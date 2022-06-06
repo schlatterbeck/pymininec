@@ -1,0 +1,81 @@
+Lines     Entry  Description
+ 195-      196   IMPEDANCE MATRIX CALCULATION
+ 620-      621   FAR FIELD CALCULATION
+1131-1149 1133   FREQUENCY INPUT
+1153-1297 1153   Geometry computation and manual input of geometry
+          1155   Manual geometry input
+          1190   Geometry computations
+          1198   COMPUTE CONNECTIVITY DATA (PULSES N1 TO N)
+          1216   COMPUTE COORDINATES OF BREAK POINTS
+          1247   SINGLE SEGMEN 0 PULSE CASE
+          1256   Geometry output
+1298-1362 1299   CONNECTIONS
+1363-1428 1364   CHANGE ENVIRONMENT
+          1369   ENVIRONMENT INPUT
+1429-1453 1430   EXCITATION INPUT
+1454-1493 1455   LOADS INPUT
+1494-     1497   MAIN PROGRAM
+1550-1556 1550   NEC-TYPE GEOMETRY INPUT
+1557-1571 1557   GET GEOMETRY DATA FROM MININEC.INP
+1572-1578 1572   Below groundplane check for z coordinate
+                 Note that it asks if we want to set coordinate to 0 but
+                 sets it to -z (!)
+1579-1588 1580   IDENTIFY OUTPUT DEVICE
+
+Data structures
+K(6,2) single precision float
+
+MS=150 Maximum number of segments
+X(150)
+Y(150) Currently replaced by Mininec.seg
+Z(150)
+
+MW=50 Maximum number of wires
+A(50)
+CA(50)   Wire.dirs [0]
+CB(50)   Wire.dirs [1]
+CG(50)   Wire.dirs [2]
+J1(50)   Wire.is_ground_start, Wire.is_ground_end (uses -1, 0, +1)
+J2(50,2) Start/End segment? currently Wire.j2
+N(50,2)  Wire.seg_start, Wire.seg_end
+S(50)    Wire.seg_len
+
+ML=11 Maximum number of loads
+MA=8 Maximum order of S-Parameter loads
+LA(2,11,8)
+LP(11)
+LS(11)
+
+MM=6 Maximum number of media
+H(6)  Medium.height
+T(6)  Medium.dieel
+U(6)  Medium.coord
+V(6)  Medium.conductivity
+Z1(6)
+Z2(6)
+
+MP=50 Maximum number of pulses
+C%(50,2)    Currently Mininec.c_per
+CI(50)
+CR(50)
+P(50)
+W%(50)      Currently Mininec.w_per
+ZR(50,50)   Z, real part
+ZI(50,50)   Z, imag part
+
+These are dimensioned to MW+MP=100
+-> Not really it's 2*MW: This stores all the start positions in the
+   first half and the end positions in the second half
+E(100)
+L(100)
+M(100)
+
+
+Not used when computing connections, looks like the variables are
+repurposed there.
+
+Datatype suffixes microsoft basic:
+% Integer
+& Long
+! Single (Float?!)
+# Double (Float?!)
