@@ -366,12 +366,12 @@ class Mininec:
             self.c_per_fixed.T [idx][cnull] = self.w_per [cnull]
     # end def compute_connectivity
 
-    def integral_i2_i3 (self, vec2, vecv, k, t, p4, reduced_kernel) :
+    def integral_i2_i3 (self, vec2, vecv, k, t, p4, exact_kernel = False) :
         """ Starts line 28
             Uses variables:
             vec2 (originally (X2, Y2, Z2))
             vecv (originally (V1, V2, V3))
-            k, t, reduced_kernel
+            k, t, exact_kernel
             c0 - c9  # Parameter of elliptic integral
             w: 2 * pi * f / c (constant in program)
             srm: small radius modification condition
@@ -381,29 +381,63 @@ class Mininec:
 
             Temporary variables:
             d3, d, b, b1, w0, w1, v0, vec3 (originally (X3, Y3, Z3))
+        # First with thin-wire approximation, doesn't make a difference
+        # if we use a exact_kernel or not
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
+        >>> m = Mininec (7, w)
+        >>> vv = np.array ([3.21214267693, 0, 0])
+        >>> v2 = np.array ([1.07071418591, 0, 0])
+        >>> t  = 0.980144947186
+        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> print ("%.7f %.7fj" % (t3, t4))
+        0.2819959 -0.1414754j
+        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
+        >>> print ("%.7f %.7fj" % (t3, t4))
+        0.2819959 -0.1414754j
+
+        # Then a thick wire without exact kernel
+        # Original produces
+        # 0.2819941 -0.1414753j
+        >>> w [0].r = 0.01
+        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> print ("%.7f %.7fj" % (t3, t4))
+        0.2819941 -0.1414753j
+
+        # Then a thick wire *with* exact kernel
+        # Original produces
+        # -2.290341 -0.1467051j
+        >>> vv = np.array ([ 1.07071418591, 0, 0])
+        >>> v2 = np.array ([-1.07071418591, 0, 0])
+        >>> t  = 0.4900725
+        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
+        >>> print ("%.7f %.7fj" % (t3, t4))
+        -2.2903412 -0.1467052j
         """
+        wire = self.geo [p4]
         t3 = t4 = 0.0
         if k < 0:
             vec3 = vecv + t * (vec2 - vecv)
         else:
             vec3 = vec2 + t * (vecv - vec2)
-        d3 = np.linalg.norm (vec3)
+        d = d3 = np.linalg.norm (vec3)
         # MOD FOR SMALL RADIUS TO WAVELENGTH RATIO
         if wire.r > self.srm:
             # SQUARE OF WIRE RADIUS
             a2 = wire.r * wire.r
-            d  = d3 * d3 + a2
-            # FIXME: Shouldn't this always be > 0?
-            if d > 0:
-                d = sqrt (d)
+            d3 = d3 * d3
+            d  = np.sqrt (d3 + a2)
             # CRITERIA FOR USING REDUCED KERNEL
-            if not reduced_kernel:
+            if exact_kernel:
+                (c0, c1, c2, c3, c4, c5, c6, c7, c8, c9) = self.cx
                 # EXACT KERNEL CALCULATION WITH ELLIPTIC INTEGRAL
                 b = d3 / (d3 + 4 * a2)
                 w0 = c0 + b * (c1 + b * (c2 + b * (c3 + b * c4)))
                 w1 = c5 + b * (c6 + b * (c7 + b * (c8 + b * c9)))
-                v0 = (w0 - w1 * log (b)) * sqrt (1 - b)
-                t3 += (v0 + log (d3 / (64 * a2)) / 2) / np.pi / wire.r - 1 / d
+                v0 = (w0 - w1 * np.log (b)) * np.sqrt (1 - b)
+                t3 += ( (v0 + np.log (d3 / (64 * a2)) / 2)
+                      / np.pi / wire.r - 1 / d
+                      )
         b1 = d * self.w
         # EXP(-J*K*R)/R
         t3 += np.cos (b1) / d
@@ -411,8 +445,9 @@ class Mininec:
         return t3, t4
     #end def integral_i2_i3
 
-    def psi_near_field (self, vec0, vect, k, p1, p2, p3, p4):
+    def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, p4):
         """ Compute psi used several times during computation of near field
+            Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
             vect originally is (T5, T6, T7)
         """
@@ -422,9 +457,12 @@ class Mininec:
         vec2 = vec1 - kvec * self.seg [p2]
         vecv = vec1 - kvec * self.seg [p3]
         return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
-    # end def psi_near_field
+    # end def psi_near_field_56
 
     def psi_near_field_66 (self, vec0, vec1, k, p2, p3, p4):
+        """ Compute psi used during computation of near field
+            Original entry point in line 66
+        """
         kvec = np.ones (3)
         kvec [-1] = k
         i4 = int (p2)
@@ -435,6 +473,9 @@ class Mininec:
     # end def psi_near_field_66
 
     def psi_near_field_75 (self, vec0, vec1, k, p2, p3, p4):
+        """ Compute psi used during computation of near field
+            Original entry point in line 75
+        """
         kvec = np.ones (3)
         kvec [-1] = k
         i4 = int (p3)
@@ -470,7 +511,7 @@ class Mininec:
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
             vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, fvs = 1)
-        t1 = 2 * log (wire.seg_len / wire.r)
+        t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1, t2
     # end def scalar_potential
@@ -497,7 +538,7 @@ class Mininec:
             vec1 = self.seg [p1]
             vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, fvs = 0)
-        t1 = log (wire.seg_len / wire.r)
+        t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1, t2
     # end def vector_potential
@@ -532,7 +573,7 @@ class Mininec:
     # end def common_vec1_vecv
 
     def psi (self, vec1, vec2, vecv, k, p2, p3, p4, fvs = 0, is_near = False):
-        """ Common code for entry points at 54, 87, and 102.
+        """ Common code for entry points at 56, 87, and 102.
             The variable fvs is used to distiguish code path at the end.
             The variable p2 is the index of the segment, seems this can
             be a float in which case the middle of two segs is used.
@@ -541,6 +582,8 @@ class Mininec:
             vec2 replaces (X2, Y2, Z2)
             vecv replaces (V1, V2, V3)
             i6: Use reduced kernel if 0, this was I6! (single precision)
+                So beware: condition "I6!=0" means variable I6! is == 0
+                The exclamation mark is part of the variable name :-(
 
             Input:
             vec1, vec2, vecv
@@ -592,14 +635,14 @@ class Mininec:
         else:
             if wire.r <= self.srm:
                 if fvs == 1:
-                    t1 = 2 * log (wire.seg_len / wire.r)
+                    t1 = 2 * np.log (wire.seg_len / wire.r)
                     t2 = -self.w * wire.seg_len
                 else:
-                    t1 = log (wire.seg_len / wire.r)
+                    t1 = np.log (wire.seg_len / wire.r)
                     t2 = -self.w * wire.seg_len / 2
                 return t1, t2
             f2 = 2 * (p3 - p2)
-            i6 = (1 - log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+            i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
         i5 = l + l
 
         # This runs from line 168 and backjump condition is in line 178
@@ -608,13 +651,13 @@ class Mininec:
                 ( vec2, vecv, k
                 , (self.q [l] + .5) / f2
                 , p4 = p4
-                , reduced_kernel = not i6
+                , exact_kernel = bool (i6)
                 )
             tmp_1, tmp_2 = self.integral_i2_i3 \
                 ( vec2, vecv, k
                 , (.5 - self.q [l]) / f2
                 , p4 = p4
-                , reduced_kernel = not i6
+                , exact_kernel = bool (i6)
                 )
             t3 += tmp_1
             t4 += tmp_2
