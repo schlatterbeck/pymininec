@@ -1,5 +1,30 @@
 Lines     Entry  Description
- 195-      196   IMPEDANCE MATRIX CALCULATION
+   1-  26    1   Start, variable initialization, array dim
+                 Jumps to 1497 (GOTO)
+  27-  53   28   KERNEL EVALUATION OF INTEGRALS I2 & I3
+  54-  65   56   PSI(P1,P2,P3) = T1 + J * T2
+                 ENTRIES REQUIRED FOR NEAR FIELD CALCULATION
+                 Prepare (X1, Y1, Z1), (X2, Y2, Z2), (V1, V2, V3)
+                 Then jumps (GOTO) to 135 in the middle of PSI
+  66-  74   66   Another PSI entry point used in near field
+                 Then jumps (GOTO) to 135 in the middle of PSI
+  75-  83   75   Another PSI entry point used in near field
+                 Then jumps (GOTO) to 135 in the middle of PSI
+  84-       87   ENTRIES REQUIRED FOR IMPEDANCE MATRIX CALCULATION
+                 S(M) GOES IN (X1,Y1,Z1) FOR SCALAR POTENTIAL
+                 MOD FOR SMALL RADIUS TO WAVE LENGTH RATIO
+                 Then jumps (GOTO) to 113 in the middle of PSI
+ 100- 181  102   Compute PSI
+                 S(M) GOES IN (X1,Y1,Z1) FOR VECTOR POTENTIAL
+                 MOD FOR SMALL RADIUS TO WAVE LENGTH RATIO
+                 Then continues to 113 in the middle of PSI
+           113   Prepare (X2, Y2, Z3), (V1, V2, V3)
+                 Then continue at 135 (GOTO) for PSI
+           135   PSI computation from
+                 (X1, Y1, Z1), (X2, Y2, Z3), (V1, V2, V3)
+ 182- 194  184   COMPLEX SQUARE ROOT
+                 W6+I*W7=SQR(Z6+I*Z7)
+ 195- 495  196   IMPEDANCE MATRIX CALCULATION
  620-      621   FAR FIELD CALCULATION
 1131-1149 1133   FREQUENCY INPUT
 1153-1297 1153   Geometry computation and manual input of geometry
@@ -22,6 +47,15 @@ Lines     Entry  Description
                  sets it to -z (!)
 1579-1588 1580   IDENTIFY OUTPUT DEVICE
 
+Looks like the PSI computation has three entry points:
+87  used for impedance matrix calculation
+102 in image loop
+54  used in near field calculation
+    after setup of (X1, Y1, Z1), (X2, Y2, Z2), (V1, V2, V3) this jumps
+    into the middle of the psi calculation in 135
+
+The PSI computation uses the INTEGRALS I2 & I3 as a subroutine
+
 Data structures
 K(6,2) single precision float
 
@@ -31,7 +65,8 @@ Y(150) Currently replaced by Mininec.seg
 Z(150)
 
 MW=50 Maximum number of wires
-A(50)
+A(50)    Wire.r
+A2 is squared radius
 CA(50)   Wire.dirs [0]
 CB(50)   Wire.dirs [1]
 CG(50)   Wire.dirs [2]
@@ -63,13 +98,16 @@ W%(50)      Currently Mininec.w_per
 ZR(50,50)   Z, real part
 ZI(50,50)   Z, imag part
 
+NS: Number of sources (must be below MP)
+
 These are dimensioned to MW+MP=100
 -> Not really it's 2*MW: This stores all the start positions in the
-   first half and the end positions in the second half
-E(100)
-L(100)
-M(100)
-
+   first half and the end positions in the second half during init
+-> Hmm and during computation is uses this for pulse data, then it
+   should be sized with MP. Yech.
+E(100) Index of pulse indexed by source (1..NS) index
+L(100) Complex voltage on pulse, real part
+M(100) Complex voltage on pulse, imag part
 
 Not used when computing connections, looks like the variables are
 repurposed there.

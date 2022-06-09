@@ -1,6 +1,30 @@
 #!/usr/bin/python3
 
+import sys
+import copy
 import numpy as np
+
+def format_float (*floats):
+    """ Reproduce floating-point formatting of the Basic code
+    """
+    r = []
+    e = 1e-9 # An epsilon to avoid python rounding down on exactly .5
+    for f in floats:
+        if f == 0:
+            fmt = '%.1f'
+        else:
+            fmt = '%%.%df' % (6 - int (np.log (f) / np.log (10)))
+        f += e
+        s = fmt % f
+        s = s [:8]
+        s = s.rstrip ('0')
+        s = s.rstrip ('.')
+        if s.startswith ('0.'):
+            s = s [1:]
+        s = '%-8s' % s
+        r.append (s)
+    return tuple (r)
+# end def format_float
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
@@ -42,6 +66,14 @@ class Wire:
         self.dirs = diff / self.wire_len
         self.seg_start = None
         self.seg_end   = None
+        self.j2 = [None, None]
+    # end def __init__
+
+    def compute_ground (self, n, media):
+        self.n = n
+        # If we are in free space, nothing to do here
+        if media is None:
+            return
         # Wire end is grounded if Z coordinate is 0
         # In the original implementation this is kept in J1
         # with: 0: not grounded -1: start grounded 1: end grounded
@@ -49,32 +81,55 @@ class Wire:
         self.is_ground_end   = (self.p2 [-1] == 0)
         if self.is_ground_start and self.is_ground_end:
             raise ValueError ("Both ends of a wire may not be grounded")
-        self.j2 = [None, None]
-    # end def __init__
+        if self.p1 [-1] < 0 or self.p2 [-1] < 0:
+            raise ValueError ("height cannot not be negative with ground")
+    # end def compute_ground
 
     def __str__ (self):
         return 'Wire %s-%s, r=%s, seg_start=%s, seg_end=%s' \
             % (self.p1, self.p2, self.r, self.seg_start, self.seg_end)
     __repr__ = __str__
 
+    def mininec_output (self):
+        return 'FIXME'
+    # end def mininec_output
+
 # end class Wire
 
 class Mininec:
     """ A mininec implementation in Python
+#    >>> w = []
+#    >>> w.append (Wire (5, 0, 0, 7, 1, 0, 7, 0.001))
+#    >>> w.append (Wire (5, 1, 0, 7, 1, 1, 7, 0.001))
+#    >>> w.append (Wire (5, 1, 1, 7, 0, 1, 7, 0.001))
+#    >>> w.append (Wire (5, 0, 1, 7, 0, 0, 7, 0.001))
+#    >>> w.append (Wire (5, 0, 0, 7, 0, 0, 0, 0.001))
+#    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 0, 0.001))
+#    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 0, 0.001))
+#    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 0, 0.001))
+#    >>> w.append (Wire (5, 0, 0, 7, 0, 0, 14, 0.001))
+#    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 14, 0.001))
+#    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 14, 0.001))
+#    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 14, 0.001))
+#    >>> m = Mininec (20, w)
     >>> w = []
-    >>> w.append (Wire (5, 0, 0, 7, 1, 0, 7, 0.001))
-    >>> w.append (Wire (5, 1, 0, 7, 1, 1, 7, 0.001))
-    >>> w.append (Wire (5, 1, 1, 7, 0, 1, 7, 0.001))
-    >>> w.append (Wire (5, 0, 1, 7, 0, 0, 7, 0.001))
-    >>> w.append (Wire (5, 0, 0, 7, 0, 0, 0, 0.001))
-    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 0, 0.001))
-    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 0, 0.001))
-    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 0, 0.001))
-    >>> w.append (Wire (5, 0, 0, 7, 0, 0, 14, 0.001))
-    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 14, 0.001))
-    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 14, 0.001))
-    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 14, 0.001))
+    >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
     >>> m = Mininec (20, w)
+    >>> m.print_wires ()
+                      **** ANTENNA GEOMETRY ****
+    <BLANKLINE>
+    WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+    X             Y             Z             RADIUS        END1 END2  NO.
+     2.141429      0             0             .001           0    1    1
+     4.282857      0             0             .001           1    1    2
+     6.424286      0             0             .001           1    1    3
+     8.565714      0             0             .001           1    1    4
+     10.70714      0             0             .001           1    1    5
+     12.84857      0             0             .001           1    1    6
+     14.99         0             0             .001           1    1    7
+     17.13143      0             0             .001           1    1    8
+     19.27286      0             0             .001           1    0    9
+
     """
     # INTRINSIC IMPEDANCE OF FREE SPACE DIVIDED BY 2 PI
     g0 = 29.979221
@@ -116,7 +171,7 @@ class Mininec:
             Computed:
             w:   Wavelength in m, (W)
             s0:  virtual dipole lenght for near field calculation (S0)
-            w:   ?  Comment: 1 / (4 * PI * OMEGA * EPSILON)
+            m:   ?  Comment: 1 / (4 * PI * OMEGA * EPSILON)
             srm: SMALL RADIUS MODIFICATION CONDITION
         """
         self.f       = f
@@ -138,11 +193,8 @@ class Mininec:
     # end __init__
 
     def check_geo (self):
-        for wire in self.geo:
-            if self.media is not None:
-                # If we are in free space, negative coordinates are allowed
-                if wire.z1 < 0 or wire.z2 < 0:
-                    raise ValueError ("Z cannot not be negative with ground")
+        for n, wire in enumerate (self.geo):
+            wire.compute_ground (n, self.media)
     # end def check_geo
 
     def compute_connectivity (self):
@@ -187,7 +239,7 @@ class Mininec:
             # instead.
             gflag = False
             i1 = i2 = 0
-            w.j2 [:] = (-i - 1, -i - 1)
+            w.j2 [:] = (-(i + 1), -(i + 1))
             # check for ground connection
             if self.media is not None:
                 if w.is_ground_start:
@@ -240,8 +292,9 @@ class Mininec:
 
             # This part starts at 1198
             # compute connectivity data (pulses n1 to n)
+            # We make seg_start/seg_end 0-based and use None instead of 0
             n1 = n + 1
-            self.geo [i].seg_start = n1
+            self.geo [i].seg_start = n1 - 1
             if w.n_segments == 1 and i1 == 0:
                 self.geo [i].seg_start = None
             n = n1 + w.n_segments
@@ -249,7 +302,7 @@ class Mininec:
                 n = n - 1
             if i2 == 0:
                 n = n - 1
-            self.geo [i].seg_end = n
+            self.geo [i].seg_end = n - 1
             if w.n_segments == 1 and i2 == 0:
                 self.geo [i].seg_end = None
             # This used to be a Goto 1247 with comment
@@ -286,7 +339,7 @@ class Mininec:
             i6 = n + 2 * (i + 1)
             for i4 in range (i1 + 1, i6 + 1):
                 j = i4 - i3
-                seg [i4] = w.p1 + j * w.p2 / w.seg_len
+                seg [i4] = w.p1 + j * w.dirs * w.seg_len
             # This used to be an inverse comparison with a goto 1245
             if c_per [(n, 2)] != 0:
                 i2 = abs (c_per [(n, 2)])
@@ -303,21 +356,291 @@ class Mininec:
         c_iter = iter (sorted (c_per))
         self.c_per = np.array \
             ([[c_per [k1], c_per [k2]] for k1, k2 in zip (c_iter, c_iter)])
+        self.seg = np.array ([self.seg [i] for i in sorted (self.seg)])
+        # This fills the 0-values in c_per with values from w_per
+        # See code in lines 1282, 1283, a side-effect hidden in the
+        # print routine :-(
+        self.c_per_fixed = copy.deepcopy (self.c_per)
+        for idx in range (2):
+            cnull = self.c_per.T [idx] == 0
+            self.c_per_fixed.T [idx][cnull] = self.w_per [cnull]
     # end def compute_connectivity
 
+    def integral_i2_i3 (self, vec2, vecv, k, t, p4, reduced_kernel) :
+        """ Starts line 28
+            Uses variables:
+            vec2 (originally (X2, Y2, Z2))
+            vecv (originally (V1, V2, V3))
+            k, t, reduced_kernel
+            c0 - c9  # Parameter of elliptic integral
+            w: 2 * pi * f / c (constant in program)
+            srm: small radius modification condition
+                 0.0001 * c / f
+            a(p4): wire radius
+            t3, t4: Integrals I2 and I3 (yes, they *are* named off-by-one)
+
+            Temporary variables:
+            d3, d, b, b1, w0, w1, v0, vec3 (originally (X3, Y3, Z3))
+        """
+        t3 = t4 = 0.0
+        if k < 0:
+            vec3 = vecv + t * (vec2 - vecv)
+        else:
+            vec3 = vec2 + t * (vecv - vec2)
+        d3 = np.linalg.norm (vec3)
+        # MOD FOR SMALL RADIUS TO WAVELENGTH RATIO
+        if wire.r > self.srm:
+            # SQUARE OF WIRE RADIUS
+            a2 = wire.r * wire.r
+            d  = d3 * d3 + a2
+            # FIXME: Shouldn't this always be > 0?
+            if d > 0:
+                d = sqrt (d)
+            # CRITERIA FOR USING REDUCED KERNEL
+            if not reduced_kernel:
+                # EXACT KERNEL CALCULATION WITH ELLIPTIC INTEGRAL
+                b = d3 / (d3 + 4 * a2)
+                w0 = c0 + b * (c1 + b * (c2 + b * (c3 + b * c4)))
+                w1 = c5 + b * (c6 + b * (c7 + b * (c8 + b * c9)))
+                v0 = (w0 - w1 * log (b)) * sqrt (1 - b)
+                t3 += (v0 + log (d3 / (64 * a2)) / 2) / np.pi / wire.r - 1 / d
+        b1 = d * self.w
+        # EXP(-J*K*R)/R
+        t3 += np.cos (b1) / d
+        t4 -= np.sin (b1) / d
+        return t3, t4
+    #end def integral_i2_i3
+
+    def psi_near_field (self, vec0, vect, k, p1, p2, p3, p4):
+        """ Compute psi used several times during computation of near field
+            vec0 originally is (X0, Y0, Z0)
+            vect originally is (T5, T6, T7)
+        """
+        kvec = np.ones (3)
+        kvec [-1] = k
+        vec1 = vec0 + p1 * vect / 2
+        vec2 = vec1 - kvec * self.seg [p2]
+        vecv = vec1 - kvec * self.seg [p3]
+        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
+    # end def psi_near_field
+
+    def psi_near_field_66 (self, vec0, vec1, k, p2, p3, p4):
+        kvec = np.ones (3)
+        kvec [-1] = k
+        i4 = int (p2)
+        i5 = i4 + 1
+        vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
+        vecv = vec0 - kvec * self.seg [p3]
+        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
+    # end def psi_near_field_66
+
+    def psi_near_field_75 (self, vec0, vec1, k, p2, p3, p4):
+        kvec = np.ones (3)
+        kvec [-1] = k
+        i4 = int (p3)
+        i5 = i4 + 1
+        vec2 = vec0 - kvec * self.seg [p2]
+        vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
+        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
+    # end def psi_near_field_75
+
+    def scalar_potential (self, k, p1, p2, p3, p4):
+        """ Compute scalar potential
+            Original entry point in line 87.
+            Original comment:
+            entries required for impedance matrix calculation
+            S(M) goes in (X1,Y1,Z1) for scalar potential
+            mod for small radius to wave length ratio
+
+            This *used* to use A(P4), S(P4), where P4 is the index into
+            the wire datastructures, A(P4) is the wire radius and S(P4)
+            is the segment length of the wire
+            Inputs:
+            k, p1, p4
+            accesses self.seg, originally X(I4),Y(I4),Z(I4), X(I5),Y(I5),Z(I5)
+            Outputs:
+            t1, t2
+            Temp:
+            i4, i5
+        """
+        wire = self.geo [p4]
+        if k < 1 or wire.r > self.srm:
+            i4 = int (p1)
+            i5 = i4 + 1
+            vec1 = (self.seg [i4] + self.seg [i5]) / 2
+            vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
+            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, fvs = 1)
+        t1 = 2 * log (wire.seg_len / wire.r)
+        t2 = -self.w * wire.seg_len
+        return t1, t2
+    # end def scalar_potential
+
+    def vector_potential (self, k, p1, p2, p3, p4):
+        """ Compute vector potential
+            Original entry point in line 102.
+            Original comment:
+            S(M) goes in (X1,Y1,Z1) for vector potential
+            mod for small radius to wave length ratio
+
+            This *used* to use A(P4), S(P4), where P4 is the index into
+            the wire datastructures, A(P4) is the wire radius and S(P4)
+            is the segment length of the wire, we still use p4 as the
+            wire index.
+            The variable p1 is the index of the segment.
+            Inputs:
+            k, p2, p3, x(p1),y(p1),z(p1)
+            Outputs:
+            t1, t2
+        """
+        wire = self.geo [p4]
+        if k < 1 or wire.r >= self.srm or (i != j or p3 == p2 + .5):
+            vec1 = self.seg [p1]
+            vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
+            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, fvs = 0)
+        t1 = log (wire.seg_len / wire.r)
+        t2 = -self.w * wire.seg_len / 2
+        return t1, t2
+    # end def vector_potential
+
+    def common_vec1_vecv (self, vec1, k, p2):
+        """ Compute vec2 (originally (X2, Y2, Z2))
+            and vecv (originally (V1, V2, V3))
+            common to scalar and vector potential.
+            This originally was an entry point at 113 used by scalar and
+            vector potential computation.
+            The variable p2 is the index of the segment, seems this can
+            be a float in which case the middle of two segs is used.
+        """
+        seg  = self.seg [p2]
+        # S(U)-S(M) GOES IN (X2,Y2,Z2) (this is now vec2)
+        kvec = np.ones (3)
+        kvec [-1] = k
+        i4 = int (p2)
+        if i4 == p2:
+            vec2 = k * self.seg [i4] - vec1
+        else:
+            i5 = i4 + 1
+            vec2 = k * (self.seg [i4] + self.seg [i5]) / 2 - vec1
+        # S(V)-S(M) GOES IN (V1,V2,V3) (this is now vecv)
+        i4 = int (p3)
+        if i4 == p3:
+            vecv = kvec * self.seg [i4] - vec1
+        else:
+            i5 = i4 + 1
+            vecv = kvec * (self.seg [i4] + self.seg [i5]) / 3 - vec1
+        return vec2, vecv
+    # end def common_vec1_vecv
+
+    def psi (self, vec1, vec2, vecv, k, p2, p3, p4, fvs = 0, is_near = False):
+        """ Common code for entry points at 54, 87, and 102.
+            The variable fvs is used to distiguish code path at the end.
+            The variable p2 is the index of the segment, seems this can
+            be a float in which case the middle of two segs is used.
+            The variable p4 is the index of the wire.
+            vec1 is the original input vector (X1, Y1, Z1)
+            vec2 replaces (X2, Y2, Z2)
+            vecv replaces (V1, V2, V3)
+            i6: Use reduced kernel if 0, this was I6! (single precision)
+
+            Input:
+            vec1, vec2, vecv
+            k:
+            p2:  segment index 1
+            p3:  segment index 2
+            p4:  wire index
+            fvs: scalar vs. vector potential
+            is_near: This originally tested input C$ for "N" which is
+                     the selection of near field compuation
+
+            Output:
+            vec2:
+            vecv:
+            t1:
+            t2:
+
+            Temp:
+            i4, i5, s4, l, f2, t, d0, d3, i6
+        """
+        wire = self.geo [p4]
+        # MAGNITUDE OF S(U) - S(M)
+        d0 = np.linalg.norm (vec2)
+        # MAGNITUDE OF S(V) - S(M)
+        d3 = np.linalg.norm (vecv)
+        # MAGNITUDE OF S(V) - S(U)
+        s4 = (p3 - p2) * wire.seg_len
+        # ORDER OF INTEGRATION
+        # LTH ORDER GAUSSIAN QUADRATURE
+        t1 = 0
+        t2 = 0
+        i6 = 0
+        f2 = 1
+        l = 7
+        t = (d0 + d3) / wire.seg_len
+        # CRITERIA FOR EXACT KERNEL
+        wire_i_j2 = self.geo [self.w_per [i]].j2
+        wire_j_j2 = self.geo [self.w_per [j]].j2
+        if  (  (t > 1.1 or is_near)
+            and wire_i_j2 [0] != wire_j_j2 [0]
+            and wire_i_j2 [0] != wire_j_j2 [1]
+            and wire_i_j2 [1] != wire_j_j2 [0]
+            and wire_i_j2 [1] != wire_j_j2 [1]
+            ) :
+            if t > 6:
+                l = 3
+            if t > 10:
+                l = 1
+        else:
+            if wire.r <= self.srm:
+                if fvs == 1:
+                    t1 = 2 * log (wire.seg_len / wire.r)
+                    t2 = -self.w * wire.seg_len
+                else:
+                    t1 = log (wire.seg_len / wire.r)
+                    t2 = -self.w * wire.seg_len / 2
+                return t1, t2
+            f2 = 2 * (p3 - p2)
+            i6 = (1 - log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+        i5 = l + l
+
+        # This runs from line 168 and backjump condition is in line 178
+        while l < i5:
+            t3, t4 = self.integral_i2_i3 \
+                ( vec2, vecv, k
+                , (self.q [l] + .5) / f2
+                , p4 = p4
+                , reduced_kernel = not i6
+                )
+            tmp_1, tmp_2 = self.integral_i2_i3 \
+                ( vec2, vecv, k
+                , (.5 - self.q [l]) / f2
+                , p4 = p4
+                , reduced_kernel = not i6
+                )
+            t3 += tmp_1
+            t4 += tmp_2
+            l = l + 1
+            t1 += self.q [l] * t3
+            t2 += self.q [l] * t4
+            l = l + 1
+        t1 = s4 * (t1 + i6)
+        t2 = s4 * t2
+        return t1, t2
+    # end def psi
+
     def compute_impedance_matrix (self):
-        """ Trick: Indeces in c_per are 1-based. A 0 in the index seems
+        """ This starts at line 195 (with entry-point for gosub at 196)
+            in the original basic code.
+            Trick: Indeces in c_per are 1-based. A 0 in the index seems
             to mean to get a 0, so we insert a 0 into the 0th position
             of all arrays we index.
         """
         n = len (self.w_per)
         s = np.insert (np.array ([w.seg_len for w in self.geo]), 0, [0.0])
-        self.Z = np.zeros ((n, n), dtype=complex)
+        #self.Z = np.zeros ((n, n), dtype=complex)
         i1 = np.abs (self.c_per.T [0])
         i2 = np.abs (self.c_per.T [1])
         f4 = np.sign (self.c_per.T [0]) * s [i1]
         f5 = np.sign (self.c_per.T [1]) * s [i2]
-        import pdb; pdb.set_trace ()
         d  = np.array  ([w.dirs for w in self.geo])
         d  = np.insert (d, 0, [0.0, 0.0, 0.0], axis = 0)
         # The t matrix replaces vectors t5, t6, t7
@@ -325,6 +648,71 @@ class Mininec:
         # Compute the special case in line 220 in one go
         ix = self.c_per.T [0] == -self.c_per.T [1]
         t.T [-1][ix] = (s [i1] * (d.T [-1][i1] + d.T [-1][i2])) [ix]
-    # end def matrix_fill
+#        j loop
+#            # compute j1 same as i1 above
+#            # compute j2 same as i2 above
+#            # compute f4 same as f4 above without s [i1] factor
+#            # compute f5 same as f5 above without s [i1] factor
+#            f6 = 1
+#            f7 = 1
+#            # IMAGE LOOP
+#            k FIXME loop : # FOR K=1 TO G STEP -2
+#                # IF C%(J,1)<>-C%(J,2) THEN 235
+#                # So use inverse comparison and put in an if statement
+#                if ix [j]:
+#                    if k < 0:
+#                        FIXME goto 332
+#                    f6 = f4
+#                    f7 = f5
+#                f8 = 0
+#                # Was inverse comparison with goto 248
+#                if k >= 0:
+#                    # A bunch of IF statements that jumped over each other
+#                    if i1 == i2:
+#                        if  (  ca(i1) + cb(i1) == 0
+#                            or self.c_per [j][0] == c_per [j][1]
+#                            ) and j1 == j2:
+#                            if i1 == j1:
+#                                f8 = 1
+#                            if i == j:
+#                                f8 = 2
+#                    # line 246
+#                    if zr [i, j] != 0 FIXME goto 317
+#                # COMPUTE PSI(M,N,N+1/2)
+    # end def compute_impedance_matrix
+
+    def print_wires (self, file = None):
+        if file is None:
+            file = sys.stdout
+        print (' ' * 18 + '**** ANTENNA GEOMETRY ****', file = file)
+        for i, wire in enumerate (self.geo):
+            print (file = file)
+            print \
+                ( 'WIRE NO.%3d  COORDINATES%sCONNECTION PULSE'
+                % (i + 1, ' ' * 32)
+                , file = file
+                )
+            print \
+                ( ('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS')
+                , file = file
+                )
+            if wire.seg_start is None and wire.seg_end is None:
+                print \
+                    ( ('%-13s ' * 5 + '%-4s %-4s') % tuple (['-'] * 5 + ['0'])
+                    , file = file
+                    )
+            for k in range (wire.seg_start, wire.seg_end + 1):
+                seg = tuple (self.seg [k + 1])
+                print \
+                    ( (' ' + '%-13s ' * 3) % format_float (*seg)
+                    , file = file, end = ''
+                    )
+                print ('%-12s' % format_float (wire.r), file = file, end = '')
+                print \
+                    ( '%4d %4d' % tuple (self.c_per [k])
+                    , file = file, end = ' '
+                    )
+                print ('%4d' % (k + 1), file = file)
+    # end def print_wires
 
 # end class Mininec
