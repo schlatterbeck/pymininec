@@ -445,7 +445,7 @@ class Mininec:
         return t3, t4
     #end def integral_i2_i3
 
-    def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, p4):
+    def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, p4, i, j):
         """ Compute psi used several times during computation of near field
             Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
@@ -456,10 +456,10 @@ class Mininec:
         vec1 = vec0 + p1 * vect / 2
         vec2 = vec1 - kvec * self.seg [p2]
         vecv = vec1 - kvec * self.seg [p3]
-        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
+        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_56
 
-    def psi_near_field_66 (self, vec0, vec1, k, p2, p3, p4):
+    def psi_near_field_66 (self, vec0, vec1, k, p2, p3, p4, i, j):
         """ Compute psi used during computation of near field
             Original entry point in line 66
         """
@@ -469,10 +469,10 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
         vecv = vec0 - kvec * self.seg [p3]
-        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
+        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_66
 
-    def psi_near_field_75 (self, vec0, vec1, k, p2, p3, p4):
+    def psi_near_field_75 (self, vec0, vec1, k, p2, p3, p4, i, j):
         """ Compute psi used during computation of near field
             Original entry point in line 75
         """
@@ -482,10 +482,10 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * self.seg [p2]
         vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, is_near = True)
+        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_75
 
-    def scalar_potential (self, k, p1, p2, p3, p4):
+    def scalar_potential (self, k, p1, p2, p3, p4, i, j):
         """ Compute scalar potential
             Original entry point in line 87.
             Original comment:
@@ -510,13 +510,13 @@ class Mininec:
             i5 = i4 + 1
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
             vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
-            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, fvs = 1)
+            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 1)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1, t2
     # end def scalar_potential
 
-    def vector_potential (self, k, p1, p2, p3, p4):
+    def vector_potential (self, k, p1, p2, p3, p4, i, j):
         """ Compute vector potential
             Original entry point in line 102.
             Original comment:
@@ -537,7 +537,7 @@ class Mininec:
         if k < 1 or wire.r >= self.srm or (i != j or p3 == p2 + .5):
             vec1 = self.seg [p1]
             vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
-            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, fvs = 0)
+            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 0)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1, t2
@@ -572,8 +572,11 @@ class Mininec:
         return vec2, vecv
     # end def common_vec1_vecv
 
-    def psi (self, vec1, vec2, vecv, k, p2, p3, p4, fvs = 0, is_near = False):
+    def psi ( self, vec1, vec2, vecv, k, p2, p3, p4, i, j
+            , fvs = 0, is_near = False
+            ):
         """ Common code for entry points at 56, 87, and 102.
+            This code starts at line 135.
             The variable fvs is used to distiguish code path at the end.
             The variable p2 is the index of the segment, seems this can
             be a float in which case the middle of two segs is used.
@@ -603,6 +606,18 @@ class Mininec:
 
             Temp:
             i4, i5, s4, l, f2, t, d0, d3, i6
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+
+        # Original produces:
+        # 5.330494 -0.1568644j
+        >>> vec1 = np.array ([2.141429, 0, 0])
+        >>> vec2 = np.zeros (3)
+        >>> vecv = np.array ([1.070714, 0, 0])
+        >>> t1, t2 = m.psi (vec1, vec2, vecv, 1, 2, 2.5, 0, 0, 0)
+        >>> print ("%.7f %.7fj" % (t1, t2))
+        5.3304831 -0.1568644j
         """
         wire = self.geo [p4]
         # MAGNITUDE OF S(U) - S(M)
@@ -620,8 +635,10 @@ class Mininec:
         l = 7
         t = (d0 + d3) / wire.seg_len
         # CRITERIA FOR EXACT KERNEL
-        wire_i_j2 = self.geo [self.w_per [i]].j2
-        wire_j_j2 = self.geo [self.w_per [j]].j2
+        assert self.w_per [i] - 1 >= 0
+        assert self.w_per [j] - 1 >= 0
+        wire_i_j2 = self.geo [self.w_per [i] - 1].j2
+        wire_j_j2 = self.geo [self.w_per [j] - 1].j2
         if  (  (t > 1.1 or is_near)
             and wire_i_j2 [0] != wire_j_j2 [0]
             and wire_i_j2 [0] != wire_j_j2 [1]
@@ -649,21 +666,21 @@ class Mininec:
         while l < i5:
             t3, t4 = self.integral_i2_i3 \
                 ( vec2, vecv, k
-                , (self.q [l] + .5) / f2
+                , (self.q [l - 1] + .5) / f2
                 , p4 = p4
                 , exact_kernel = bool (i6)
                 )
             tmp_1, tmp_2 = self.integral_i2_i3 \
                 ( vec2, vecv, k
-                , (.5 - self.q [l]) / f2
+                , (.5 - self.q [l - 1]) / f2
                 , p4 = p4
                 , exact_kernel = bool (i6)
                 )
             t3 += tmp_1
             t4 += tmp_2
             l = l + 1
-            t1 += self.q [l] * t3
-            t2 += self.q [l] * t4
+            t1 += self.q [l - 1] * t3
+            t2 += self.q [l - 1] * t4
             l = l + 1
         t1 = s4 * (t1 + i6)
         t2 = s4 * t2
