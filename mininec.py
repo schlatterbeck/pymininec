@@ -534,9 +534,6 @@ class Mininec:
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
-        >>> vec1 = np.array ([2.141429, 0, 0])
-        >>> vec2 = np.zeros (3)
-        >>> vecv = np.array ([1.070714, 0, 0])
         >>> method = m.scalar_potential
         >>> r = method (k=1, p1=1.5, p2=8, p3=9, p4=0, i=0, j=8)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
@@ -574,6 +571,16 @@ class Mininec:
             k, p2, p3, x(p1),y(p1),z(p1)
             Outputs:
             t1, t2
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+
+        # Original produces:
+        # 0.6747199 -.1555772j
+        >>> method = m.vector_potential
+        >>> r = method (k=1, p1=1, p2=1.5, p3=2, p4=0, i=0, j=1)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        0.6747199 -0.1555773j
         """
         wire = self.geo [p4]
         if k < 1 or wire.r >= self.srm or (i != j or p3 == p2 + .5):
