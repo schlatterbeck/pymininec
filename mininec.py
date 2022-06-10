@@ -473,6 +473,20 @@ class Mininec:
             Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
             vect originally is (T5, T6, T7)
+            Note that p1 is the only non-zero-based variable, it's not
+            used as an index but as a factor.
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+
+        # Original produces:
+        # 0.5496336 -0.3002106j
+        >>> vec0 = np.array ([0, -1, -1])
+        >>> vect = np.array ([8.565715E-02, 0, 0])
+        >>> method = m.psi_near_field_56
+        >>> r = method (vec0, vect, k=1, p1=0.5, p2=1, p3=2, p4=0, i=0, j=0)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        0.5496335 -0.3002106j
         """
         kvec = np.ones (3)
         kvec [-1] = k
@@ -485,6 +499,20 @@ class Mininec:
     def psi_near_field_66 (self, vec0, vec1, k, p2, p3, p4, i, j):
         """ Compute psi used during computation of near field
             Original entry point in line 66
+            vec0 originally is (X0, Y0, Z0)
+            vec1 originally is (X1, Y1, Z1)
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+
+        # Original produces:
+        # 0.4792338 -0.1544592j
+        >>> vec0 = np.array ([0, -1, -1])
+        >>> vec1 = np.array ([3.212143, 0, 0])
+        >>> method = m.psi_near_field_66
+        >>> r = method (vec0, vec1, k=1, p2=0.5, p3=1, p4=0, i=0, j=0)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        0.4792338 -0.1544592j
         """
         kvec = np.ones (3)
         kvec [-1] = k
@@ -498,6 +526,20 @@ class Mininec:
     def psi_near_field_75 (self, vec0, vec1, k, p2, p3, p4, i, j):
         """ Compute psi used during computation of near field
             Original entry point in line 75
+            vec0 originally is (X0, Y0, Z0)
+            vec1 originally is (X1, Y1, Z1)
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+
+        # Original produces:
+        # 0.3218219 -.1519149j
+        >>> vec0 = np.array ([0, -1, -1])
+        >>> vec1 = np.array ([3.212143, 0, 0])
+        >>> method = m.psi_near_field_75
+        >>> r = method (vec0, vec1, k=1, p2=1, p3=1.5, p4=0, i=0, j=0)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        0.3218219 -0.1519149j
         """
         kvec = np.ones (3)
         kvec [-1] = k
