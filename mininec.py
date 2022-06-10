@@ -381,6 +381,10 @@ class Mininec:
 
             Temporary variables:
             d3, d, b, b1, w0, w1, v0, vec3 (originally (X3, Y3, Z3))
+
+            Note when comparing results to the BASIC implementation: The
+            basic implementation *adds* its results to the *existing*
+            values of t3 and t4!
         # First with thin-wire approximation, doesn't make a difference
         # if we use a exact_kernel or not
         >>> w = []
@@ -389,19 +393,19 @@ class Mininec:
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
         >>> t  = 0.980144947186
-        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
-        >>> print ("%.7f %.7fj" % (t3, t4))
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
-        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
-        >>> print ("%.7f %.7fj" % (t3, t4))
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
 
         # Then a thick wire without exact kernel
         # Original produces
         # 0.2819941 -0.1414753j
         >>> w [0].r = 0.01
-        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
-        >>> print ("%.7f %.7fj" % (t3, t4))
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819941 -0.1414753j
 
         # Then a thick wire *with* exact kernel
@@ -410,9 +414,28 @@ class Mininec:
         >>> vv = np.array ([ 1.07071418591, 0, 0])
         >>> v2 = np.array ([-1.07071418591, 0, 0])
         >>> t  = 0.4900725
-        >>> t3, t4 = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
-        >>> print ("%.7f %.7fj" % (t3, t4))
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -2.2903412 -0.1467052j
+
+        # Original produces
+        # -4.219833E-02 -4.820928E-02j
+        >>> vv = np.array ([16.06072, 0, 0])
+        >>> v2 = np.array ([13.91929, 0, 0])
+        >>> t  = 0.7886752
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> print ("%.8f %.8fj" % (r.real, r.imag))
+        -0.04219836 -0.04820921j
+
+        # Original produces
+        # -7.783058E-02 -.1079738j
+        # But *ADDED TO THE PREVIOUS RESULT*
+        >>> vv = np.array ([16.06072, 0, 0])
+        >>> v2 = np.array ([13.91929, 0, 0])
+        >>> t  = 0.2113249
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> print ("%.8f %.8fj" % (r.real, r.imag))
+        -0.03563231 -0.05976447j
         """
         wire = self.geo [p4]
         t3 = t4 = 0.0
@@ -442,7 +465,7 @@ class Mininec:
         # EXP(-J*K*R)/R
         t3 += np.cos (b1) / d
         t4 -= np.sin (b1) / d
-        return t3, t4
+        return t3 + t4 * 1j
     #end def integral_i2_i3
 
     def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, p4, i, j):
@@ -496,24 +519,43 @@ class Mininec:
             This *used* to use A(P4), S(P4), where P4 is the index into
             the wire datastructures, A(P4) is the wire radius and S(P4)
             is the segment length of the wire
+
             Inputs:
-            k, p1, p4
+            k, p1, p2, p3, p4, i, j
+            Note that p1, p2, p3, i, j, p4 are 0-based now.
             accesses self.seg, originally X(I4),Y(I4),Z(I4), X(I5),Y(I5),Z(I5)
             Outputs:
             t1, t2
             Temp:
             i4, i5
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+
+        # Original produces:
+        # -8.333431E-02 -0.1156091j
+        >>> vec1 = np.array ([2.141429, 0, 0])
+        >>> vec2 = np.zeros (3)
+        >>> vecv = np.array ([1.070714, 0, 0])
+        >>> method = m.scalar_potential
+        >>> r = method (k=1, p1=1.5, p2=8, p3=9, p4=0, i=0, j=8)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        -0.0833344 -0.1156091j
         """
         wire = self.geo [p4]
-        if k < 1 or wire.r > self.srm:
+        if  (  k < 1
+            or wire.r > self.srm
+            or p3 != p2 + 1
+            or p1 == (p2 + p3) / 2
+            ):
             i4 = int (p1)
             i5 = i4 + 1
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
-            vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
+            vec2, vecv = self.common_vec1_vecv (vec1, k, p2, p3)
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 1)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
-        return t1, t2
+        return t1, t2 * 1j
     # end def scalar_potential
 
     def vector_potential (self, k, p1, p2, p3, p4, i, j):
@@ -536,14 +578,14 @@ class Mininec:
         wire = self.geo [p4]
         if k < 1 or wire.r >= self.srm or (i != j or p3 == p2 + .5):
             vec1 = self.seg [p1]
-            vec2, vecv = self.common_vec1_vecv (vec1, k, p2)
+            vec2, vecv = self.common_vec1_vecv (vec1, k, p2, p3)
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 0)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
-        return t1, t2
+        return t1, t2 * 1j
     # end def vector_potential
 
-    def common_vec1_vecv (self, vec1, k, p2):
+    def common_vec1_vecv (self, vec1, k, p2, p3):
         """ Compute vec2 (originally (X2, Y2, Z2))
             and vecv (originally (V1, V2, V3))
             common to scalar and vector potential.
@@ -551,12 +593,15 @@ class Mininec:
             vector potential computation.
             The variable p2 is the index of the segment, seems this can
             be a float in which case the middle of two segs is used.
+            Note that this is tested by scalar_potential and
+            vector_potential tests above.
+            Note that p2, p3 are now 0-based.
         """
-        seg  = self.seg [p2]
+        i4 = int (p2)
+        seg  = self.seg [i4]
         # S(U)-S(M) GOES IN (X2,Y2,Z2) (this is now vec2)
         kvec = np.ones (3)
         kvec [-1] = k
-        i4 = int (p2)
         if i4 == p2:
             vec2 = k * self.seg [i4] - vec1
         else:
@@ -591,12 +636,14 @@ class Mininec:
             Input:
             vec1, vec2, vecv
             k:
-            p2:  segment index 1
-            p3:  segment index 2
-            p4:  wire index
+            p2:  segment index 1 (0-based)
+            p3:  segment index 2 (0-based)
+            p4:  wire index (0-based)
             fvs: scalar vs. vector potential
             is_near: This originally tested input C$ for "N" which is
                      the selection of near field compuation
+            Note: p2 and p3 are used only as differences, so if both are
+                  1-based produces same result as when both are 0-based.
 
             Output:
             vec2:
@@ -615,9 +662,19 @@ class Mininec:
         >>> vec1 = np.array ([2.141429, 0, 0])
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> t1, t2 = m.psi (vec1, vec2, vecv, 1, 2, 2.5, 0, 0, 0)
-        >>> print ("%.7f %.7fj" % (t1, t2))
+        >>> r = m.psi (vec1, vec2, vecv, 1, 1, 1.5, 0, 0, 0)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
         5.3304831 -0.1568644j
+
+        # Original produces:
+        # -8.333431E-02 -0.1156091j
+        >>> vec1 = np.array ([3.212143, 0, 0])
+        >>> vec2 = np.array ([13.91929, 0, 0])
+        >>> vecv = np.array ([16.06072, 0, 0])
+        >>> x = m.psi
+        >>> r = x (vec1, vec2, vecv, k=1, p2=8, p3=9, p4=0, i=0, j=8, fvs = 1)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        -0.0833344 -0.1156090j
         """
         wire = self.geo [p4]
         # MAGNITUDE OF S(U) - S(M)
@@ -628,8 +685,7 @@ class Mininec:
         s4 = (p3 - p2) * wire.seg_len
         # ORDER OF INTEGRATION
         # LTH ORDER GAUSSIAN QUADRATURE
-        t1 = 0
-        t2 = 0
+        tret = 0+0j
         i6 = 0
         f2 = 1
         l = 7
@@ -639,17 +695,19 @@ class Mininec:
         assert self.w_per [j] - 1 >= 0
         wire_i_j2 = self.geo [self.w_per [i] - 1].j2
         wire_j_j2 = self.geo [self.w_per [j] - 1].j2
-        if  (  (t > 1.1 or is_near)
-            and wire_i_j2 [0] != wire_j_j2 [0]
+        wires_differ = \
+            (   wire_i_j2 [0] != wire_j_j2 [0]
             and wire_i_j2 [0] != wire_j_j2 [1]
             and wire_i_j2 [1] != wire_j_j2 [0]
             and wire_i_j2 [1] != wire_j_j2 [1]
-            ) :
+            )
+        if t > 1.1 or is_near or wires_differ:
+            # This starts line 165
             if t > 6:
                 l = 3
             if t > 10:
                 l = 1
-        else:
+        elif not wires_differ:
             if wire.r <= self.srm:
                 if fvs == 1:
                     t1 = 2 * np.log (wire.seg_len / wire.r)
@@ -657,34 +715,35 @@ class Mininec:
                 else:
                     t1 = np.log (wire.seg_len / wire.r)
                     t2 = -self.w * wire.seg_len / 2
-                return t1, t2
+                return t1, t2 * 1j
+            # The following starts line 162
             f2 = 2 * (p3 - p2)
             i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+        # The following starts line 167
         i5 = l + l
 
         # This runs from line 168 and backjump condition is in line 178
+        # This really *updated* t3 and t4 *in place* in the gosub for
+        # computing the integral (!)
+        # Note how the index l is incremented twice below.
         while l < i5:
-            t3, t4 = self.integral_i2_i3 \
+            ret = self.integral_i2_i3 \
                 ( vec2, vecv, k
                 , (self.q [l - 1] + .5) / f2
                 , p4 = p4
                 , exact_kernel = bool (i6)
                 )
-            tmp_1, tmp_2 = self.integral_i2_i3 \
+            ret += self.integral_i2_i3 \
                 ( vec2, vecv, k
                 , (.5 - self.q [l - 1]) / f2
                 , p4 = p4
                 , exact_kernel = bool (i6)
                 )
-            t3 += tmp_1
-            t4 += tmp_2
             l = l + 1
-            t1 += self.q [l - 1] * t3
-            t2 += self.q [l - 1] * t4
+            tret += ret * self.q [l - 1]
             l = l + 1
-        t1 = s4 * (t1 + i6)
-        t2 = s4 * t2
-        return t1, t2
+        tret = (tret + i6) * s4
+        return tret
     # end def psi
 
     def compute_impedance_matrix (self):
