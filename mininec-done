@@ -25,8 +25,8 @@ Lines     Entry  Description
  182- 194  184   COMPLEX SQUARE ROOT [now uses numpy]
                  W6+I*W7=SQR(Z6+I*Z7)
  195- 495  196   IMPEDANCE MATRIX CALCULATION
-           342   ADDITION OF LOADS
-           375   IMPEDANCE MATRIX FACTORIZATION
+           342   ADDITION OF LOADS (jumps to 477 if no load)
+           377   IMPEDANCE MATRIX FACTORIZATION
            428   SOLVE / COMPUTE RIGHT HAND SIDE
            477   SOURCE DATA (printing of sources)
                  This all uses the global FLG to determine what part(s)
@@ -105,10 +105,10 @@ Z1(6)
 Z2(6)
 
 MP=50 Maximum number of pulses
-C%(50,2)    Currently Mininec.c_per
-CI(50)
-CR(50)
-P(50)
+C%(50,2)    Currently Mininec.c_per or Mininec.seg_idx (the latter has no 0s)
+CI(50)      Right hand side (imag)
+CR(50)      Right hand side (real)
+P(50)       Pivots
 W%(50)      Currently Mininec.w_per
 ZR(50,50)   Z, real part
 ZI(50,50)   Z, imag part
@@ -120,7 +120,7 @@ These are dimensioned to MW+MP=100
    first half and the end positions in the second half during init
 -> Hmm and during computation is uses this for pulse data, then it
    should be sized with MP. Yech.
-E(100) Index of pulse indexed by source (1..NS) index
+E(100) Index of pulse indexed by source (1..NS) index ("Excitation")
 L(100) Complex voltage on pulse, real part
 M(100) Complex voltage on pulse, imag part
 

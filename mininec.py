@@ -31,6 +31,23 @@ def format_float (use_e, *floats):
     return tuple (r)
 # end def format_float
 
+class Excitation:
+    """ This is the "PULSE" definition in mininec.
+        The idx is the index into the segments (0-based)
+        For convenience phase is in degrees (and converted internally)
+        Magnitude is in volts
+    """
+    def __init__ (self, idx, magnitude, phase):
+        if idx < 0:
+            raise ValueError ("Index must be >= 0")
+        self.idx       = idx
+        self.magnitude = magnitude
+        self.phase_d   = phase
+        self.phase     = phase / 180. * np.pi
+        self.voltage   = magnitude * np.e ** (1j * self.phase)
+    # end def __init__
+# end class Excitation
+
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
         Note that it seems only the first medium can have a
@@ -117,10 +134,11 @@ class Mininec:
 #    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 14, 0.001))
 #    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 14, 0.001))
 #    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 14, 0.001))
-#    >>> m = Mininec (20, w)
+#    >>> m = Mininec (20, w, [s])
     >>> w = []
     >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-    >>> m = Mininec (20, w)
+    >>> s = Excitation (5, 1, 0)
+    >>> m = Mininec (20, w, [s])
     >>> m.print_wires ()
                       **** ANTENNA GEOMETRY ****
     <BLANKLINE>
@@ -154,11 +172,12 @@ class Mininec:
         ])
     c = 299.8 # speed of light
 
-    def __init__ (self, f, geo, media = None):
+    def __init__ (self, f, geo, sources, media = None):
         """ Initialize, no interactive input is done here
             f:   Frequency in MHz, (F)
             media: sequence of Medium objects, if empty use perfect ground
                    if None (the default) use free space
+            sources: List of Excitation objects
             geo: A sequence of Wire objects
             # Obsolete:
             g:   +1 for free space, -1 for groundplane (G)
@@ -181,7 +200,8 @@ class Mininec:
             srm: SMALL RADIUS MODIFICATION CONDITION
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
         >>> print (m.seg_idx)
 	[[1 1]
 	 [1 1]
@@ -195,6 +215,7 @@ class Mininec:
         """
         self.f       = f
         self.media   = media
+        self.sources = sources
         self.geo     = geo
         self.wavelen = w = 299.8 / f
         # virtual dipole length for near field calculation:
@@ -208,6 +229,13 @@ class Mininec:
         self.flg     = 0
         self.check_geo ()
         self.compute_connectivity ()
+        # Check source indeces
+        for n, s in enumerate (self.sources):
+            if s.idx >= len (self.c_per):
+                raise ValueError \
+                    ( "Index %d of source %d exceeds segments (%d)"
+                    % (s.idx, n + 1, len (self.c_per))
+                    )
     # end __init__
 
     def check_geo (self):
@@ -217,6 +245,7 @@ class Mininec:
 
     def compute (self):
         self.compute_impedance_matrix ()
+        self.compute_rhs ()
         #self.compute_impedance_matrix_loads ()
     # end def compute
 
@@ -393,6 +422,16 @@ class Mininec:
         self.w_per   -= 1
     # end def compute_connectivity
 
+    def compute_rhs (self):
+        rhs = np.zeros (len (self.c_per), dtype=complex)
+        for src in self.sources:
+            f2 = -1j/self.m
+            if self.seg_idx [src.idx][0] == -self.seg_idx [src.idx][1]:
+                f2 = -2j/self.m
+            rhs [src.idx] = f2 * src.voltage
+        self.rhs = rhs
+    # end def compute_rhs
+
     def image_iter (self):
         """ This replaces the image loop which loops over [1, -1] when a
             ground plane exists, over only [1] otherwise. At some point
@@ -426,7 +465,8 @@ class Mininec:
         # if we use a exact_kernel or not
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
         >>> t  = 0.980144947186
@@ -514,7 +554,8 @@ class Mininec:
             used as an index but as a factor.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
 
         # Original produces:
         # 0.5496336 -0.3002106j
@@ -540,7 +581,8 @@ class Mininec:
             vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
 
         # Original produces:
         # 0.4792338 -0.1544592j
@@ -567,7 +609,8 @@ class Mininec:
             vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
 
         # Original produces:
         # 0.3218219 -.1519149j
@@ -609,7 +652,8 @@ class Mininec:
             i4, i5
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
@@ -652,7 +696,8 @@ class Mininec:
             t1, t2
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
 
         # Original produces:
         # 0.6747199 -.1555772j
@@ -741,7 +786,8 @@ class Mininec:
             i4, i5, s4, l, f2, t, d0, d3, i6
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> s = Excitation (5, 1, 0)
+        >>> m = Mininec (7, w, [s])
 
         # Original produces:
         # 5.330494 -0.1568644j
@@ -836,9 +882,11 @@ class Mininec:
         """ This starts at line 195 (with entry-point for gosub at 196)
             in the original basic code.
             Note that we're using seg_idx instead of c_per
+        >>> s  = Excitation (4, 1, 0)
+        >>> s2 = Excitation (4, 1, 30)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w)
+        >>> m = Mininec (7, w, [s2])
         >>> m.compute_impedance_matrix ()
         >>> n = len (m.w_per)
         >>> for i in range (n):
@@ -941,6 +989,33 @@ class Mininec:
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
         -8.48511-9.668585E-03j
+        >>> m.compute_rhs ()
+        >>> for r in m.rhs:
+        ...     sgn = '++-' [int (np.sign (r.imag))]
+        ...     print ('%.8f%s%.8fj' % (r.real, sgn, abs (r.imag)))
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00244346-0.00423220j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        >>> m.sources [0] = s
+        >>> m.compute_rhs ()
+        >>> for r in m.rhs:
+        ...     sgn = '++-' [int (np.sign (r.imag))]
+        ...     print ('%.8f%s%.8fj' % (r.real, sgn, abs (r.imag)))
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000-0.00488692j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
+        0.00000000+0.00000000j
         """
         n    = len (self.w_per)
         s    = np.array ([w.seg_len for w in self.geo])
