@@ -1,10 +1,12 @@
-- Change to directory with basic script:
-  cd /usr/local/src/net-orig/NEC-mininec/mininec/mininec3/
-- Use the debugscript as follows:
-  tr '\n' '\r' < ~/checkout/own/projects/pymininec/dipole-01.mini | \
-      ./debugscript =pcbasic mininec.scaled.bas --interface=none -d
-- Or use the conventional way without input redirection:
-  python3 -m pdb =pcbasic mininec.scaled.bas --interface=none -d
+- Change to directory with basic script
+- Use the conventional way without input redirection, instruct the basic
+  interpreter to read from a file instead. Be sure to pre-convert the
+  file so that all newlines are replaced with carriage-returns, e.g.
+  tr '\n' '\r' < dipole-01.mini > dipole-01.CR
+  python3 -m pdb =pcbasic mininec.scaled.bas --input=dipole-01.CR \
+    --interface=none -d
+  The basic interpreter can redirect the input. Unfortunately the script 
+  explicitly uses SCRN output which is not redirectable with pcbasic.
 - Set breakpoint:
   break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105
   or break at a certain Basic line number:
