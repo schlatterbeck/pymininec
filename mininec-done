@@ -22,9 +22,22 @@ Lines     Entry  Description
                  Then continue at 135 (GOTO) for PSI
            135   PSI computation from
                  (X1, Y1, Z1), (X2, Y2, Z3), (V1, V2, V3)
- 182- 194  184   COMPLEX SQUARE ROOT
+ 182- 194  184   COMPLEX SQUARE ROOT [now uses numpy]
                  W6+I*W7=SQR(Z6+I*Z7)
  195- 495  196   IMPEDANCE MATRIX CALCULATION
+           342   ADDITION OF LOADS
+           375   IMPEDANCE MATRIX FACTORIZATION
+           428   SOLVE / COMPUTE RIGHT HAND SIDE
+           477   SOURCE DATA (printing of sources)
+                 This all uses the global FLG to determine what part(s)
+                 of the matrix calculation need to be performed.
+                 The flag is set to 0 on change of frequency, change
+                 of loads, or change of wires.
+                 if FLG is 1, only right hand sides are computed, if FLG
+                 is 2 nothing is recomputed (jumps directly to printing
+                 of source data).
+ 496- 570  497   PRINT CURRENTS (first computes matrix if necessary)
+ 571- 605  572   SORT JUNCTION CURRENTS
  620-      621   FAR FIELD CALCULATION
 1131-1149 1133   FREQUENCY INPUT
 1153-1297 1153   Geometry computation and manual input of geometry
@@ -46,6 +59,8 @@ Lines     Entry  Description
                  Note that it asks if we want to set coordinate to 0 but
                  sets it to -z (!)
 1579-1588 1580   IDENTIFY OUTPUT DEVICE
+1589-1598 1589   CALCULATE ELAPSED TIME [not implemented]
+1599-1616 1599   CALCULATE APPROXIMATE TIME REMAINING [not implemented]
 
 Looks like the PSI computation has three entry points:
 87  used for impedance matrix calculation
