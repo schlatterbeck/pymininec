@@ -1,0 +1,78 @@
+- Change to directory with basic script:
+  cd /usr/local/src/net-orig/NEC-mininec/mininec/mininec3/
+- Use the debugscript as follows:
+  tr '\n' '\r' < ~/checkout/own/projects/pymininec/dipole-01.mini | \
+      ./debugscript =pcbasic mininec.scaled.bas --interface=none -d
+- Or use the conventional way without input redirection:
+  python3 -m pdb =pcbasic mininec.scaled.bas --interface=none -d
+- Set breakpoint:
+  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105
+  or break at a certain Basic line number:
+  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105, struct.unpack_from('<H', token, 2)[0] == 102
+  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105, struct.unpack_from('<H', token, 2)[0] == 231
+  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105, struct.unpack_from('<H', token, 2)[0] == 259
+
+- The current line number is
+  p struct.unpack_from('<H', token, 2)[0]
+- Printing scalar variables:
+  p self._scalars
+  prints something like
+  b'MS!': b'!'[b'00000c87' 70.0]
+  b'MW!': b'!'[b'00002085' 20.0]
+  b'ML!': b'!'[b'00003084' 11.0]
+  b'MA!': b'!'[b'00000084' 8.0]
+  These *does* contain the correct values. Note that a '!' was appended
+  to the file name even though the basic code used MS, MW, ...
+  So it seems the default in Basic is to use single precision float
+
+  Print an individual variable:
+  p self._values.from_bytes (self._scalars._vars [b'MS!'])
+  p self._values.from_bytes (self._scalars._vars [b'MW!'])
+  p self._values.from_bytes (self._scalars._vars [b'MP!'])
+  p self._values.from_bytes (self._scalars._vars [b'J%'])
+  p self._values.from_bytes (self._scalars._vars [b'F8!'])
+  p self._values.from_bytes (self._scalars._vars [b'P1!'])
+  p self._values.from_bytes (self._scalars._vars [b'P2!'])
+  p self._values.from_bytes (self._scalars._vars [b'P3!'])
+  p self._values.from_bytes (self._scalars._vars [b'P4!'])
+  p self._values.from_bytes (self._scalars._vars [b'T1!'])
+  p self._values.from_bytes (self._scalars._vars [b'T2!'])
+  p self._values.from_bytes (self._scalars._vars [b'X1!'])
+  p self._values.from_bytes (self._scalars._vars [b'Y1!'])
+  p self._values.from_bytes (self._scalars._vars [b'Z1!'])
+  p self._values.from_bytes (self._scalars._vars [b'X2!'])
+  p self._values.from_bytes (self._scalars._vars [b'Y2!'])
+  p self._values.from_bytes (self._scalars._vars [b'Z2!'])
+  p self._values.from_bytes (self._scalars._vars [b'X3!'])
+  p self._values.from_bytes (self._scalars._vars [b'Y3!'])
+  p self._values.from_bytes (self._scalars._vars [b'Z3!'])
+  p self._values.from_bytes (self._scalars._vars [b'V1!'])
+  p self._values.from_bytes (self._scalars._vars [b'V2!'])
+  p self._values.from_bytes (self._scalars._vars [b'V3!'])
+  p self._values.from_bytes (self._scalars._vars [b'I4%'])
+  p self._values.from_bytes (self._scalars._vars [b'I5%'])
+  p self._values.from_bytes (self._scalars._vars [b'V1!'])
+  p self._values.from_bytes (self._scalars._vars [b'V2!'])
+  p self._values.from_bytes (self._scalars._vars [b'F6!'])
+  p self._values.from_bytes (self._scalars._vars [b'F7!'])
+  p self._values.from_bytes (self._scalars._vars [b'F4!'])
+  p self._values.from_bytes (self._scalars._vars [b'D1!'])
+  p self._values.from_bytes (self._scalars._vars [b'D2!'])
+  p self._values.from_bytes (self._scalars._vars [b'W2!'])
+  p self._values.from_bytes (self._scalars._vars [b'T5!'])
+  p self._values.from_bytes (self._scalars._vars [b'T6!'])
+  p self._values.from_bytes (self._scalars._vars [b'T7!'])
+  Show all variables:
+  p sorted (self._scalars._vars.keys())
+
+  Print arrays:
+  Array memory usage:
+  p self._memory.arrays.array_size_bytes (b'Q!')
+  Dimension (created by 'DIM'):
+  p self._memory.arrays.dimensions (b'Q!')
+  Get the array as a python list
+  p self._memory.arrays.to_list (b'Q!')
+  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  p self._memory.arrays.to_list (b'J2%')
+  [[0, 0], [0, 0], ...]]
+

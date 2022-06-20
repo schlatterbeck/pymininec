@@ -1,0 +1,14 @@
+#!/usr/bin/python3
+
+import os
+import sys
+import pdb
+
+tty_r = open ('/dev/tty', 'r')
+tty_w = open ('/dev/tty', 'w')
+dbg = pdb.Pdb (stdin = tty_r, stdout = tty_w)
+args = sys.argv [1:]
+sys.argv [:] = args
+
+dbg._runscript (args [0])
+
