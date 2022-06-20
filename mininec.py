@@ -4,7 +4,7 @@ import sys
 import copy
 import numpy as np
 
-def format_float (*floats):
+def format_float (use_e, *floats):
     """ Reproduce floating-point formatting of the Basic code
     """
     r = []
@@ -13,14 +13,19 @@ def format_float (*floats):
         if f == 0:
             fmt = '%.1f'
         else:
-            fmt = '%%.%df' % (6 - int (np.log (f) / np.log (10)))
+            fmt = '%%.%df' % (6 - int (np.log (abs (f)) / np.log (10)))
+        if use_e and abs (f) < 1e-1:
+            fmt = '%e'
         f += e
         s = fmt % f
-        s = s [:8]
-        s = s.rstrip ('0')
-        s = s.rstrip ('.')
-        if s.startswith ('0.'):
-            s = s [1:]
+        if fmt != '%e':
+            s = s [:8]
+            s = s.rstrip ('0')
+            s = s.rstrip ('.')
+            if s.startswith ('0.'):
+                s = s [1:]
+        else:
+            s = s.upper ()
         s = '%-8s' % s
         r.append (s)
     return tuple (r)
@@ -39,6 +44,7 @@ class Medium:
         self.coord    = 1e6      # U(I)
         self.height   = height   # H(I)
     # end def __init__
+
 # end class Medium
 
 class Wire:
@@ -173,6 +179,19 @@ class Mininec:
             s0:  virtual dipole lenght for near field calculation (S0)
             m:   ?  Comment: 1 / (4 * PI * OMEGA * EPSILON)
             srm: SMALL RADIUS MODIFICATION CONDITION
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
+        >>> m = Mininec (7, w)
+        >>> print (m.seg_idx)
+	[[1 1]
+	 [1 1]
+	 [1 1]
+	 [1 1]
+	 [1 1]
+	 [1 1]
+	 [1 1]
+	 [1 1]
+	 [1 1]]
         """
         self.f       = f
         self.media   = media
@@ -185,17 +204,21 @@ class Mininec:
         # set small radius modification condition:
         self.srm     = .0001 * w
         self.w       = 2 * np.pi / w
-        self.w2      = w ** 2 / 2
+        self.w2      = self.w ** 2 / 2
         self.flg     = 0
         self.check_geo ()
         self.compute_connectivity ()
-        self.compute_impedance_matrix ()
     # end __init__
 
     def check_geo (self):
         for n, wire in enumerate (self.geo):
             wire.compute_ground (n, self.media)
     # end def check_geo
+
+    def compute (self):
+        self.compute_impedance_matrix ()
+        #self.compute_impedance_matrix_loads ()
+    # end def compute
 
     def compute_connectivity (self):
         """ In the original code this is done while parsing the
@@ -360,11 +383,25 @@ class Mininec:
         # This fills the 0-values in c_per with values from w_per
         # See code in lines 1282, 1283, a side-effect hidden in the
         # print routine :-(
-        self.c_per_fixed = copy.deepcopy (self.c_per)
+        # Note that we keep c_per for printing (it has 0 entries)
+        self.seg_idx = copy.deepcopy (self.c_per)
+        # Fill 0s with values from w_per
         for idx in range (2):
             cnull = self.c_per.T [idx] == 0
-            self.c_per_fixed.T [idx][cnull] = self.w_per [cnull]
+            self.seg_idx.T [idx][cnull] = self.w_per [cnull]
+        # make indeces 0-based
+        self.w_per   -= 1
     # end def compute_connectivity
+
+    def image_iter (self):
+        """ This replaces the image loop which loops over [1, -1] when a
+            ground plane exists, over only [1] otherwise. At some point
+            we may want to refactor this.
+        """
+        if self.media is None:
+            return iter ([1])
+        return iter ([1, -1])
+    # end def image_iter
 
     def integral_i2_i3 (self, vec2, vecv, k, t, p4, exact_kernel = False) :
         """ Starts line 28
@@ -662,7 +699,7 @@ class Mininec:
             vecv = kvec * self.seg [i4] - vec1
         else:
             i5 = i4 + 1
-            vecv = kvec * (self.seg [i4] + self.seg [i5]) / 3 - vec1
+            vecv = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
         return vec2, vecv
     # end def common_vec1_vecv
 
@@ -740,10 +777,10 @@ class Mininec:
         l = 7
         t = (d0 + d3) / wire.seg_len
         # CRITERIA FOR EXACT KERNEL
-        assert self.w_per [i] - 1 >= 0
-        assert self.w_per [j] - 1 >= 0
-        wire_i_j2 = self.geo [self.w_per [i] - 1].j2
-        wire_j_j2 = self.geo [self.w_per [j] - 1].j2
+        assert self.w_per [i] >= 0
+        assert self.w_per [j] >= 0
+        wire_i_j2 = self.geo [self.w_per [i]].j2
+        wire_j_j2 = self.geo [self.w_per [j]].j2
         wires_differ = \
             (   wire_i_j2 [0] != wire_j_j2 [0]
             and wire_i_j2 [0] != wire_j_j2 [1]
@@ -798,55 +835,261 @@ class Mininec:
     def compute_impedance_matrix (self):
         """ This starts at line 195 (with entry-point for gosub at 196)
             in the original basic code.
-            Trick: Indeces in c_per are 1-based. A 0 in the index seems
-            to mean to get a 0, so we insert a 0 into the 0th position
-            of all arrays we index.
+            Note that we're using seg_idx instead of c_per
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> m = Mininec (7, w)
+        >>> m.compute_impedance_matrix ()
+        >>> n = len (m.w_per)
+        >>> for i in range (n):
+        ...     print ("row %d" % (i+1))
+        ...     for j in range (n):
+        ...        print ('%s%s%sj'
+        ...              % ( format_float (1, m.Z [i][j].real) [0].strip ()
+        ...                , '++-' [int (np.sign (m.Z [i][j].imag))]
+        ...                , format_float
+        ...                   (1, abs (m.Z [i][j].imag)) [0].strip ()
+        ...                )
+        ...              )
+        row 1
+        -8.22111-9.668635E-03j
+        2.016947-9.572989E-03j
+        .2143659-9.290232E-03j
+        5.390039E-02-8.83227E-03j
+        2.352012E-02-8.218217E-03j
+        1.223069E-02-7.473381E-03j
+        6.605738E-03-6.627979E-03j
+        3.326367E-03-5.715214E-03j
+        1.25811E-03-4.770002E-03j
+        row 2
+        2.016947-9.572989E-03j
+        -8.22111-9.668635E-03j
+        2.016947-9.572989E-03j
+        .2143659-9.290232E-03j
+        5.390039E-02-8.83227E-03j
+        2.352012E-02-8.218217E-03j
+        1.223069E-02-7.473381E-03j
+        6.605738E-03-6.627979E-03j
+        3.326367E-03-5.715214E-03j
+        row 3
+        .2143659-9.290232E-03j
+        2.016947-9.572989E-03j
+        -8.22111-9.668635E-03j
+        2.016947-9.572989E-03j
+        .2143659-9.290232E-03j
+        5.390039E-02-8.83227E-03j
+        2.352012E-02-8.218217E-03j
+        1.223069E-02-7.473381E-03j
+        6.605738E-03-6.627979E-03j
+        row 4
+        5.390039E-02-8.83227E-03j
+        .2143659-9.290232E-03j
+        2.016947-9.572989E-03j
+        -8.22111-9.668635E-03j
+        2.016947-9.572989E-03j
+        .2143659-9.290232E-03j
+        5.390039E-02-8.83227E-03j
+        2.352012E-02-8.218217E-03j
+        1.223069E-02-7.473381E-03j
+        row 5
+        2.352012E-02-8.218217E-03j
+        5.390039E-02-8.83227E-03j
+        .2143659-9.290232E-03j
+        2.016947-9.572989E-03j
+        -8.22111-9.668635E-03j
+        2.016947-9.572989E-03j
+        .2143659-9.290232E-03j
+        5.390039E-02-8.83227E-03j
+        2.352012E-02 -8.218217E-03j
+        row 6
+        1.223069E-02-7.473381E-03j
+        2.352012E-02 -8.218217E-03j
+        5.390039E-02-8.83227E-03j
+        .2143659-9.290232E-03j
+        2.016947-9.572989E-03j
+        -8.22111-9.668635E-03j
+        2.016947-9.572989E-03j
+        .2143659-9.290232E-03j
+        5.390039E-02-8.83227E-03j
+        row7
+        6.605738E-03-6.627979E-03j
+        1.223069E-02-7.473381E-03j
+        2.352012E-02-8.218217E-03j
+        5.390039E-02-8.83227E-03j
+        .2143659-9.290232E-03j
+        2.016947-9.572989E-03j
+        -8.22111-9.668635E-03j
+        2.016947 -9.572989E-03j
+        .2143659-9.290232E-03j
+        row8
+        3.326367e-03-5.715214e-03j
+        6.605738e-03-6.627979e-03j
+        1.223069e-02-7.473381e-03j
+        2.352012e-02-8.218217e-03j
+        5.390039e-02-8.83227e-03j
+        .2143659-9.290232e-03j
+        2.016947-9.572989e-03j
+        -8.22111-9.668635e-03j
+        2.016947-9.572989e-03j
+        row9
+        1.25811e-03-4.770002e-03j
+        3.326367e-03-5.715214e-03j
+        6.605738e-03-6.627979e-03j
+        1.223069e-02-7.473381e-03j
+        2.352012e-02-8.218217e-03j
+        5.390039e-02-8.83227e-03j
+        .2143659-9.290232e-03j
+        2.016947-9.572989e-03j
+        -8.22111-9.668635e-03j
         """
-        n = len (self.w_per)
-        s = np.insert (np.array ([w.seg_len for w in self.geo]), 0, [0.0])
-        #self.Z = np.zeros ((n, n), dtype=complex)
-        i1 = np.abs (self.c_per.T [0])
-        i2 = np.abs (self.c_per.T [1])
-        f4 = np.sign (self.c_per.T [0]) * s [i1]
-        f5 = np.sign (self.c_per.T [1]) * s [i2]
-        d  = np.array  ([w.dirs for w in self.geo])
-        d  = np.insert (d, 0, [0.0, 0.0, 0.0], axis = 0)
-        # The t matrix replaces vectors t5, t6, t7
-        t  = (np.tile (f4, (3, 1)).T * d [i1] + np.tile (f5, (3, 1)).T * d [i2])
+        n    = len (self.w_per)
+        s    = np.array ([w.seg_len for w in self.geo])
+        self.Z = np.zeros ((n, n), dtype=complex)
+        # Since seg_idx is 1-based, we subtract 1 to make i1v/i2v 0-based
+        i1v  = np.abs (self.seg_idx.T [0]) - 1
+        i2v  = np.abs (self.seg_idx.T [1]) - 1
+        f4   = np.sign (self.seg_idx.T [0]) * s [i1v]
+        f5   = np.sign (self.seg_idx.T [1]) * s [i2v]
+        d    = np.array  ([w.dirs for w in self.geo])
+        # The t567 matrix replaces vectors T5, T6, T7
+        t567 = \
+            ( np.tile (f4, (3, 1)).T * d [i1v]
+            + np.tile (f5, (3, 1)).T * d [i2v]
+            )
         # Compute the special case in line 220 in one go
-        ix = self.c_per.T [0] == -self.c_per.T [1]
-        t.T [-1][ix] = (s [i1] * (d.T [-1][i1] + d.T [-1][i2])) [ix]
-#        j loop
-#            # compute j1 same as i1 above
-#            # compute j2 same as i2 above
-#            # compute f4 same as f4 above without s [i1] factor
-#            # compute f5 same as f5 above without s [i1] factor
-#            f6 = 1
-#            f7 = 1
-#            # IMAGE LOOP
-#            k FIXME loop : # FOR K=1 TO G STEP -2
-#                # IF C%(J,1)<>-C%(J,2) THEN 235
-#                # So use inverse comparison and put in an if statement
-#                if ix [j]:
-#                    if k < 0:
-#                        FIXME goto 332
-#                    f6 = f4
-#                    f7 = f5
-#                f8 = 0
-#                # Was inverse comparison with goto 248
-#                if k >= 0:
-#                    # A bunch of IF statements that jumped over each other
-#                    if i1 == i2:
-#                        if  (  ca(i1) + cb(i1) == 0
-#                            or self.c_per [j][0] == c_per [j][1]
-#                            ) and j1 == j2:
-#                            if i1 == j1:
-#                                f8 = 1
-#                            if i == j:
-#                                f8 = 2
-#                    # line 246
-#                    if zr [i, j] != 0 FIXME goto 317
-#                # COMPUTE PSI(M,N,N+1/2)
+        ix = self.seg_idx.T [0] == -self.seg_idx.T [1]
+        t567.T [-1][ix] = (s [i1v] * (d.T [-1][i1v] + d.T [-1][i2v])) [ix]
+        # Instead of I1, I2 use i1v [i], i2v [i]
+        import pdb; pdb.set_trace ()
+        for i in range (n):
+            # Instead of J1, J2 use i1v [j], i2v [j]
+            for j in range (n):
+                f6 = f7 = 1
+                # 230
+                for k in self.image_iter ():
+                    if self.seg_idx [j][0] == -self.seg_idx [j][1]:
+                        if k < 0:
+                            continue
+                        f6 = np.sign (self.seg_idx [j][0])
+                        f7 = np.sign (self.seg_idx [j][1])
+                    f8 = 0
+                    if k >= 0:
+                        di = self.geo [i1v [i]].dirs
+                        dj = self.geo [i1v [j]].dirs
+                        # set flag to avoid redundant calculations
+                        if  (   i1v [i] == i2v [i]
+                            and (  di [0] + di [1] == 0
+                                or self.seg_idx [i][0] == self.seg_idx [i][1]
+                                )
+                            and i1v [j] == i2v [j]
+                            and (  dj [0] + dj [1] == 0
+                                or self.seg_idx [j][0] == self.seg_idx [j][1]
+                                )
+                            ):
+                            if i1v [i] == i1v [j]:
+                                f8 = 1
+                            if i == j:
+                                f8 = 2
+                    # This was a conditional goto 317 in line 246
+                    if k < 0 or self.Z [i][j].real == 0:
+                        p1 = 2 * self.w_per [i] + i + 1
+                        p2 = 2 * self.w_per [j] + j + 1
+                        p3 = p2 + 0.5
+                        p4 = i2v [j]
+                        vp = self.vector_potential (k, p1, p2, p3, p4, i, j)
+                        u = vp * np.sign (self.seg_idx [j][1])
+                        # compute PSI(M,N-1/2,N)
+                        p3 = p2
+                        p2 -= 0.5
+                        p4 = i1v [j]
+                        if f8 < 2:
+                            vp = self.vector_potential (k, p1, p2, p3, p4, i, j)
+                        v = vp * np.sign (self.seg_idx [j][0])
+                        # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
+                        f7v  = np.array ([1, 1, f7])
+                        f6v  = np.array ([1, 1, f6])
+                        di1  = self.geo [i1v [j]].dirs
+                        di2  = self.geo [i2v [j]].dirs
+                        kvec = np.array ([1, 1, k])
+                        # We do real and imaginary part in one go:
+                        vec3 = f7v * u * di2 + f6v * v * di1 * kvec
+                        d    = self.w2 * sum (vec3 * t567 [i])
+                        # compute PSI(M+1/2,N,N+1)
+                        p1 += 0.5
+                        if f8 == 2:
+                            p1 -= 1
+                        p2 = p3
+                        p3 += 1
+                        p4 = i2v [j]
+                        if f8 < 2 or f8 == 1:
+                            if f8 == 1:
+                                u56 = np.sign (self.seg_idx [j][1]) * u + vp
+                            else:
+                                u56 = self.scalar_potential \
+                                    (k, p1, p2, p3, p4, i, j)
+                            # compute PSI(M-1/2,N,N+1)
+                            # Code at 291
+                            p1 -= 1
+                            sp = self.scalar_potential \
+                                (k, p1, p2, p3, p4, i, j)
+                            seglen = self.geo [i2v [j]].seg_len
+                            u12 = (sp - u56) / seglen
+                            # compute PSI(M+1/2,N-1,N)
+                            p1  += 1
+                            p3  = p2
+                            p2  -= 1
+                            p4  = i1v [j]
+                            u34 = self.scalar_potential \
+                                (k, p1, p2, p3, p4, i, j)
+                            # compute PSI(M-1/2,N-1,N)
+                            if f8 >= 1:
+                                sp = u56
+                            else:
+                                p1 -= 1
+                                sp = self.scalar_potential \
+                                    (k, p1, p2, p3, p4, i, j)
+                            # gradient of scalar potential contribution
+                            seglen = self.geo [i1v [j]].seg_len
+                            u12 += (u34 - sp) / seglen
+                        else:
+                            sp = self.scalar_potential (k, p1, p2, p3, p4, i, j)
+                            seglen = self.geo [i1v [j]].seg_len
+                            sg  = np.sign (self.seg_idx [j][1])
+                            u12 = (2 * sp - 4 * u * sg) / seglen
+                        # 314
+                        # sum into impedance matrix
+                        self.Z [i][j] = self.Z [i][j] + k * (d + u12)
+
+                    # avoid redundant calculations
+                    # 317
+                    if j < i or f8 == 0:
+                        continue
+                    self.Z [j][i] = self.Z [i][j]
+                    # segments on same wire same distance apart
+                    # have same Z
+                    p1 = j + 1
+                    if p1 >= n:
+                        continue
+                    if self.seg_idx [p1][0] != self.seg_idx [p1][1]:
+                        continue
+                    d = self.geo [i2v [j]].dirs
+                    if  (   self.seg_idx [p1, 1] != self.seg_idx [j][1]
+                        and (  self.seg_idx [p1, 1] != -self.seg_idx [j][1]
+                            or d [0] + d [1] != 0
+                            )
+                        ):
+                        continue
+                    p2 = i + 1
+                    if p2 > n:
+                        continue
+                    self.Z [p2][p1] = self.Z [i][j]
+            pct = i / n
+            # Here follows a GOSUB 1599 which calculates the remaining time,
+            # not implemented
+        # end matrix fill time calculation
+        # Here follows a GOSUB 1589 which calculates elapsed time,
+        # not implemented
+        # addition of loads happens in compute_impedance_matrix_loads
     # end def compute_impedance_matrix
 
     def print_wires (self, file = None):
@@ -872,10 +1115,13 @@ class Mininec:
             for k in range (wire.seg_start, wire.seg_end + 1):
                 seg = tuple (self.seg [k + 1])
                 print \
-                    ( (' ' + '%-13s ' * 3) % format_float (*seg)
+                    ( (' ' + '%-13s ' * 3) % format_float (0, *seg)
                     , file = file, end = ''
                     )
-                print ('%-12s' % format_float (wire.r), file = file, end = '')
+                print \
+                    ( '%-12s' % format_float (0, wire.r)
+                    , file = file, end = ''
+                    )
                 print \
                     ( '%4d %4d' % tuple (self.c_per [k])
                     , file = file, end = ' '
