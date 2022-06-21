@@ -1,0 +1,9 @@
+*.swp
+*.OUT
+*.out
+*.GNN
+*.CR
+*.bas
+*.BAS
+README.html
+__pycache__

@@ -188,20 +188,6 @@ class Wire:
 
 class Mininec:
     """ A mininec implementation in Python
-#    >>> w = []
-#    >>> w.append (Wire (5, 0, 0, 7, 1, 0, 7, 0.001))
-#    >>> w.append (Wire (5, 1, 0, 7, 1, 1, 7, 0.001))
-#    >>> w.append (Wire (5, 1, 1, 7, 0, 1, 7, 0.001))
-#    >>> w.append (Wire (5, 0, 1, 7, 0, 0, 7, 0.001))
-#    >>> w.append (Wire (5, 0, 0, 7, 0, 0, 0, 0.001))
-#    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 0, 0.001))
-#    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 0, 0.001))
-#    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 0, 0.001))
-#    >>> w.append (Wire (5, 0, 0, 7, 0, 0, 14, 0.001))
-#    >>> w.append (Wire (5, 1, 0, 7, 1, 0, 14, 0.001))
-#    >>> w.append (Wire (5, 1, 1, 7, 1, 1, 14, 0.001))
-#    >>> w.append (Wire (5, 0, 1, 7, 0, 1, 14, 0.001))
-#    >>> m = Mininec (20, w, [s])
     >>> w = []
     >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
     >>> s = Excitation (4, 1, 0)
@@ -313,6 +299,7 @@ class Mininec:
                     ( "Index %d of source %d exceeds segments (%d)"
                     % (s.idx, n + 1, len (self.c_per))
                     )
+        self.output_date = False
     # end __init__
 
     def check_geo (self):
@@ -338,8 +325,8 @@ class Mininec:
 		      POWER =  5.034822E-03  WATTS
         """
         self.compute_impedance_matrix ()
-        self.compute_rhs ()
         #self.compute_impedance_matrix_loads ()
+        self.compute_rhs ()
         self.currents = np.linalg.solve (self.Z, self.rhs)
     # end def compute
 
@@ -1259,6 +1246,47 @@ class Mininec:
         # addition of loads happens in compute_impedance_matrix_loads
     # end def compute_impedance_matrix
 
+    # All the *as_mininec methods
+
+    def as_mininec (self):
+        r = []
+        r.append (self.header_as_mininec ())
+        r.append (self.frequency_as_mininec ())
+        #r.append (self.environment_as_mininec ())
+        r.append (self.wires_as_mininec ())
+        r.append ('')
+        r.append (self.sources_as_mininec ())
+        r.append ('')
+        #r.append (self.loads_as_mininec ())
+        r.append (self.source_data_as_mininec ())
+        #r.append (self.far_field_as_mininec ())
+        return '\n'.join (r)
+    # end def as_mininec
+
+    def frequency_as_mininec (self):
+        r = []
+        r.append ('FREQUENCY (MHZ): %s' % format_float ([self.f]) [0].strip ())
+        r.append \
+            ('    WAVE LENGTH =  %s  METERS'
+            % format_float ([self.wavelen]) [0].strip ()
+            )
+        r.append ('')
+        return '\n'.join (r)
+    # end def frequency_as_mininec
+
+    def header_as_mininec (self):
+        r = []
+        r.append (' ' * 19 + '*' * 40)
+        r.append (' ' * 21 + 'MINI-NUMERICAL ELECTROMAGNETICS CODE')
+        r.append (' ' * 35 + 'MININEC')
+        fmt = '%m-%d-%y' + ' ' * 14 + '%H:%M%:%S'
+        if self.output_date:
+            r.append (' ' * 23 + datetime.now ().strftime (fmt))
+        r.append (' ' * 19 + '*' * 40)
+        r.append ('')
+        return '\n'.join (r)
+    # end def header_as_mininec
+
     def sources_as_mininec (self):
         r = []
         r.append ('NO. OF SOURCES : %2d' % len (self.sources))
@@ -1329,3 +1357,11 @@ class Mininec:
     # end def wires_as_mininec
 
 # end class Mininec
+
+if __name__ == '__main__':
+    w = []
+    w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+    s = Excitation (4, 1, 0)
+    m = Mininec (7, w, [s])
+    m.compute ()
+    print (m.as_mininec ())
