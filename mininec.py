@@ -140,6 +140,14 @@ class Mininec:
     >>> s = Excitation (5, 1, 0)
     >>> m = Mininec (20, w, [s])
     >>> m.print_wires ()
+    NO. OF WIRES: 1
+    <BLANKLINE>
+    WIRE NO. 1
+                COORDINATES                                 END         NO. OF
+       X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+     0             0             0                           0
+     21.41429      0             0             .001          0             10
+    <BLANKLINE>
                       **** ANTENNA GEOMETRY ****
     <BLANKLINE>
     WIRE NO.  1  COORDINATES                                CONNECTION PULSE
@@ -203,15 +211,15 @@ class Mininec:
         >>> s = Excitation (5, 1, 0)
         >>> m = Mininec (7, w, [s])
         >>> print (m.seg_idx)
-	[[1 1]
-	 [1 1]
-	 [1 1]
-	 [1 1]
-	 [1 1]
-	 [1 1]
-	 [1 1]
-	 [1 1]
-	 [1 1]]
+        [[1 1]
+         [1 1]
+         [1 1]
+         [1 1]
+         [1 1]
+         [1 1]
+         [1 1]
+         [1 1]
+         [1 1]]
         """
         self.f       = f
         self.media   = media
@@ -1168,6 +1176,41 @@ class Mininec:
     def print_wires (self, file = None):
         if file is None:
             file = sys.stdout
+        print ('NO. OF WIRES: %d' % len (self.geo), file = file)
+        print ()
+        for i, wire in enumerate (self.geo):
+            print ('WIRE NO. %d' % (i + 1), file = file)
+            print \
+                ( '%sCOORDINATES%sEND%sNO. OF'
+                % (' ' * 12, ' ' * 33, ' ' * 9)
+                , file = file
+                )
+            print \
+                ( '   X%sY%sZ%sRADIUS%sCONNECTION%sSEGMENTS'
+                % (' ' * 13, ' ' * 13, ' ' * 10, ' ' * 5, ' ' * 5)
+                , file = file
+                )
+            print \
+                ( (' ' + '%-13s ' * 3) % format_float (0, *wire.p1)
+                , file = file, end = ''
+                )
+            conn = wire.j2 [0]
+            if conn == -(wire.n + 1):
+                conn = 0
+            print ('%s%2d' % (' ' * 13, conn), file = file)
+            print \
+                ( (' ' + '%-13s ' * 3) % format_float (0, *wire.p2)
+                , file = file, end = ''
+                )
+            print \
+                ( '%-13s' % format_float (0, wire.r)
+                , file = file, end = ''
+                )
+            conn = wire.j2 [1]
+            if conn == -(wire.n + 1):
+                conn = 0
+            print ('%2d%15d' % (conn, wire.n_segments), file = file)
+        print ()
         print (' ' * 18 + '**** ANTENNA GEOMETRY ****', file = file)
         for i, wire in enumerate (self.geo):
             print (file = file)
