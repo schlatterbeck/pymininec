@@ -4,7 +4,7 @@ import sys
 import copy
 import numpy as np
 
-def format_float (use_e, *floats):
+def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
     """
     r = []
@@ -24,9 +24,9 @@ def format_float (use_e, *floats):
             s = s.rstrip ('.')
             if s.startswith ('0.'):
                 s = s [1:]
+            s = '%-8s' % s
         else:
             s = s.upper ()
-        s = '%-8s' % s
         r.append (s)
     return tuple (r)
 # end def format_float
@@ -40,12 +40,79 @@ class Excitation:
     def __init__ (self, idx, magnitude, phase):
         if idx < 0:
             raise ValueError ("Index must be >= 0")
+        self.parent    = None
         self.idx       = idx
         self.magnitude = magnitude
         self.phase_d   = phase
         self.phase     = phase / 180. * np.pi
         self.voltage   = magnitude * np.e ** (1j * self.phase)
     # end def __init__
+
+    @property
+    def current (self):
+        """ Note that this is defined only when the parent has solved
+            the impedance matrix.
+        """
+        return self.parent.currents [self.idx]
+    # end def current
+
+    @property
+    def power (self):
+        """ Return only the real part of the power
+        """
+        return (0.5 * self.voltage * np.conj (self.current)).real
+    # end def power
+
+    @property
+    def impedance (self):
+        return self.voltage / self.current
+    # end def impedance
+
+    def as_mininec (self):
+        r = []
+        r.append \
+            ( 'PULSE %2d      VOLTAGE = ( %s , %s J)'
+            % ( self.idx + 1
+              , format_float ([self.voltage.real]) [0].strip ()
+              , format_float ([self.voltage.imag]) [0].strip ()
+              )
+            )
+        r.append \
+            ( '%sCURRENT = ( %s , %s J)'
+            % ( ' ' * 14
+              , format_float ([self.current.real], 1) [0]
+              , format_float ([self.current.imag], 1) [0]
+              )
+            )
+        r.append \
+            ( '%sIMPEDANCE = ( %s , %s J)'
+            % ( ' ' * 14
+              , format_float ([self.impedance.real]) [0]
+              , format_float ([self.impedance.imag]) [0]
+              )
+            )
+        r.append \
+            ( '%sPOWER =  %s  WATTS'
+            % ( ' ' * 14
+              , format_float ([self.power], 1) [0]
+              )
+            )
+        return '\n'.join (r)
+    # end def as_mininec
+
+    def as_mininec_short (self):
+        """ Only the input data
+        """
+        r = ['PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):']
+        r.append \
+            ('%2d ,%2d ,%2d' % (self.idx + 1, self.magnitude, self.phase_d))
+        return ' '.join (r)
+    # end def as_mininec_short
+
+    def register (self, parent):
+        assert self.parent is None
+        self.parent = parent
+    # end def register
 # end class Excitation
 
 class Medium:
@@ -113,9 +180,9 @@ class Wire:
             % (self.p1, self.p2, self.r, self.seg_start, self.seg_end)
     __repr__ = __str__
 
-    def mininec_output (self):
+    def as_mininec (self):
         return 'FIXME'
-    # end def mininec_output
+    # end def as_mininec
 
 # end class Wire
 
@@ -137,9 +204,9 @@ class Mininec:
 #    >>> m = Mininec (20, w, [s])
     >>> w = []
     >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-    >>> s = Excitation (5, 1, 0)
+    >>> s = Excitation (4, 1, 0)
     >>> m = Mininec (20, w, [s])
-    >>> m.print_wires ()
+    >>> print (m.wires_as_mininec ())
     NO. OF WIRES: 1
     <BLANKLINE>
     WIRE NO. 1
@@ -208,7 +275,7 @@ class Mininec:
             srm: SMALL RADIUS MODIFICATION CONDITION
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
         >>> print (m.seg_idx)
         [[1 1]
@@ -226,6 +293,8 @@ class Mininec:
         self.sources = sources
         self.geo     = geo
         self.wavelen = w = 299.8 / f
+        for s in self.sources:
+            s.register (self)
         # virtual dipole length for near field calculation:
         self.s0      = .001 * w
         # 1 / (4 * PI * OMEGA * EPSILON)
@@ -252,9 +321,26 @@ class Mininec:
     # end def check_geo
 
     def compute (self):
+        """ Compute the currents (solution of the impedance matrix)
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> s = Excitation (4, 1, 0)
+        >>> m = Mininec (7, w, [s])
+        >>> m.compute ()
+        >>> print (m.sources_as_mininec ())
+	NO. OF SOURCES :  1
+	PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  5 , 1 , 0
+        >>> print (m.source_data_as_mininec ())
+	********************    SOURCE DATA     ********************
+	PULSE  5      VOLTAGE = ( 1 , 0 J)
+		      CURRENT = ( 1.006964E-02 , -5.166079E-03 J)
+		      IMPEDANCE = ( 78.61622 , 40.33289 J)
+		      POWER =  5.034822E-03  WATTS
+        """
         self.compute_impedance_matrix ()
         self.compute_rhs ()
         #self.compute_impedance_matrix_loads ()
+        self.currents = np.linalg.solve (self.Z, self.rhs)
     # end def compute
 
     def compute_connectivity (self):
@@ -473,7 +559,7 @@ class Mininec:
         # if we use a exact_kernel or not
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
@@ -562,7 +648,7 @@ class Mininec:
             used as an index but as a factor.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
 
         # Original produces:
@@ -589,7 +675,7 @@ class Mininec:
             vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
 
         # Original produces:
@@ -617,7 +703,7 @@ class Mininec:
             vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
 
         # Original produces:
@@ -660,7 +746,7 @@ class Mininec:
             i4, i5
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
 
         # Original produces:
@@ -704,7 +790,7 @@ class Mininec:
             t1, t2
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
 
         # Original produces:
@@ -794,7 +880,7 @@ class Mininec:
             i4, i5, s4, l, f2, t, d0, d3, i6
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (5, 1, 0)
+        >>> s = Excitation (4, 1, 0)
         >>> m = Mininec (7, w, [s])
 
         # Original produces:
@@ -901,10 +987,10 @@ class Mininec:
         ...     print ("row %d" % (i+1))
         ...     for j in range (n):
         ...        print ('%s%s%sj'
-        ...              % ( format_float (1, m.Z [i][j].real) [0].strip ()
+        ...              % ( format_float ([m.Z [i][j].real], 1) [0].strip ()
         ...                , '++-' [int (np.sign (m.Z [i][j].imag))]
         ...                , format_float
-        ...                   (1, abs (m.Z [i][j].imag)) [0].strip ()
+        ...                   ([abs (m.Z [i][j].imag)], 1) [0].strip ()
         ...                )
         ...              )
         row 1
@@ -1173,76 +1259,73 @@ class Mininec:
         # addition of loads happens in compute_impedance_matrix_loads
     # end def compute_impedance_matrix
 
-    def print_wires (self, file = None):
-        if file is None:
-            file = sys.stdout
-        print ('NO. OF WIRES: %d' % len (self.geo), file = file)
-        print ()
+    def sources_as_mininec (self):
+        r = []
+        r.append ('NO. OF SOURCES : %2d' % len (self.sources))
+        for s in self.sources:
+            r.append (s.as_mininec_short ())
+        return '\n'.join (r)
+    # end def sources_as_mininec
+
+    def source_data_as_mininec (self):
+        r = []
+        r.append ('*' * 20 + '    SOURCE DATA     ' + '*' * 20)
+        for s in self.sources:
+            r.append (s.as_mininec ())
+        return '\n'.join (r)
+    # end def source_data_as_mininec
+
+    def wires_as_mininec (self):
+        r = []
+        r.append ('NO. OF WIRES: %d' % len (self.geo))
+        r.append ('')
         for i, wire in enumerate (self.geo):
-            print ('WIRE NO. %d' % (i + 1), file = file)
-            print \
+            r.append ('WIRE NO. %d' % (i + 1))
+            r.append \
                 ( '%sCOORDINATES%sEND%sNO. OF'
                 % (' ' * 12, ' ' * 33, ' ' * 9)
-                , file = file
                 )
-            print \
+            r.append \
                 ( '   X%sY%sZ%sRADIUS%sCONNECTION%sSEGMENTS'
                 % (' ' * 13, ' ' * 13, ' ' * 10, ' ' * 5, ' ' * 5)
-                , file = file
                 )
-            print \
-                ( (' ' + '%-13s ' * 3) % format_float (0, *wire.p1)
-                , file = file, end = ''
-                )
+            l = []
+            l.append ((' ' + '%-13s ' * 3) % format_float (wire.p1))
             conn = wire.j2 [0]
             if conn == -(wire.n + 1):
                 conn = 0
-            print ('%s%2d' % (' ' * 13, conn), file = file)
-            print \
-                ( (' ' + '%-13s ' * 3) % format_float (0, *wire.p2)
-                , file = file, end = ''
-                )
-            print \
-                ( '%-13s' % format_float (0, wire.r)
-                , file = file, end = ''
-                )
+            l.append ('%s%2d' % (' ' * 13, conn))
+            r.append (''.join (l))
+            l = []
+            l.append ((' ' + '%-13s ' * 3) % format_float (wire.p2))
+            l.append ('%-13s' % format_float ([wire.r]))
             conn = wire.j2 [1]
             if conn == -(wire.n + 1):
                 conn = 0
-            print ('%2d%15d' % (conn, wire.n_segments), file = file)
-        print ()
-        print (' ' * 18 + '**** ANTENNA GEOMETRY ****', file = file)
+            l.append ('%2d%15d' % (conn, wire.n_segments))
+            r.append (''.join (l))
+        r.append ('')
+        r.append (' ' * 18 + '**** ANTENNA GEOMETRY ****')
         for i, wire in enumerate (self.geo):
-            print (file = file)
-            print \
+            r.append ('')
+            r.append \
                 ( 'WIRE NO.%3d  COORDINATES%sCONNECTION PULSE'
                 % (i + 1, ' ' * 32)
-                , file = file
                 )
-            print \
-                ( ('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS')
-                , file = file
-                )
+            r.append \
+                (('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS'))
             if wire.seg_start is None and wire.seg_end is None:
-                print \
-                    ( ('%-13s ' * 5 + '%-4s %-4s') % tuple (['-'] * 5 + ['0'])
-                    , file = file
-                    )
+                r.append \
+                    (('%-13s ' * 5 + '%-4s %-4s') % tuple (['-'] * 5 + ['0']))
             for k in range (wire.seg_start, wire.seg_end + 1):
                 seg = tuple (self.seg [k + 1])
-                print \
-                    ( (' ' + '%-13s ' * 3) % format_float (0, *seg)
-                    , file = file, end = ''
-                    )
-                print \
-                    ( '%-12s' % format_float (0, wire.r)
-                    , file = file, end = ''
-                    )
-                print \
-                    ( '%4d %4d' % tuple (self.c_per [k])
-                    , file = file, end = ' '
-                    )
-                print ('%4d' % (k + 1), file = file)
-    # end def print_wires
+                l = []
+                l.append ((' ' + '%-13s ' * 3) % format_float (seg))
+                l.append ('%-12s' % format_float ([wire.r]))
+                l.append ('%4d %4d' % tuple (self.c_per [k]))
+                l.append ('%4d' % (k + 1))
+                r.append (''.join (l))
+        return '\n'.join (r)
+    # end def wires_as_mininec
 
 # end class Mininec
