@@ -26,7 +26,10 @@ result of a line-by-line translation from Basic, especially where I
 didn't (yet) understand the intention of the code. The same holds for
 Variable names which might not (yet) reflect the intention of the code.
 So the *de-spaghettification* was not successful in some parts of the
-code yet :-)
+code yet :-) My notes from the reverse-engineering can be found in the
+file ``mininec-done`` which has explanations of some of the variables
+used in mininec and some sub routines with descriptions (mostly taken
+from ``REM`` statements) of the Basic code.
 
 Running examples in Basic
 -------------------------
@@ -53,6 +56,10 @@ an input file. Note that the input file has to be converted to carriage
 return line endings (no newlines). I've described how I'm debugging the
 Basic code using the Python debugger in a `contribution to pcbasic`_,
 the file can be found `in my pcbasic fork`_ on github.
+
+In the file ``debug-basic.txt`` you can find my notes on how to debug
+mininec using the python debugger. This is more or less a random
+cut&past buffer.
 
 The `original basic source code`_ can be obtained from the `unofficial
 NEC archive`_ by PA3KJ or from a `Mininec github project`_, I'm using
