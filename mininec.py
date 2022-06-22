@@ -11,25 +11,42 @@ def format_float (floats, use_e = 0):
     e = 1e-9 # An epsilon to avoid python rounding down on exactly .5
     for f in floats:
         if f == 0:
-            fmt = '%.1f'
+            fmt = '% .1f'
         else:
-            fmt = '%%.%df' % (6 - int (np.log (abs (f)) / np.log (10)))
+            fmt = '%% .%df' % (6 - int (np.log (abs (f)) / np.log (10)))
         if use_e and abs (f) < 1e-1:
             fmt = '%e'
         f += e
         s = fmt % f
         if fmt != '%e':
-            s = s [:8]
-            s = s.rstrip ('0')
-            s = s.rstrip ('.')
-            if s.startswith ('0.'):
-                s = s [1:]
-            s = '%-8s' % s
+            if '.' in s:
+                s = s [:9]
+                s = s.rstrip ('0')
+                s = s.rstrip ('.')
+                if s.startswith (' 0.') or s.startswith ('-0.'):
+                    s = s [0] + s [2:]
+                s = '%-9s' % s
         else:
             s = s.upper ()
         r.append (s)
     return tuple (r)
 # end def format_float
+
+class Angle:
+    """ Represents the stepping of Zenith and Azimuth angles
+    """
+    def __init__ (self, initial, inc, number):
+        self.initial = initial
+        self.inc     = inc
+        self.number  = number
+    # end def __init__
+
+    def iter (self):
+        for i in range (self.number):
+            angle = self.initial + i * self.inc
+            yield (angle, angle / 180 * np.pi)
+    # end def iter
+# end class Angle
 
 class Excitation:
     """ This is the "PULSE" definition in mininec.
@@ -53,7 +70,7 @@ class Excitation:
         """ Note that this is defined only when the parent has solved
             the impedance matrix.
         """
-        return self.parent.currents [self.idx]
+        return self.parent.current [self.idx]
     # end def current
 
     @property
@@ -115,6 +132,19 @@ class Excitation:
     # end def register
 # end class Excitation
 
+class Far_Field_Pattern:
+    """ Values in dBi and/or V/m for far field
+        Angles are in degrees for printing
+    """
+    def __init__ (self, theta, phi, gain = None, e_theta = None, e_phi = None):
+        self.theta    = theta
+        self.phi      = phi
+        self.gain     = gain
+        self.e_theta  = e_theta
+        self.e_phi    = e_phi
+    # end def __init__
+# end def Far_Field_Pattern
+
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
         Note that it seems only the first medium can have a
@@ -124,9 +154,16 @@ class Medium:
         self.dieel    = dieel    # dielectric constant T(I)
         self.cond     = cond     # conductivity V(I)
         self.nradials = nradials # number of radials (NR)
+        self.dist     = dist     # radial distance (RD)
         self.radius   = radius   # radial wire radius (RR)
         self.coord    = 1e6      # U(I)
         self.height   = height   # H(I)
+        if self.nradials:
+            if self.radius <= 0 or self.dist <= 0:
+                raise ValueError ("Radial radius and distance must be >0")
+        else:
+            self.radius = 0.0
+            self.dist   = 0.0
     # end def __init__
 
 # end class Medium
@@ -327,7 +364,9 @@ class Mininec:
         self.compute_impedance_matrix ()
         #self.compute_impedance_matrix_loads ()
         self.compute_rhs ()
-        self.currents = np.linalg.solve (self.Z, self.rhs)
+        self.current = np.linalg.solve (self.Z, self.rhs)
+        # Used by far field calculation
+        self.power = sum (s.power for s in self.sources)
     # end def compute
 
     def compute_connectivity (self):
@@ -503,6 +542,168 @@ class Mininec:
         self.w_per   -= 1
     # end def compute_connectivity
 
+    def compute_far_field (self, zenith_angle, azimuth_angle):
+        """ Compute far field
+            Original code starts at 620 (and is called at 621)
+            The angles are instances of Angle.
+        """
+        # For now ground calculation is skipped, see lines 624-633
+        # We also only use calculation in dBi for now, see 641-654
+        # Note that the volts/meter calculation asks about the power and
+        # about the radial distance (?)
+        # 685 has code to print radials, only used for volts/meter
+        # Original vars:
+        # AA: Azimuth angle initial
+        # AC: Azimuth increment
+        # NA: Azimuth number
+        # ZA: Zenith angle initial
+        # ZC: Zenith increment
+        # ZA: Zenith number
+        # X1, Y1, Z1: vec real
+        # X2, Y2, Z2: vec imag
+        self.far_field_angles = (zenith_angle, azimuth_angle)
+        k9 = .016678 / self.power
+        self.far_field_by_angle = {}
+        for azi_d, azi in azimuth_angle.iter ():
+            # exchange real/imag
+            v12 = np.conj (np.e ** (1j * azi) * -1j)
+            for zen_d, zen in zenith_angle.iter ():
+                # Can we somehow reduce this with complex artithmetics?
+                # What is/was the intention of that code?
+                rt3  = np.e ** (1j * zen)
+                rt1  = -rt3.imag * v12.imag + 1j * (rt3.real * v12.imag)
+                rt2  =  rt3.imag * v12.real - 1j * (rt3.real * v12.real)
+                rvec = np.array ([rt1, rt2, rt3])
+                vec  = np.zeros (3, dtype = complex)
+                for k in self.image_iter ():
+                    kvec  = np.array ([1, 1, k])
+                    kvec2 = np.array ([k, k, 1])
+                    for i in range (len (self.w_per)):
+                        s_x = self.seg_idx [i]
+                        # Code at 716, 717
+                        if k <= 0 and s_x [0] == -s_x [1]:
+                            continue
+                        j = 2 * self.w_per [i] + i + 1
+                        # for each end of pulse compute
+                        # a contribution to e-field
+                        # End of this loop (goto for continue) is 812
+                        for f5 in range (2):
+                            l = abs (s_x [f5]) - 1
+                            wire = self.geo [l]
+                            f3 = np.sign (s_x [f5]) * self.w * wire.seg_len / 2
+                            # Line 723, 724
+                            if (s_x [0] == s_x [1] and f3 < 0):
+                                continue # f5
+                            # Standard case (condition Line 725, 726)
+                            if k == 1 or nm == 0:
+                                seg = self.seg [j]
+                                s2  = self.w * sum (seg * rvec.real * kvec)
+                                s   = np.conj (np.e ** (1j * s2))
+                                b   = f3 * s * self.current [i]
+                                # Line 733
+                                if s_x [0] == -s_x [1]:
+                                    # grounded ends, only update last axis
+                                    v = np.array ([0, 0, 1])
+                                    vec += 2 * b * wire.dirs * v
+                                    continue
+                                vec += kvec2 * b * wire.dirs
+                                continue
+                            else: # real ground case (Line 747)
+                                nr = 0
+                                rr = 0
+                                if len (self.media):
+                                    med = self.media [0]
+                                    nr = med.nradials
+                                    rr = med.radius
+                                # begin by finding specular distance
+                                t4 = 1e5
+                                if r3 != 0:
+                                    t4 = -self.Z [j] * rt3.imag / rt3.real
+                                b9 = t4 * v2 + self.seg [j][0]
+                                if tb != 1:
+                                    # Hmm this is pythagoras?
+                                    b9 *= b9
+                                    b9 += (self.seg [j][1] - t4 * v1) ** 2
+                                    b9 = np.sqrt (b9)
+                                # search for the corresponding medium
+                                j2 = nm
+                                if self.media:
+                                    coord = [m.coord for m in self.media]
+                                    j2 = np.argmin (b9 - coord)
+                                # obtain impedance at specular point
+                                z45 = self.Z [j2]
+                                # Line 764, 765
+                                if nr != 0 or b9 > coord [0]:
+                                    prod = nr * rr
+                                    r = b9 + prod
+                                    z8  = self.w * r * np.log (r / prod) / nr
+                                    s89 = z45 * z8 * 1j
+                                    t89 = z45 + (z8 * 1j)
+                                    d   = t89.real ** 2 + t89.imag ** 2
+                                    z45 = s89 * np.conj (t89) / d
+                                    # form SQR(1-Z^2*SIN^2)
+                                    w67 = np.sqrt (z45 ** 2 * rt3.imag ** 2)
+                                    # vertical reflection coefficient
+                                    s89 = rt3.real - w67 * z45
+                                    t89 = rt3.real + w68 * z45
+                                    d   = t89.real ** 2 + t89.imag ** 2
+                                    v89 = s89 * np.conj (t89) / d
+                                    # horizontal reflection coefficient
+                                    s89 = w67 - rt3.real * z45
+                                    t89 = w67 + rt3.real * z45
+                                    d   = t89.real ** 2 + t89.imag ** 2
+                                    h89 = s89 * np.conj (t89) / d - v89
+                                    # compute contribution to sum
+                                    h   = 0
+                                    if self.media and j2 < len (self.media):
+                                        h = self.media [j2].height
+                                    seg = self.seg [j]
+                                    hv  = np.array ([0, 0, 2 * h])
+                                    s2  = self.w * sum ((seg - h) * rvec)
+                                    s   = np.conj (np.e ** (1j * s2))
+                                    b   = f3 * s * self.current [i]
+                                    w67 = v12 * v89
+                                    w   = self.geo [l]
+                                    d   = v12 * (w.dirs [0] + 1j * w.dirs [1])
+                                    z67 = d * b * h89
+                                    tm1 = np.array \
+                                        ([         v12.real * z67.real
+                                           + 1j * (v12.real * z67.imag)
+                                         ,         v12.imag * z67.real
+                                           + 1j * (v12.imag * z67.imag)
+                                         , 1
+                                        ])
+                                    tm2 = np.array ([-1, -1, 1])
+                                    vec += (w.dirs * w67 + tm1) * tm2
+                h12 = sum (vec * rvec.imag) * self.g0 * -1j
+                vv  = np.array ([v12.real, v12.imag])
+                x34 = sum (vec [:2] * vv) * self.g0 * -1j
+                rd = 0
+                if self.media:
+                    rd = self.media [0].dist
+                # pattern in dBi
+                p123 = np.ones (3) * -999
+                t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
+                t2 = k9 * (x34.real ** 2 + x34.imag ** 2)
+                t3 = t1 + t2
+                # calculate values in dBi
+                t123 = np.array ([t1, t2, t3])
+                cond = t123 > 1e-30
+                p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
+                if rd != 0:
+                    h12 /= rd
+                    x34 /= rd
+                # pattern in volts/meter
+                # magnitude and phase of e(theta)
+                s1 = np.abs   (h12)
+                s2 = np.angle (h12)
+                # magnitude and phase of e(phi)
+                s3 = np.abs   (x34)
+                s4 = np.angle (x34)
+                self.far_field_by_angle [(zen_d, azi_d)] = \
+                    Far_Field_Pattern (zen_d, azi_d, p123, [s1, s2], [s3, s4])
+    # end def compute_far_field
+
     def compute_impedance_matrix (self):
         """ This starts at line 195 (with entry-point for gosub at 196)
             in the original basic code.
@@ -525,7 +726,7 @@ class Mininec:
         ...                )
         ...              )
         row 1
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         5.390034E-02-8.832276E-03j
@@ -536,7 +737,7 @@ class Mininec:
         1.258103E-03-4.769989E-03j
         row 2
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         5.390034E-02-8.832276E-03j
@@ -547,7 +748,7 @@ class Mininec:
         row 3
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         5.390034E-02-8.832276E-03j
@@ -558,7 +759,7 @@ class Mininec:
         5.390034E-02-8.832276E-03j
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         5.390034E-02-8.832276E-03j
@@ -569,7 +770,7 @@ class Mininec:
         5.390034E-02-8.832276E-03j
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         5.390034E-02-8.832276E-03j
@@ -580,7 +781,7 @@ class Mininec:
         5.390034E-02-8.832276E-03j
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         5.390034E-02-8.832276E-03j
@@ -591,7 +792,7 @@ class Mininec:
         5.390034E-02-8.832276E-03j
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         .214366-9.290246E-03j
         row 8
@@ -602,7 +803,7 @@ class Mininec:
         5.390034E-02-8.832276E-03j
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         4.240447-9.572989E-03j
         row 9
         1.258103E-03-4.769989E-03j
@@ -613,7 +814,7 @@ class Mininec:
         5.390034E-02-8.832276E-03j
         .214366-9.290246E-03j
         4.240447-9.572989E-03j
-        -8.48511-9.668585E-03j
+        -8.485114-9.668585E-03j
         >>> m.compute_rhs ()
         >>> for r in m.rhs:
         ...     sgn = '++-' [int (np.sign (r.imag))]
@@ -1259,9 +1460,47 @@ class Mininec:
         r.append ('')
         #r.append (self.loads_as_mininec ())
         r.append (self.source_data_as_mininec ())
-        #r.append (self.far_field_as_mininec ())
+        r.append (self.far_field_as_mininec ())
         return '\n'.join (r)
     # end def as_mininec
+
+    def far_field_as_mininec (self):
+        """ Print far field in mininec format
+            This may only be called when compute_far_field has already
+            been called before.
+        """
+        r = []
+        zenith, azimuth = self.far_field_angles
+        r.append \
+            ( 'ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
+            % (zenith.initial, zenith.inc, zenith.number)
+            )
+        r.append \
+            ( 'AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
+            % (azimuth.initial, azimuth.inc, azimuth.number)
+            )
+        r.append ('')
+        r.append ('*' * 20 + '    PATTERN DATA    ' + '*' * 20)
+        r.append \
+            ( 'ZENITH%sAZIMUTH%sVERTICAL%sHORIZONTAL%sTOTAL'
+            % tuple (' ' * x for x in (8, 7, 6, 4))
+            )
+        r.append \
+            ( ' ANGLE%sANGLE%sPATTERN (DB)  PATTERN (DB)  PATTERN (DB)'
+            % tuple (' ' * x for x in (9, 8))
+            )
+        srt = lambda x: (x [1], x [0])
+        for zen, azi in sorted (self.far_field_by_angle, key = srt):
+            ff = self.far_field_by_angle [(zen, azi)]
+            v, h, t = ff.gain
+            r.append \
+                ( ('%s     ' * 4 + '%s')
+                % ( format_float ((zen, azi))
+                  + format_float ((v, h, t))
+                  )
+                )
+        return '\n'.join (r)
+    # end def far_field_as_mininec
 
     def frequency_as_mininec (self):
         r = []
@@ -1364,4 +1603,8 @@ if __name__ == '__main__':
     s = Excitation (4, 1, 0)
     m = Mininec (7, w, [s])
     m.compute ()
+    # We're in free space
+    zenith  = Angle (0, 10, 10)
+    azimuth = Angle (0, 10, 37)
+    m.compute_far_field (zenith, azimuth)
     print (m.as_mininec ())

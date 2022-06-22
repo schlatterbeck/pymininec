@@ -10,10 +10,11 @@ Lines     Entry  Description
                  Then jumps (GOTO) to 135 in the middle of PSI
   75-  83   75   Another PSI entry point used in near field
                  Then jumps (GOTO) to 135 in the middle of PSI
-  84-       87   ENTRIES REQUIRED FOR IMPEDANCE MATRIX CALCULATION
+  84-  99   87   ENTRIES REQUIRED FOR IMPEDANCE MATRIX CALCULATION
                  S(M) GOES IN (X1,Y1,Z1) FOR SCALAR POTENTIAL
                  MOD FOR SMALL RADIUS TO WAVE LENGTH RATIO
                  Then jumps (GOTO) to 113 in the middle of PSI
+                 One return at 93 or GOTO 113
  100- 181  102   Compute PSI
                  S(M) GOES IN (X1,Y1,Z1) FOR VECTOR POTENTIAL
                  MOD FOR SMALL RADIUS TO WAVE LENGTH RATIO
@@ -38,9 +39,11 @@ Lines     Entry  Description
                  of source data).
  496- 570  497   PRINT CURRENTS (first computes matrix if necessary)
  571- 605  572   SORT JUNCTION CURRENTS
- 620-      621   FAR FIELD CALCULATION
+ 606- 619  607   CALCULATE S1 AND S2 (with second RETURN at 615)
+ 620- 872  621   FAR FIELD CALCULATION
+ 873-1130  875   NEAR FIELD CALCULATION
 1131-1149 1133   FREQUENCY INPUT
-1153-1297 1153   Geometry computation and manual input of geometry
+1150-1297 1153   Geometry computation and manual input of geometry
           1155   Manual geometry input
           1190   Geometry computations
           1198   COMPUTE CONNECTIVITY DATA (PULSES N1 TO N)
@@ -52,7 +55,7 @@ Lines     Entry  Description
           1369   ENVIRONMENT INPUT
 1429-1453 1430   EXCITATION INPUT
 1454-1493 1455   LOADS INPUT
-1494-     1497   MAIN PROGRAM
+1494-1549 1497   MAIN PROGRAM
 1550-1556 1550   NEC-TYPE GEOMETRY INPUT
 1557-1571 1557   GET GEOMETRY DATA FROM MININEC.INP
 1572-1578 1572   Below groundplane check for z coordinate
@@ -61,6 +64,7 @@ Lines     Entry  Description
 1579-1588 1580   IDENTIFY OUTPUT DEVICE
 1589-1598 1589   CALCULATE ELAPSED TIME [not implemented]
 1599-1616 1599   CALCULATE APPROXIMATE TIME REMAINING [not implemented]
+1617             END
 
 Looks like the PSI computation has three entry points:
 87  used for impedance matrix calculation
@@ -97,6 +101,7 @@ LP(11)
 LS(11)
 
 MM=6 Maximum number of media
+NM   Number of media
 H(6)  Medium.height
 T(6)  Medium.dieel
 U(6)  Medium.coord
@@ -126,6 +131,17 @@ M(100) Complex voltage on pulse, imag part
 
 Not used when computing connections, looks like the variables are
 repurposed there.
+
+NR: Number of radials in environment
+
+During Far field calculations:
+AA: Azimuth angle initial
+AC: Azimuth increment
+NA: Azimuth number
+ZA: Zenith angle initial
+ZC: Zenith increment
+ZA: Zenith number
+
 
 Datatype suffixes microsoft basic:
 % Integer

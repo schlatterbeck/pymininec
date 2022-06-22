@@ -8,16 +8,13 @@
   The basic interpreter can redirect the input. Unfortunately the script 
   explicitly uses SCRN output which is not redirectable with pcbasic.
 - Set breakpoint:
+
   break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105
-  or break at a certain Basic line number:
-  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105, struct.unpack_from('<H', token, 2)[0] == 332
-  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105, struct.unpack_from('<H', token, 2)[0] == 231
-  break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105, struct.unpack_from('<H', token, 2)[0] == 259
-   You can make the previous breakpoint unconditional with
-   condition 1
-   or set a different line number to stop at
-   condition 1 struct.unpack_from('<H', token, 2)[0] == 259
-   Print the current (Basic) line number whenever the breakpoint is hit:
+  condition 1 struct.unpack_from('<H', token, 2)[0] == 259
+  condition 1
+
+  Print the current (Basic) line number whenever the breakpoint is hit:
+
    commands 1
    p struct.unpack_from('<H', token, 2)[0]
    end
@@ -36,44 +33,13 @@
   So it seems the default in Basic is to use single precision float
 
   Print an individual variable:
-  p self._values.from_bytes (self._scalars._vars [b'MS!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'MW!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'MP!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'J%']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'F8!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'P1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'P2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'P3!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'P4!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'T1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'T2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'U1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'U2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'V1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'V2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'X1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'Y1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'Z1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'X2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'Y2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'Z2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'X3!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'Y3!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'Z3!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'V1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'V2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'V3!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'I4%']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'I5%']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'F6!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'F7!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'F4!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'D1!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'D2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'W2!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'T5!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'T6!']).to_value()
-  p self._values.from_bytes (self._scalars._vars [b'T7!']).to_value()
+  p self._scalars.get (b'F3!').to_value()
+  p self._scalars.get (b'X1!').to_value()
+  p self._scalars.get (b'Y1!').to_value()
+  p self._scalars.get (b'Z1!').to_value()
+  p self._scalars.get (b'X2!').to_value()
+  p self._scalars.get (b'Y2!').to_value()
+  p self._scalars.get (b'Z2!').to_value()
   Show all variables:
   p sorted (self._scalars._vars.keys())
 
@@ -87,4 +53,12 @@
   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   p self._memory.arrays.to_list (b'J2%')
   [[0, 0], [0, 0], ...]]
+
+  p self._memory.arrays.get(b'J2!', [1,1]).to_value()
+
+
+# Debugging python program
+break mininec.py:579
+break mininec.py:679
+break mininec.py:678
 
