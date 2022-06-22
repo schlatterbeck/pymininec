@@ -1,6 +1,8 @@
 MININEC in Python
 =================
 
+.. |--| unicode:: U+2013   .. en dash
+
 This is an attempt to rewrite the original MININEC3 basic sources in
 Python. Currently implemented is the computation of the impedance
 matrix, the computation of currents resulting from solving that matrix,
@@ -23,7 +25,7 @@ Python. I'm using numeric code from `numpy`_ where possible to speed up
 computation, e.g. solving the impedance matrix is done using
 ``numpy.linalg.solve`` instead of a line-by-line translation from Basic.
 
-Note that the current code is still hard to understand -- it's the
+Note that the current code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I
 didn't (yet) understand the intention of the code. The same holds for
 Variable names which might not (yet) reflect the intention of the code.
