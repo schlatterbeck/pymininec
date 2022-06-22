@@ -2,15 +2,17 @@ MININEC in Python
 =================
 
 This is an attempt to rewrite the original MININEC3 basic sources in
-Python. Currently implemented is the computation of the impedance matrix
-and the computation of currents resulting from solving that matrix.
+Python. Currently implemented is the computation of the impedance
+matrix, the computation of currents resulting from solving that matrix,
+and the computation of the far field.
+
 Tests against the `original Basic source code`_ were performed for a
 simple 7MHz wire dipole with half the wavelength and 10 segments.
 
 The wire is 0.01m (1cm) thick, we use such a thick wire to make the
 mininec code work harder because it cannot use the thin wire asumptions.
-At the time of this writing the thin-wire approximation code in python
-is broken.
+At the time of this writing the thin-wire approximation code in the
+pymininec implementation is broken.
 
 For the dipole example it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
