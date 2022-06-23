@@ -999,7 +999,7 @@ class Mininec:
                         di2  = self.geo [i2v [j]].dirs
                         kvec = np.array ([1, 1, k])
                         # We do real and imaginary part in one go:
-                        vec3 = f7v * u * di2 + f6v * v * di1 * kvec
+                        vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
                         d    = self.w2 * sum (vec3 * t567 [i])
                         # compute PSI(M+1/2,N,N+1)
                         p1 += 0.5

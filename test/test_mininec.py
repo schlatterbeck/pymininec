@@ -175,13 +175,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertRaises (ValueError, Mininec, 7, w, [s])
     # end def test_source_index
 
-    @pytest.mark.xfail
     def test_matrix_fill_ideal_ground (self):
         """ This uses assertAlmostEqual number of decimal places to
             compare significant digits (approximately)
         """
-        mat = self.matrix_ideal_ground_from_mininec
-        m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
+        mat   = self.matrix_ideal_ground_from_mininec
+        ideal = ideal_ground
+        m = self.vertical_dipole \
+            (wire_dia = 0.01, filename = 'vdipole-01.pout', media = [ideal])
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))

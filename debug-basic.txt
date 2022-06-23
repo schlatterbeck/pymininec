@@ -54,9 +54,16 @@
   p self._memory.arrays.to_list (b'J2%')
   [[0, 0], [0, 0], ...]]
 
-  p self._memory.arrays.get(b'J2!', [1,1]).to_value()
+  p self._memory.arrays.get(b'ZR!', [1,1]).to_value()
+  p self._memory.arrays.get(b'ZI!', [1,1]).to_value()
+  p self._memory.arrays.get(b'CG!', [1]).to_value()
 
 
 # Debugging python program
 break mininec.py:870
+# In loop computing Z
+break mininec.py:956
 
+After first loop (k negative):
+python: -24.251461047089546-0.04057961218741288j
+basic:  -24.251426696777344-0.04057953506708145j
