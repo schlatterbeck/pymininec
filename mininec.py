@@ -188,6 +188,10 @@ class Medium:
         With diel and cond zero we asume ideal ground.
         Note that it seems only the first medium can have a
         ground screen of radials
+    >>> med = Medium (3, 4)
+    >>> imp = med.impedance (30)
+    >>> print ('%.4f%+.4fj' % (imp.real, imp.imag))
+    0.0144+0.0144j
     """
     def __init__ \
         (self, diel, cond, height = 0, nradials = 0, radius = 0, dist = 0):
@@ -198,6 +202,7 @@ class Medium:
         self.radius   = radius   # radial wire radius (RR)
         self.coord    = 1e6      # U(I)
         self.height   = height   # H(I)
+        self.is_ideal = False
         if diel == 0 and cond == 0:
             self.is_ideal = True
             self.Z        = 0+0j
@@ -217,9 +222,12 @@ class Medium:
             if not self.cond:
                 raise ValueError \
                     ("Non-ideal ground must have non-zero ground parameters")
-            t = 2 * np.pi * self.f * 8.85e-6
-            self.Z = 1 / np.sqrt (self.diel + -1j * self.cond / t)
     # end def __init__
+
+    def impedance (self, f):
+        t = 2 * np.pi * f * 8.85e-6
+        return 1 / np.sqrt (self.diel + -1j * self.cond / t)
+    # end def impedance
 
 # end class Medium
 
@@ -233,6 +241,9 @@ class Wire:
         wire_len (D)
         seg_len  (S)
         dirs (CA, CB, CG)
+    >>> wire = Wire (1, 0, 0, 0, 0, 0, 25, 0.001)
+    >>> wire
+    Wire [0 0 0]-[ 0  0 25], r=0.001, seg_start=None, seg_end=None
     """
     def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r):
         self.n_segments = n_segments
@@ -243,7 +254,7 @@ class Wire:
             raise ValueError ("Radius must be >0")
         diff = self.p2 - self.p1
         if (diff == 0).all ():
-            raise ValueError ("Zero length wire: %s %s" % (wire.p1, wire.p2))
+            raise ValueError ("Zero length wire: %s %s" % (self.p1, self.p2))
         self.wire_len = np.linalg.norm (diff)
         self.seg_len  = self.wire_len / self.n_segments
         # Original comment: compute direction cosines
@@ -274,17 +285,13 @@ class Wire:
             % (self.p1, self.p2, self.r, self.seg_start, self.seg_end)
     __repr__ = __str__
 
-    def as_mininec (self):
-        return 'FIXME'
-    # end def as_mininec
-
 # end class Wire
 
 class Mininec:
     """ A mininec implementation in Python
     >>> w = []
     >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-    >>> s = Excitation (4, 1, 0)
+    >>> s = Excitation (4, cvolt = 1+0j)
     >>> m = Mininec (20, w, [s])
     >>> print (m.wires_as_mininec ())
     NO. OF WIRES: 1
@@ -486,7 +493,7 @@ class Mininec:
             i1 = i2 = 0
             w.j2 [:] = (-(i + 1), -(i + 1))
             # check for ground connection
-            if self.media is not None:
+            if self.media:
                 if w.is_ground_start:
                     i1   = -(i + 1)
                 if w.is_ground_end:
@@ -711,7 +718,7 @@ class Mininec:
                                 # always finds a medium, later
                                 # comparison of j2 suggests not
                                 idx = max (j2, len (self.media) - 1)
-                                z45 = self.media [idx].Z
+                                z45 = self.media [idx].impedance (self.f)
                                 # Line 764, 765
                                 if nr != 0 or b9 > coord [0]:
                                     prod = nr * rr
