@@ -204,12 +204,21 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     def test_vdipole_wiredia_01 (self):
         m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
-    # end def test_dipole_wiredia_01
+    # end def test_vdipole_wiredia_01
 
-#    def test_vdipole_wiredia_001 (self):
-#        m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
-#        self.assertEqual (self.expected_output, m.as_mininec ())
-#    # end def test_dipole_wiredia_001
+    def test_vdipole_wiredia_01_ground (self):
+        ideal = [ideal_ground]
+        m = self.vertical_dipole \
+            (wire_dia = 0.01, filename = 'vdipole-01g0.pout', media = ideal)
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_vdipole_wiredia_01_ground
+
+    def test_vdipole_wiredia_001_ground (self):
+        ideal = [ideal_ground]
+        m = self.vertical_dipole \
+            (wire_dia = 0.001, filename = 'vdipole-001g0.pout', media = ideal)
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_vdipole_wiredia_001_ground
 
 # end class Test_Case_Known_Structure
 

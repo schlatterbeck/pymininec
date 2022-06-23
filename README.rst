@@ -27,7 +27,7 @@ You can verify the differences yourself. In the ``test`` directory there
 are input files with extension ``.mini`` which are intended (after
 conversion to carriage-return convention) to be used as input to the
 original Basic code. The output of the Basic code is in files with the
-extension ``.bout`` while the output of the Python code is iin files
+extension ``.bout`` while the output of the Python code is in files
 with the extension ``.pout``. The ``.pout`` files are compared in the
 regression tests.
 
