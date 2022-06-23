@@ -1213,7 +1213,7 @@ class Mininec:
                 else:
                     t1 = np.log (wire.seg_len / wire.r)
                     t2 = -self.w * wire.seg_len / 2
-                return t1, t2 * 1j
+                return t1 + t2 * 1j
             # The following starts line 162
             f2 = 2 * (p3 - p2)
             i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
@@ -1392,12 +1392,16 @@ class Mininec:
         >>> r = method (k=1, p1=1.5, p2=8, p3=9, p4=0, i=0, j=8)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
+        >>> w [0].r = 0.001
+        >>> r = method (k=1, p1=0.5, p2=1, p3=2, p4=0, i=0, j=0)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        1.0497691 -0.3085993j
         """
         wire = self.geo [p4]
         if  (  k < 1
             or wire.r > self.srm
-            or p3 != p2 + 1
-            or p1 == (p2 + p3) / 2
+            or p3 == p2 + 1
+            or p1 != (p2 + p3) / 2
             ):
             i4 = int (p1)
             i5 = i4 + 1
@@ -1406,7 +1410,7 @@ class Mininec:
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 1)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
-        return t1, t2 * 1j
+        return t1 + t2 * 1j
     # end def scalar_potential
 
     def vector_potential (self, k, p1, p2, p3, p4, i, j):
@@ -1444,7 +1448,7 @@ class Mininec:
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 0)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
-        return t1, t2 * 1j
+        return t1 + t2 * 1j
     # end def vector_potential
 
     # All the *as_mininec methods
@@ -1599,12 +1603,12 @@ class Mininec:
 
 if __name__ == '__main__':
     w = []
-    w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+    w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
     s = Excitation (4, 1, 0)
     m = Mininec (7, w, [s])
     m.compute ()
     # We're in free space
-    zenith  = Angle (0, 10, 10)
+    zenith  = Angle (0, 10, 19)
     azimuth = Angle (0, 10, 37)
     m.compute_far_field (zenith, azimuth)
     print (m.as_mininec ())
