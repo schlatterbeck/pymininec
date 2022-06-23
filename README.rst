@@ -8,15 +8,14 @@ Python. Currently implemented is the computation of the impedance
 matrix, the computation of currents resulting from solving that matrix,
 and the computation of the far field.
 
-Tests against the `original Basic source code`_ were performed for a
-simple 7MHz wire dipole with half the wavelength and 10 segments.
+There are several tests against the `original Basic source code`_, for
+the test cases see the subdirectory ``test``. One of the test cases is
+a simple 7MHz wire dipole with half the wavelength and 10 segments.
+In one case the wire is 0.01m (1cm) thick, we use such a thick wire to
+make the mininec code work harder because it cannot use the thin wire
+asumptions. Another test is for the thin wire case.
 
-The wire is 0.01m (1cm) thick, we use such a thick wire to make the
-mininec code work harder because it cannot use the thin wire asumptions.
-At the time of this writing the thin-wire approximation code in the
-pymininec implementation is broken.
-
-For the dipole example it was carefully verified that the results are
+For all the test examples it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
 to see how you can run the original Basic code in the 21th century). The
 differences are due to rounding errors in the single precision
@@ -24,6 +23,13 @@ implementation in Basic compared to a double precision implementation in
 Python. I'm using numeric code from `numpy`_ where possible to speed up
 computation, e.g. solving the impedance matrix is done using
 ``numpy.linalg.solve`` instead of a line-by-line translation from Basic.
+You can verify the differences yourself. In the ``test`` directory there
+are input files with extension ``.mini`` which are intended (after
+conversion to carriage-return convention) to be used as input to the
+original Basic code. The output of the Basic code is in files with the
+extension ``.bout`` while the output of the Python code is iin files
+with the extension ``.pout``. The ``.pout`` files are compared in the
+regression tests.
 
 Note that the current code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I
