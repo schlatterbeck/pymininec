@@ -49,6 +49,21 @@ class _Test_Base_With_File:
         return m
     # end def dipole_7mhz
 
+    def vertical_dipole (self, wire_dia, filename, media = None):
+        w = []
+        w.append (Wire (10, 0, 0, 7.33, 0, 0, 12.7, wire_dia))
+        s = Excitation (4, 1, 0)
+        m = Mininec (28.074, w, [s], media = media)
+        self.simple_setup (filename, m)
+        zlen = 19
+        if media:
+            zlen = 10
+        zenith  = Angle (0, 10, zlen)
+        azimuth = Angle (0, 10, 37)
+        m.compute_far_field (zenith, azimuth)
+        return m
+    # end def vertical_dipole
+
 # end class _Test_Base_With_File
 
 class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
@@ -62,6 +77,16 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = self.dipole_7mhz (wire_dia = 0.001, filename = 'dipole-001.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_dipole_wiredia_001
+
+    def test_vdipole_wiredia_01 (self):
+        m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_dipole_wiredia_01
+
+#    def test_vdipole_wiredia_001 (self):
+#        m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
+#        self.assertEqual (self.expected_output, m.as_mininec ())
+#    # end def test_dipole_wiredia_001
 
 # end class Test_Case_Known_Structure
 

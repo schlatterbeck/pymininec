@@ -106,8 +106,8 @@ H(6)  Medium.height
 T(6)  Medium.dieel
 U(6)  Medium.coord
 V(6)  Medium.conductivity
-Z1(6)
-Z2(6)
+Z1(6) Medium.Z (real)
+Z2(6) Medium.Z (imag)
 
 MP=50 Maximum number of pulses
 C%(50,2)    Currently Mininec.c_per or Mininec.seg_idx (the latter has no 0s)

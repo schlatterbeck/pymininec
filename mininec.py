@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Copyright (C) 2022 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
@@ -77,15 +78,29 @@ class Excitation:
         For convenience phase is in degrees (and converted internally)
         Magnitude is in volts
     """
-    def __init__ (self, idx, magnitude, phase):
+    def __init__ (self, idx, magnitude = None, phase = None, cvolt = None):
         if idx < 0:
             raise ValueError ("Index must be >= 0")
+        if  (  magnitude is not None and phase is None
+            or phase is not None and magnitude is None
+            or magnitude is not None and cvolt is not None
+            or phase is not None and cvolt is not None
+            ):
+            raise ValueError \
+                ("Either specify magnitude/phase or complex voltage")
+
         self.parent    = None
         self.idx       = idx
-        self.magnitude = magnitude
-        self.phase_d   = phase
-        self.phase     = phase / 180. * np.pi
-        self.voltage   = magnitude * np.e ** (1j * self.phase)
+        if magnitude:
+            self.magnitude = magnitude
+            self.phase_d   = phase
+            self.phase     = phase / 180. * np.pi
+            self.voltage   = magnitude * np.e ** (1j * self.phase)
+        else:
+            self.voltage   = cvolt
+            self.magnitude = np.abs (cvolt)
+            self.phase     = np.angle (cvolt)
+            self.phase_d   = self.phase / np.pi * 180
     # end def __init__
 
     @property
@@ -170,26 +185,45 @@ class Far_Field_Pattern:
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
+        With diel and cond zero we asume ideal ground.
         Note that it seems only the first medium can have a
         ground screen of radials
     """
-    def __init__ (self, dieel, cond, height = 0, nradials = 0, radius = 0):
-        self.dieel    = dieel    # dielectric constant T(I)
+    def __init__ \
+        (self, diel, cond, height = 0, nradials = 0, radius = 0, dist = 0):
+        self.diel     = diel     # dielectric constant T(I)
         self.cond     = cond     # conductivity V(I)
         self.nradials = nradials # number of radials (NR)
         self.dist     = dist     # radial distance (RD)
         self.radius   = radius   # radial wire radius (RR)
         self.coord    = 1e6      # U(I)
         self.height   = height   # H(I)
+        if diel == 0 and cond == 0:
+            self.is_ideal = True
+            self.Z        = 0+0j
+            self.coord    = 0
+            if self.nradials:
+                raise ValueError ("Ideal ground may not use radials")
+            if self.height != 0:
+                raise ValueError ("Ideal ground must have height 0")
         if self.nradials:
             if self.radius <= 0 or self.dist <= 0:
                 raise ValueError ("Radial radius and distance must be >0")
         else:
             self.radius = 0.0
             self.dist   = 0.0
+        # Code from Line 628-633 in far field calculation
+        if diel:
+            if not self.cond:
+                raise ValueError \
+                    ("Non-ideal ground must have non-zero ground parameters")
+            t = 2 * np.pi * self.f * 8.85e-6
+            self.Z = 1 / np.sqrt (self.diel + -1j * self.cond / t)
     # end def __init__
 
 # end class Medium
+
+ideal_ground = Medium (0, 0)
 
 class Wire:
     """ A NEC-like wire
@@ -293,7 +327,7 @@ class Mininec:
         ])
     c = 299.8 # speed of light
 
-    def __init__ (self, f, geo, sources, media = None):
+    def __init__ (self, f, geo, sources, media = None, boundary = 1):
         """ Initialize, no interactive input is done here
             f:   Frequency in MHz, (F)
             media: sequence of Medium objects, if empty use perfect ground
@@ -310,7 +344,7 @@ class Mininec:
             nm:  Number of media (NM)
                  0: perfectly conducting ground
                  See class Medium above
-            tb:  Type of boundary (1: linear, 2: circular) (TB)
+            boundary:  Type of boundary (1: linear, 2: circular) (TB)
                  only if nm > 1
                  See class Medium above, if we have radials it's
                  circular
@@ -334,11 +368,14 @@ class Mininec:
          [1 1]
          [1 1]]
         """
-        self.f       = f
-        self.media   = media
-        self.sources = sources
-        self.geo     = geo
-        self.wavelen = w = 299.8 / f
+        self.f        = f
+        self.media    = media
+        self.boundary = boundary
+        self.sources  = sources
+        self.geo      = geo
+        self.wavelen  = w = 299.8 / f
+        if not self.media or len (self.media) == 1:
+            self.boundary = 1
         for s in self.sources:
             s.register (self)
         # virtual dipole length for near field calculation:
@@ -350,6 +387,7 @@ class Mininec:
         self.w       = 2 * np.pi / w
         self.w2      = self.w ** 2 / 2
         self.flg     = 0
+        self.check_ground ()
         self.check_geo ()
         self.compute_connectivity ()
         # Check source indeces
@@ -367,6 +405,18 @@ class Mininec:
             wire.compute_ground (n, self.media)
     # end def check_geo
 
+    def check_ground (self):
+        if not self.media:
+            if self.media is not None:
+                raise ValueError ("Media must be None for free space")
+            return
+        for n, g in enumerate (self.media):
+            if g.is_ideal and len (self.media) != 1:
+                raise ValueError ("Ideal ground must be the only medium")
+            if g.nradials and n != 0:
+                raise ValueError ("Medium with radials must be first")
+    # end def check_ground
+
     def compute (self):
         """ Compute the currents (solution of the impedance matrix)
         >>> w = []
@@ -375,14 +425,14 @@ class Mininec:
         >>> m = Mininec (7, w, [s])
         >>> m.compute ()
         >>> print (m.sources_as_mininec ())
-	NO. OF SOURCES :  1
-	PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  5 , 1 , 0
+        NO. OF SOURCES :  1
+        PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  5 , 1 , 0
         >>> print (m.source_data_as_mininec ())
-	********************    SOURCE DATA     ********************
-	PULSE  5      VOLTAGE = ( 1 , 0 J)
-		      CURRENT = ( 1.006964E-02 , -5.166079E-03 J)
-		      IMPEDANCE = ( 78.61622 , 40.33289 J)
-		      POWER =  5.034822E-03  WATTS
+        ********************    SOURCE DATA     ********************
+        PULSE  5      VOLTAGE = ( 1 , 0 J)
+                      CURRENT = ( 1.006964E-02 , -5.166079E-03 J)
+                      IMPEDANCE = ( 78.61622 , 40.33289 J)
+                      POWER =  5.034822E-03  WATTS
         """
         self.compute_impedance_matrix ()
         #self.compute_impedance_matrix_loads ()
@@ -618,7 +668,10 @@ class Mininec:
                             if (s_x [0] == s_x [1] and f3 < 0):
                                 continue # f5
                             # Standard case (condition Line 725, 726)
-                            if k == 1 or nm == 0:
+                            if  (  k == 1
+                                or not self.media
+                                or self.media [0].is_ideal
+                                ):
                                 seg = self.seg [j]
                                 s2  = self.w * sum (seg * rvec.real * kvec)
                                 s   = np.conj (np.e ** (1j * s2))
@@ -634,27 +687,31 @@ class Mininec:
                             else: # real ground case (Line 747)
                                 nr = 0
                                 rr = 0
-                                if len (self.media):
+                                if self.media:
                                     med = self.media [0]
                                     nr = med.nradials
                                     rr = med.radius
                                 # begin by finding specular distance
                                 t4 = 1e5
-                                if r3 != 0:
-                                    t4 = -self.Z [j] * rt3.imag / rt3.real
-                                b9 = t4 * v2 + self.seg [j][0]
-                                if tb != 1:
+                                if rt3.real != 0:
+                                    t4 = -self.seg [j][2] * rt3.imag / rt3.real
+                                b9 = t4 * v12.imag + self.seg [j][0]
+                                if self.boundary != 1:
                                     # Hmm this is pythagoras?
                                     b9 *= b9
                                     b9 += (self.seg [j][1] - t4 * v1) ** 2
                                     b9 = np.sqrt (b9)
                                 # search for the corresponding medium
-                                j2 = nm
+                                j2 = len (self.media)
                                 if self.media:
                                     coord = [m.coord for m in self.media]
                                     j2 = np.argmin (b9 - coord)
                                 # obtain impedance at specular point
-                                z45 = self.Z [j2]
+                                # FIXME: It's unclear if loop above
+                                # always finds a medium, later
+                                # comparison of j2 suggests not
+                                idx = max (j2, len (self.media) - 1)
+                                z45 = self.media [idx].Z
                                 # Line 764, 765
                                 if nr != 0 or b9 > coord [0]:
                                     prod = nr * rr
@@ -668,7 +725,7 @@ class Mininec:
                                     w67 = np.sqrt (z45 ** 2 * rt3.imag ** 2)
                                     # vertical reflection coefficient
                                     s89 = rt3.real - w67 * z45
-                                    t89 = rt3.real + w68 * z45
+                                    t89 = rt3.real + w67 * z45
                                     d   = t89.real ** 2 + t89.imag ** 2
                                     v89 = s89 * np.conj (t89) / d
                                     # horizontal reflection coefficient
@@ -1625,15 +1682,138 @@ class Mininec:
 # end class Mininec
 
 if __name__ == '__main__':
-    w = []
-    w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-    s = Excitation (4, 1, 0)
-    m = Mininec (7, w, [s])
+    stderr = sys.stderr
+    from argparse import ArgumentParser
+    cmd = ArgumentParser ()
+    cmd.add_argument \
+        (  '--excitation-segment'
+        , help    = "Segment number for excitation, can be specified "
+                    "more than once, default is the single segment 5"
+        , type    = int
+        , action  = 'append'
+        , default = []
+        , 
+        )
+    cmd.add_argument \
+        ( '--excitation-voltage'
+        , help    = "Voltage for excitation, can be specified more than "
+                    "once and can be a complex number, "
+                    "default is a single source of 1V"
+        , type    = complex
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '-f', '--frequency'
+        , type    = float
+        , default = 7.0
+        , help    = 'Frequency in MHz, default=%(default)s'
+        )
+    cmd.add_argument \
+        ( '--radial_count'
+        , type    = int
+        , default = 0
+        , help    = 'Number of radials, default=%(default)s'
+        )
+    cmd.add_argument \
+        ( '--radial_radius'
+        , type    = float
+        , help    = 'Radius of radial wires'
+        )
+    cmd.add_argument \
+        ( '--radial_dist'
+        , type    = float
+        , help    = 'Distance of radials'
+        )
+    cmd.add_argument \
+        ( '--medium'
+        , help    = "Media (ground), free space if not given, "
+                    "specify dielectricum, condition, height, if all are "
+                    "zero, ideal ground is asumed, if radials are "
+                    "specified they apply to the first ground (which "
+                    "cannot be ideal with radials), several media can be "
+                    "specified"
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '-w', '--wire'
+        , help    = 'Wire definition 8 values delimited with ",":'
+                    " Number of segments,"
+                    " x,y,z coordinates of wire endpoints plus wire radius, "
+                    "can be specified more than once, default is a "
+                    "single wire with length 21.414285"
+        , action  = 'append'
+        , default = []
+        )
+    args = cmd.parse_args ()
+    if not args.wire:
+        args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
+    if not args.excitation_segment:
+        args.excitation_segment = [5]
+    if not args.excitation_voltage:
+        args.excitation_voltage = [1]
+    wires = []
+    for n, wire in enumerate (args.wire):
+        wparams = wire.strip ().split (',')
+        if len (wparams) != 8:
+            print \
+                ( "Invalid number of parameters for wire %d" % (n + 1)
+                , file = stderr
+                )
+            sys.exit (23)
+        try:
+            seg = int (wparams [0])
+            r = [float (x) for x in wparams [1:]]
+        except ValueError as err:
+            print ("Invalid wire %d: %s" % (n + 1, str (err)), file = stderr)
+            sys.exit (23)
+        wires.append (Wire (seg, *r))
+    if len (args.excitation_segment) != len (args.excitation_voltage):
+        print \
+            ("Number of excitation segments must match voltages", file = stderr)
+        sys.exit (23)
+
+    exc = []
+    for i, v in zip (args.excitation_segment, args.excitation_voltage):
+        exc.append (Excitation (i - 1, cvolt = v))
+    media = []
+    rad = []
+    if args.radial_count:
+        rad = (args.radial_count, args.radial_radius, args.radial_distance)
+    for n, m in enumerate (args.medium):
+        p = m.split (',')
+        if len (p) != 3:
+            print ("Medium needs three parameters", file = stderr)
+            sys.exit (23)
+        try:
+            p = [float (x) for x in p]
+        except ValueError:
+            print ("Invalid medium %d: %s" % (n + 1, str (err)), file = stderr)
+            sys.exit (23)
+        r = []
+        if n == 0:
+            r = rad
+        media.append (Medium (*p, *r))
+    media = media or None
+
+    m = Mininec (args.frequency, wires, exc, media = media)
     m.compute ()
     # We're in free space
-    zenith  = Angle (0, 10, 19)
     azimuth = Angle (0, 10, 37)
+    if not media:
+        zenith  = Angle (0, 10, 19)
+    else:
+        zenith  = Angle (0, 10, 10)
     m.compute_far_field (zenith, azimuth)
     print (m.as_mininec ())
 
-__all__ = 'Angle Excitation Far_Field_Pattern Medium Wire Mininec'.split ()
+__all__ = \
+    [ 'Angle'
+    , 'Excitation'
+    , 'Far_Field_Pattern'
+    , 'Medium'
+    , 'Wire'
+    , 'Mininec'
+    , 'ideal_ground'
+    ]

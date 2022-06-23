@@ -69,7 +69,7 @@ the file can be found `in my pcbasic fork`_ on github.
 
 In the file ``debug-basic.txt`` you can find my notes on how to debug
 mininec using the python debugger. This is more or less a random
-cut&past buffer.
+cut&paste buffer.
 
 The `original basic source code`_ can be obtained from the `unofficial
 NEC archive`_ by PA3KJ or from a `Mininec github project`_, I'm using

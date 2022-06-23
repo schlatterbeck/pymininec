@@ -58,7 +58,5 @@
 
 
 # Debugging python program
-break mininec.py:579
-break mininec.py:679
-break mininec.py:678
+break mininec.py:870
 
