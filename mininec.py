@@ -681,7 +681,7 @@ class Mininec:
                                 ):
                                 seg = self.seg [j]
                                 s2  = self.w * sum (seg * rvec.real * kvec)
-                                s   = np.conj (np.e ** (1j * s2))
+                                s   = np.e ** (1j * s2)
                                 b   = f3 * s * self.current [i]
                                 # Line 733
                                 if s_x [0] == -s_x [1]:
@@ -692,12 +692,10 @@ class Mininec:
                                 vec += kvec2 * b * wire.dirs
                                 continue
                             else: # real ground case (Line 747)
-                                nr = 0
-                                rr = 0
-                                if self.media:
-                                    med = self.media [0]
-                                    nr = med.nradials
-                                    rr = med.radius
+                                assert self.media
+                                med = self.media [0]
+                                nr  = med.nradials
+                                rr  = med.radius
                                 # begin by finding specular distance
                                 t4 = 1e5
                                 if rt3.real != 0:
@@ -706,21 +704,20 @@ class Mininec:
                                 if self.boundary != 1:
                                     # Hmm this is pythagoras?
                                     b9 *= b9
-                                    b9 += (self.seg [j][1] - t4 * v1) ** 2
+                                    b9 += (self.seg [j][1] - t4 * v12.real) ** 2
                                     b9 = np.sqrt (b9)
                                 # search for the corresponding medium
                                 j2 = len (self.media)
-                                if self.media:
-                                    coord = [m.coord for m in self.media]
-                                    j2 = np.argmin (b9 - coord)
+                                coord = [m.coord for m in self.media]
+                                j2 = np.argmin (b9 - coord)
                                 # obtain impedance at specular point
-                                # FIXME: It's unclear if loop above
+                                # FIXME: It's unclear if argmin above
                                 # always finds a medium, later
                                 # comparison of j2 suggests not
                                 idx = max (j2, len (self.media) - 1)
                                 z45 = self.media [idx].impedance (self.f)
                                 # Line 764, 765
-                                if nr != 0 or b9 > coord [0]:
+                                if nr != 0 and b9 <= coord [0]:
                                     prod = nr * rr
                                     r = b9 + prod
                                     z8  = self.w * r * np.log (r / prod) / nr
@@ -728,40 +725,41 @@ class Mininec:
                                     t89 = z45 + (z8 * 1j)
                                     d   = t89.real ** 2 + t89.imag ** 2
                                     z45 = s89 * np.conj (t89) / d
-                                    # form SQR(1-Z^2*SIN^2)
-                                    w67 = np.sqrt (z45 ** 2 * rt3.imag ** 2)
-                                    # vertical reflection coefficient
-                                    s89 = rt3.real - w67 * z45
-                                    t89 = rt3.real + w67 * z45
-                                    d   = t89.real ** 2 + t89.imag ** 2
-                                    v89 = s89 * np.conj (t89) / d
-                                    # horizontal reflection coefficient
-                                    s89 = w67 - rt3.real * z45
-                                    t89 = w67 + rt3.real * z45
-                                    d   = t89.real ** 2 + t89.imag ** 2
-                                    h89 = s89 * np.conj (t89) / d - v89
-                                    # compute contribution to sum
-                                    h   = 0
-                                    if self.media and j2 < len (self.media):
-                                        h = self.media [j2].height
-                                    seg = self.seg [j]
-                                    hv  = np.array ([0, 0, 2 * h])
-                                    s2  = self.w * sum ((seg - h) * rvec)
-                                    s   = np.conj (np.e ** (1j * s2))
-                                    b   = f3 * s * self.current [i]
-                                    w67 = v12 * v89
-                                    w   = self.geo [l]
-                                    d   = v12 * (w.dirs [0] + 1j * w.dirs [1])
-                                    z67 = d * b * h89
-                                    tm1 = np.array \
-                                        ([         v12.real * z67.real
-                                           + 1j * (v12.real * z67.imag)
-                                         ,         v12.imag * z67.real
-                                           + 1j * (v12.imag * z67.imag)
-                                         , 1
-                                        ])
-                                    tm2 = np.array ([-1, -1, 1])
-                                    vec += (w.dirs * w67 + tm1) * tm2
+                                # form SQR(1-Z^2*SIN^2)
+                                w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
+                                # vertical reflection coefficient
+                                s89 = rt3.real - w67 * z45
+                                t89 = rt3.real + w67 * z45
+                                d   = t89.real ** 2 + t89.imag ** 2
+                                v89 = s89 * np.conj (t89) / d
+                                # horizontal reflection coefficient
+                                s89 = w67 - rt3.real * z45
+                                t89 = w67 + rt3.real * z45
+                                d   = t89.real ** 2 + t89.imag ** 2
+                                h89 = s89 * np.conj (t89) / d - v89
+                                # compute contribution to sum
+                                h   = 0
+                                if self.media and j2 < len (self.media):
+                                    h = self.media [j2].height
+                                seg = self.seg [j]
+                                hv  = np.array ([0, 0, 2 * h])
+                                sv  = np.array ([1, 1, -1])
+                                s2  = self.w * sum (sv * (seg - hv) * rvec.real)
+                                s   = np.e ** (1j * s2)
+                                b   = f3 * s * self.current [i]
+                                w67 = b * v89
+                                w   = self.geo [l]
+                                d   = v12 * (w.dirs [0] + 1j * w.dirs [1])
+                                z67 = d * b * h89
+                                tm1 = np.array \
+                                    ([         v12.real * z67.real
+                                       + 1j * (v12.real * z67.imag)
+                                     ,         v12.imag * z67.real
+                                       + 1j * (v12.imag * z67.imag)
+                                     , 0
+                                    ])
+                                tm2 = np.array ([-1, -1, 1])
+                                vec += (w.dirs * w67 + tm1) * tm2
                 h12 = sum (vec * rvec.imag) * self.g0 * -1j
                 vv  = np.array ([v12.real, v12.imag])
                 x34 = sum (vec [:2] * vv) * self.g0 * -1j

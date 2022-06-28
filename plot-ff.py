@@ -46,8 +46,6 @@ class Mininec_Gain:
         phis   = np.array (list (sorted (phis)))   * np.pi / 180
         gains  = np.reshape (np.array (gains), (thetas.shape [0], -1))
         gains  = 10.0 ** (gains / 10.0)
-        # Thetas are upside down (count from top)
-        theta = -theta + np.pi
         P, T   = np.meshgrid (phis, thetas)
         X = np.cos (P) * np.sin (T) * gains
         Y = np.sin (P) * np.sin (T) * gains
@@ -67,8 +65,14 @@ class Mininec_Gain:
         ax.set_xlim (mid_x - max_range, mid_x + max_range)
         ax.set_ylim (mid_y - max_range, mid_y + max_range)
         ax.set_zlim (mid_z - max_range, mid_z + max_range)
+        ax.set_xlabel ('X')
+        ax.set_ylabel ('Y')
+        ax.set_zlabel ('Z')
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_zticklabels([])
 
-        ax.plot_wireframe (X, Y, Z, color = 'r')
+        ax.plot_wireframe (X, Y, Z, color = 'r', linewidth = 0.5)
         plt.show ()
     # end def plot
 # end class Mininec_Gain

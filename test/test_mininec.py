@@ -220,6 +220,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vdipole_wiredia_001_ground
 
+    def test_vdipole_wiredia_01_avg_ground (self):
+        self.maxDiff = None
+        avg = [Medium (13, 0.005)]
+        m = self.vertical_dipole \
+            (wire_dia = 0.01, filename = 'vdipole-01gavg.pout', media = avg)
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_vdipole_wiredia_01_ground
+
 # end class Test_Case_Known_Structure
 
 class Test_Doctest (unittest.TestCase):
