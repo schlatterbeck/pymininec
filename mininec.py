@@ -262,6 +262,7 @@ class Wire:
         self.seg_start = None
         self.seg_end   = None
         self.j2 = [None, None]
+        self.i1 = self.i2 = 0
     # end def __init__
 
     def compute_ground (self, n, media):
@@ -286,6 +287,49 @@ class Wire:
     __repr__ = __str__
 
 # end class Wire
+
+class Gauge_Wire (Wire):
+    table = dict \
+        (( ( 1,    7.348e-3)
+         , ( 2,    6.543e-3)
+         , ( 3,    5.827e-3)
+         , ( 4,    5.189e-3)
+         , ( 5,    4.621e-3)
+         , ( 6,    4.115e-3)
+         , ( 7,    3.665e-3)
+         , ( 8,    3.264e-3)
+         , ( 9,    2.906e-3)
+         , (10,    2.588e-3)
+         , (11,    2.304e-3)
+         , (12,    2.052e-3)
+         , (13,    1.829e-3)
+         , (14,    1.628e-3)
+         , (15,    1.45e-3)
+         , (16,    1.291e-3)
+         , (17,    1.15e-3)
+         , (18,    1.024e-3)
+         , (19,    0.9119e-3)
+         , (20,    0.8128e-3)
+         , (21,    0.7239e-3)
+         , (22,    0.6426e-3)
+         , (23,    0.574e-3)
+         , (24,    0.5106e-3)
+         , (25,    0.4547e-3)
+         , (26,    0.4038e-3)
+         , (27,    0.3606e-3)
+         , (28,    0.32e-3)
+         , (29,    0.287e-3)
+         , (30,    0.254e-3)
+         , (31,    0.2261e-3)
+         , (32,    0.2032e-3)
+	))
+
+    def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, gauge):
+        r = self.table [gauge] / 2
+        super ().__init__ (n_segments, x1, y1, z1, x2, y2, z2, r)
+    # end def __init__
+
+# end class Gauge_Wire
 
 class Mininec:
     """ A mininec implementation in Python
@@ -540,6 +584,8 @@ class Mininec:
                         if self.geo [j].j2 [0] == -(j + 1):
                             self.geo [j].j2 [0] = j + 1
                         break
+            w.i1 = i1
+            w.i2 = i2
             # Here we used to print the geometry, we do this separately.
 
             # This part starts at 1198
@@ -551,9 +597,9 @@ class Mininec:
                 self.geo [i].seg_start = None
             n = n1 + w.n_segments
             if i1 == 0:
-                n = n - 1
+                n -= 1
             if i2 == 0:
-                n = n - 1
+                n -= 1
             self.geo [i].seg_end = n - 1
             if w.n_segments == 1 and i2 == 0:
                 self.geo [i].seg_end = None
@@ -570,7 +616,7 @@ class Mininec:
                 c_per [(j, 2)] = i + 1
                 w_per [j] = i + 1
             c_per [(n1, 1)] = i1
-            c_per [(n, 2)]  = i2
+            c_per [(n,  2)] = i2
             # Here comment says "compute coordinates of break points"
             i1 = n1 + 2 * i
             i3 = i1
@@ -581,11 +627,11 @@ class Mininec:
                 # We compute a vector f3 here to special-case the 3rd element
                 f3 = ( np.ones (3)
                      * np.sign (c_per [(n1, 1)])
-                     * self.geo [i2].seg_len
+                     * self.geo [i2 - 1].seg_len
                      )
                 if c_per [(n1, 1)] == -(i + 1):
                     f3 [-1] = -f3 [-1]
-                seg [i1] = seg [i1] - f3 * self.geo [i2].dirs
+                seg [i1] = seg [i1] - f3 * self.geo [i2 - 1].dirs
                 i3 += 1
 
             i6 = n + 2 * (i + 1)
@@ -598,12 +644,12 @@ class Mininec:
                 # We compute a vector f3 here to special-case the 3rd element
                 f3 = ( np.ones (3)
                      * np.sign (c_per [(n, 2)])
-                     * self.geo [i2].seg_len
+                     * self.geo [i2 - 1].seg_len
                      )
                 i3 = i6 - 1
                 if i + 1 == -c_per [(n, 2)]:
                     f3 [-1] = -f3 [-1]
-                seg [i6] = seg [i3] + f3 * self.geo [i2].dirs
+                seg [i6] = seg [i3] + f3 * self.geo [i2 - 1].dirs
         self.w_per = np.array ([w_per [i] for i in sorted (w_per)])
         c_iter = iter (sorted (c_per))
         self.c_per = np.array \
@@ -1631,6 +1677,15 @@ class Mininec:
         return '\n'.join (r)
     # end def source_data_as_mininec
 
+    def seg_as_mininec (self, wire, seg, idx):
+        l = []
+        l.append (('%-13s ' * 3) % format_float (seg))
+        l.append ('%-12s' % format_float ([wire.r]))
+        l.append ('%4d %4d' % tuple (self.c_per [idx]))
+        l.append ('%4d' % (idx + 1))
+        return  ''.join (l)
+    # end def seg_as_mininec
+
     def wires_as_mininec (self):
         r = []
         r.append ('NO. OF WIRES: %d' % len (self.geo))
@@ -1646,22 +1701,18 @@ class Mininec:
                 % (' ' * 13, ' ' * 13, ' ' * 10, ' ' * 5, ' ' * 5)
                 )
             l = []
-            l.append ((' ' + '%-13s ' * 3) % format_float (wire.p1))
-            conn = wire.j2 [0]
-            if conn == -(wire.n + 1):
-                conn = 0
-            l.append ('%s%2d' % (' ' * 13, conn))
+            l.append (('%-13s ' * 3) % format_float (wire.p1))
+            l.append ('%s%3d' % (' ' * 12, wire.i1))
             r.append (''.join (l))
             l = []
-            l.append ((' ' + '%-13s ' * 3) % format_float (wire.p2))
+            l.append (('%-13s ' * 3) % format_float (wire.p2))
             l.append ('%-13s' % format_float ([wire.r]))
-            conn = wire.j2 [1]
-            if conn == -(wire.n + 1):
-                conn = 0
-            l.append ('%2d%15d' % (conn, wire.n_segments))
+            l.append ('%2d%15d' % (wire.i2, wire.n_segments))
             r.append (''.join (l))
-        r.append ('')
+            r.append ('')
         r.append (' ' * 18 + '**** ANTENNA GEOMETRY ****')
+        k = 1
+        j = 0
         for i, wire in enumerate (self.geo):
             r.append ('')
             r.append \
@@ -1672,15 +1723,17 @@ class Mininec:
                 (('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS'))
             if wire.seg_start is None and wire.seg_end is None:
                 r.append \
-                    (('%-13s ' * 5 + '%-4s %-4s') % tuple (['-'] * 5 + ['0']))
-            for k in range (wire.seg_start, wire.seg_end + 1):
-                seg = tuple (self.seg [k + 1])
-                l = []
-                l.append ((' ' + '%-13s ' * 3) % format_float (seg))
-                l.append ('%-12s' % format_float ([wire.r]))
-                l.append ('%4d %4d' % tuple (self.c_per [k]))
-                l.append ('%4d' % (k + 1))
-                r.append (''.join (l))
+                    (('%-13s ' * 3 + '    %-10s %-4s %-4s %-4s') % (('-',) * 6 + ('0',)))
+            elif wire.seg_end is None:
+                idx = 2 * self.w_per [wire.seg_start] + wire.seg_start + 1
+                seg = tuple (self.seg [idx])
+                r.append (self.seg_as_mininec (wire, seg, wire.seg_start))
+            else:
+                assert wire.seg_start is not None
+                for k in range (wire.seg_start, wire.seg_end + 1):
+                    idx = 2 * self.w_per [k] + k + 1
+                    seg = tuple (self.seg [idx])
+                    r.append (self.seg_as_mininec (wire, seg, k))
         return '\n'.join (r)
     # end def wires_as_mininec
 
@@ -1819,6 +1872,7 @@ __all__ = \
     , 'Far_Field_Pattern'
     , 'Medium'
     , 'Wire'
+    , 'Gauge_Wire'
     , 'Mininec'
     , 'ideal_ground'
     ]
