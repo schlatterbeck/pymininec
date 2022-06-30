@@ -65,6 +65,59 @@ class _Test_Base_With_File:
         return m
     # end def vertical_dipole
 
+    def folded_dipole (self, filename):
+        """ Folded dipole with 1" wire distance and 16.6' total length
+            according to L. B. Cebik. Under the limits: MININEC (3.13).
+            In Antenna Modeling Notes, volume 1, antenneX Online
+            Magazine, 2003, chapter 2, pages 23–35. We use tapering of
+            segment lengths.
+            Note that this produces values completely different from the
+            article. Probably the folded dipole in the article has 1'
+            distance (foot) not 1" (inch), probably a typo.
+            The values with double precision differ considerably from
+            the single precision computatations in Basic, it still looks
+            good enough.
+        """
+        i    = 0.0254
+        ft   = 0.3048
+        hl   = 16.6 * ft / 2
+        d    = i
+        cls  = Gauge_Wire
+        w = []
+        w.append (cls ( 1, -hl,          0, 0, -hl +  1 * i, 0, 0, 18))
+        w.append (cls ( 1, -hl +  1 * i, 0, 0, -hl +  3 * i, 0, 0, 18))
+        w.append (cls ( 1, -hl +  3 * i, 0, 0, -hl +  7 * i, 0, 0, 18))
+        w.append (cls ( 1, -hl +  7 * i, 0, 0, -hl + 15 * i, 0, 0, 18))
+        w.append (cls ( 6, -hl + 15 * i, 0, 0,            0, 0, 0, 18))
+        w.append (cls ( 1, -hl,          0, 0, -hl,          0, d, 18))
+        w.append (cls ( 1, -hl,          0, d, -hl +  1 * i, 0, d, 18))
+        w.append (cls ( 1, -hl +  1 * i, 0, d, -hl +  3 * i, 0, d, 18))
+        w.append (cls ( 1, -hl +  3 * i, 0, d, -hl +  7 * i, 0, d, 18))
+        w.append (cls ( 1, -hl +  7 * i, 0, d, -hl + 15 * i, 0, d, 18))
+        w.append (cls ( 6, -hl + 15 * i, 0, d,            0, 0, d, 18))
+
+        w.append (cls ( 1,  hl,          0, 0,  hl -  1 * i, 0, 0, 18))
+        w.append (cls ( 1,  hl -  1 * i, 0, 0,  hl -  3 * i, 0, 0, 18))
+        w.append (cls ( 1,  hl -  3 * i, 0, 0,  hl -  7 * i, 0, 0, 18))
+        w.append (cls ( 1,  hl -  7 * i, 0, 0,  hl - 15 * i, 0, 0, 18))
+        w.append (cls ( 6,  hl - 15 * i, 0, 0,            0, 0, 0, 18))
+        w.append (cls ( 1,  hl,          0, 0,  hl,          0, d, 18))
+        w.append (cls ( 1,  hl,          0, d,  hl -  1 * i, 0, d, 18))
+        w.append (cls ( 1,  hl -  1 * i, 0, d,  hl -  3 * i, 0, d, 18))
+        w.append (cls ( 1,  hl -  3 * i, 0, d,  hl -  7 * i, 0, d, 18))
+        w.append (cls ( 1,  hl -  7 * i, 0, d,  hl - 15 * i, 0, d, 18))
+        w.append (cls ( 6,  hl - 15 * i, 0, d,            0, 0, d, 18))
+        for x in w:
+            print (x)
+        s = Excitation (30, 1, 0)
+        m = Mininec (28.5, w, [s], media = None)
+        self.simple_setup (filename, m)
+        zenith  = Angle (0, 10, 19)
+        azimuth = Angle (0, 10, 37)
+        m.compute_far_field (zenith, azimuth)
+        return m
+    # end def folded_dipole
+
 # end class _Test_Base_With_File
 
 class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
@@ -221,12 +274,16 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     # end def test_vdipole_wiredia_001_ground
 
     def test_vdipole_wiredia_01_avg_ground (self):
-        self.maxDiff = None
         avg = [Medium (13, 0.005)]
         m = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01gavg.pout', media = avg)
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vdipole_wiredia_01_ground
+
+    def test_folded_dipole (self):
+        m = self.folded_dipole ('folded-18.pout')
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_folded_dipole
 
 # end class Test_Case_Known_Structure
 
