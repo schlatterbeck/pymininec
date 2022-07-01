@@ -718,8 +718,8 @@ class Mininec:
                             wire = self.geo [l]
                             f3 = np.sign (s_x [f5]) * self.w * wire.seg_len / 2
                             # Line 723, 724
-                            if (s_x [0] == s_x [1] and f3 < 0):
-                                continue # f5
+                            if s_x [0] == -s_x [1] and f3 < 0:
+                                continue
                             # Standard case (condition Line 725, 726)
                             if  (  k == 1
                                 or not self.media
