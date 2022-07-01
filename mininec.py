@@ -1768,6 +1768,22 @@ if __name__ == '__main__':
         , help    = 'Frequency in MHz, default=%(default)s'
         )
     cmd.add_argument \
+        ( '--medium'
+        , help    = "Media (ground), free space if not given, "
+                    "specify dielectricum, condition, height, if all are "
+                    "zero, ideal ground is asumed, if radials are "
+                    "specified they apply to the first ground (which "
+                    "cannot be ideal with radials), several media can be "
+                    "specified"
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--phi'
+        , help    = "Phi angle: start, increment, count"
+        , default = '0,10,37'
+        )
+    cmd.add_argument \
         ( '--radial_count'
         , type    = int
         , default = 0
@@ -1784,15 +1800,9 @@ if __name__ == '__main__':
         , help    = 'Distance of radials'
         )
     cmd.add_argument \
-        ( '--medium'
-        , help    = "Media (ground), free space if not given, "
-                    "specify dielectricum, condition, height, if all are "
-                    "zero, ideal ground is asumed, if radials are "
-                    "specified they apply to the first ground (which "
-                    "cannot be ideal with radials), several media can be "
-                    "specified"
-        , action  = 'append'
-        , default = []
+        ( '--theta'
+        , help    = "Theta angle: start, increment, count"
+        , default = '0,10,10'
         )
     cmd.add_argument \
         ( '-w', '--wire'
@@ -1854,15 +1864,23 @@ if __name__ == '__main__':
             r = rad
         media.append (Medium (*p, *r))
     media = media or None
+    p = args.phi.split (',')
+    if len (p) != 3:
+        print ("Invalid phi angle, need three comma-separated values")
+    try:
+        azimuth = Angle (float (p [0]), float (p [1]), int (p [2]))
+    except Exception:
+        print ("Invalid phi angle, need float, float, int")
+    p = args.theta.split (',')
+    if len (p) != 3:
+        print ("Invalid theta angle, need three comma-separated values")
+    try:
+        zenith = Angle (float (p [0]), float (p [1]), int (p [2]))
+    except Exception:
+        print ("Invalid theta angle, need float, float, int")
 
     m = Mininec (args.frequency, wires, exc, media = media)
     m.compute ()
-    # We're in free space
-    azimuth = Angle (0, 10, 37)
-    if not media:
-        zenith  = Angle (0, 10, 19)
-    else:
-        zenith  = Angle (0, 10, 10)
     m.compute_far_field (zenith, azimuth)
     print (m.as_mininec ())
 
