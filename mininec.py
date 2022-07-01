@@ -322,7 +322,7 @@ class Gauge_Wire (Wire):
          , (30,    0.254e-3)
          , (31,    0.2261e-3)
          , (32,    0.2032e-3)
-	))
+        ))
 
     def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, gauge):
         r = self.table [gauge] / 2
@@ -1739,8 +1739,127 @@ class Mininec:
 
 # end class Mininec
 
-if __name__ == '__main__':
-    stderr = sys.stderr
+def main (argv = sys.argv [1:], f_err = sys.stderr):
+    """ The main routine called from the command-line
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
+    >>> args.extend (['--theta=0,45,3', '--phi=0,180,3'])
+    >>> main (args)
+                       ****************************************
+                         MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                       MININEC
+                       ****************************************
+    <BLANKLINE>
+    FREQUENCY (MHZ): 7.15
+        WAVE LENGTH =  41.93007  METERS
+    <BLANKLINE>
+    NO. OF WIRES: 1
+    <BLANKLINE>
+    WIRE NO. 1
+                COORDINATES                                 END         NO. OF
+       X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+     0             0             0                         -1
+     0             0             10.0838       .0127        0              5
+    <BLANKLINE>
+                      **** ANTENNA GEOMETRY ****
+    <BLANKLINE>
+    WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+    X             Y             Z             RADIUS        END1 END2  NO.
+     0             0             0             .0127        -1    1   1
+     0             0             2.01676       .0127         1    1   2
+     0             0             4.03352       .0127         1    1   3
+     0             0             6.05028       .0127         1    1   4
+     0             0             8.06704       .0127         1    0   5
+    <BLANKLINE>
+    NO. OF SOURCES :  1
+    PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  1 , 1 , 0
+    <BLANKLINE>
+    ********************    SOURCE DATA     ********************
+    PULSE  1      VOLTAGE = ( 1 , 0 J)
+                  CURRENT = ( 2.857798E-02 , 1.660854E-03 J)
+                  IMPEDANCE = (  34.87418 , -2.026766 J)
+                  POWER =  1.428899E-02  WATTS
+    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 ,  3
+    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 ,180 ,  3
+    <BLANKLINE>
+    ********************    PATTERN DATA    ********************
+    ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
+     ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
+     0             0            -999          -999          -999     
+     45            0             1.163918     -999           1.163918
+     90            0             5.119285     -999           5.119285
+     0             180          -999          -999          -999     
+     45            180           1.163918     -999           1.163918
+     90            180           5.119285     -999           5.119285
+     0             360          -999          -999          -999     
+     45            360           1.163918     -999           1.163918
+     90            360           5.119285     -999           5.119285
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127,extra']
+    >>> r = main (args, sys.stdout)
+    Invalid number of parameters for wire 1
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,extra']
+    >>> r = main (args, sys.stdout)
+    Invalid wire 1: could not convert string to float: 'extra'
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--excitation-segment=1', '--excitation-segment=2'])
+    >>> r = main (args, sys.stdout)
+    Number of excitation segments must match voltages
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--medium=0,0'])
+    >>> r = main (args, sys.stdout)
+    Medium needs three parameters
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--medium=0,0,oops'])
+    >>> r = main (args, sys.stdout)
+    Invalid medium 1: could not convert string to float: 'oops'
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--theta=0,45,3', '--phi=0,180'])
+    >>> r = main (args, sys.stdout)
+    Invalid phi angle, need three comma-separated values
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--theta=0,45,3', '--phi=0,180,nonint'])
+    >>> r = main (args, sys.stdout)
+    Invalid phi angle, need float, float, int
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--theta=0,45', '--phi=0,180,3'])
+    >>> r = main (args, sys.stdout)
+    Invalid theta angle, need three comma-separated values
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15']
+    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--theta=0,45,nonint', '--phi=0,180,3'])
+    >>> r = main (args, sys.stdout)
+    Invalid theta angle, need float, float, int
+    >>> r
+    23
+    """
     from argparse import ArgumentParser
     cmd = ArgumentParser ()
     cmd.add_argument \
@@ -1814,7 +1933,7 @@ if __name__ == '__main__':
         , action  = 'append'
         , default = []
         )
-    args = cmd.parse_args ()
+    args = cmd.parse_args (argv)
     if not args.wire:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     if not args.excitation_segment:
@@ -1827,20 +1946,20 @@ if __name__ == '__main__':
         if len (wparams) != 8:
             print \
                 ( "Invalid number of parameters for wire %d" % (n + 1)
-                , file = stderr
+                , file = f_err
                 )
-            sys.exit (23)
+            return 23
         try:
             seg = int (wparams [0])
             r = [float (x) for x in wparams [1:]]
         except ValueError as err:
-            print ("Invalid wire %d: %s" % (n + 1, str (err)), file = stderr)
-            sys.exit (23)
+            print ("Invalid wire %d: %s" % (n + 1, str (err)), file = f_err)
+            return 23
         wires.append (Wire (seg, *r))
     if len (args.excitation_segment) != len (args.excitation_voltage):
         print \
-            ("Number of excitation segments must match voltages", file = stderr)
-        sys.exit (23)
+            ("Number of excitation segments must match voltages", file = f_err)
+        return 23
 
     exc = []
     for i, v in zip (args.excitation_segment, args.excitation_voltage):
@@ -1852,13 +1971,13 @@ if __name__ == '__main__':
     for n, m in enumerate (args.medium):
         p = m.split (',')
         if len (p) != 3:
-            print ("Medium needs three parameters", file = stderr)
-            sys.exit (23)
+            print ("Medium needs three parameters", file = f_err)
+            return 23
         try:
             p = [float (x) for x in p]
-        except ValueError:
-            print ("Invalid medium %d: %s" % (n + 1, str (err)), file = stderr)
-            sys.exit (23)
+        except ValueError as err:
+            print ("Invalid medium %d: %s" % (n + 1, str (err)), file = f_err)
+            return 23
         r = []
         if n == 0:
             r = rad
@@ -1866,31 +1985,45 @@ if __name__ == '__main__':
     media = media or None
     p = args.phi.split (',')
     if len (p) != 3:
-        print ("Invalid phi angle, need three comma-separated values")
+        print \
+            ( "Invalid phi angle, need three comma-separated values"
+            , file = f_err
+            )
+        return 23
     try:
         azimuth = Angle (float (p [0]), float (p [1]), int (p [2]))
     except Exception:
-        print ("Invalid phi angle, need float, float, int")
+        print ("Invalid phi angle, need float, float, int", file = f_err)
+        return 23
     p = args.theta.split (',')
     if len (p) != 3:
-        print ("Invalid theta angle, need three comma-separated values")
+        print \
+            ( "Invalid theta angle, need three comma-separated values"
+            , file = f_err
+            )
+        return 23
     try:
         zenith = Angle (float (p [0]), float (p [1]), int (p [2]))
     except Exception:
-        print ("Invalid theta angle, need float, float, int")
+        print ("Invalid theta angle, need float, float, int", file = f_err)
+        return 23
 
     m = Mininec (args.frequency, wires, exc, media = media)
     m.compute ()
     m.compute_far_field (zenith, azimuth)
     print (m.as_mininec ())
+# end def main
+
+if __name__ == '__main__':
+    sys.exit (main ())
 
 __all__ = \
     [ 'Angle'
     , 'Excitation'
     , 'Far_Field_Pattern'
-    , 'Medium'
-    , 'Wire'
     , 'Gauge_Wire'
+    , 'Medium'
     , 'Mininec'
+    , 'Wire'
     , 'ideal_ground'
     ]

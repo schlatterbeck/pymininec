@@ -108,8 +108,6 @@ class _Test_Base_With_File:
         w.append (cls ( 1,  hl -  3 * i, 0, d,  hl -  7 * i, 0, d, 18))
         w.append (cls ( 1,  hl -  7 * i, 0, d,  hl - 15 * i, 0, d, 18))
         w.append (cls ( 6,  hl - 15 * i, 0, d,            0, 0, d, 18))
-        for x in w:
-            print (x)
         s = Excitation (30, 1, 0)
         m = Mininec (28.5, w, [s], media = None)
         self.simple_setup (filename, m)
@@ -282,7 +280,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 123
+        num_tests = 165
         f, t  = doctest.testmod \
             (mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.__file__)
