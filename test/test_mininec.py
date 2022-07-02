@@ -228,6 +228,29 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
                 self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
     # end def test_matrix_fill_quarter_ideal_ground
 
+    def test_matrix_fill_quarter_radials (self):
+        """ This uses assertAlmostEqual number of decimal places to
+            compare significant digits (approximately)
+            Note that the matrix is identical to the ideal ground case.
+            This is because mininec computes the currents in the wires
+            using ideal ground (which in turn make problems with wires
+            too near to ground with a parallel component).
+        """
+        mat   = np.array (matrix_ideal_ground_quarter_from_mininec_r) \
+              + 1j * np.array (matrix_ideal_ground_quarter_from_mininec_i)
+        m1 = Medium (20, .0303, 0, coord = 5, nradials = 16, radius = 0.001)
+        m2 = Medium (5, 0.001, -5)
+        media = [m1, m2]
+        m = self.vertical_quarterwave \
+            (filename = 'vertical-rad.pout', media = media)
+        for i in range (len (m.w_per)):
+            for j in range (len (m.w_per)):
+                f = int (np.log (abs (mat [i][j].real)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+    # end def test_matrix_fill_quarter_radials
+
     def test_dipole_wiredia_01 (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
@@ -275,6 +298,15 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = self.vertical_quarterwave ('vertical-ig.pout', ideal)
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vertical_ideal_ground
+
+    def test_vertical_radials (self):
+        self.maxDiff = None
+        m1 = Medium (20, .0303, 0, coord = 5, nradials = 16, radius = 0.001)
+        m2 = Medium (5, 0.001, -5)
+        media = [m1, m2]
+        m = self.vertical_quarterwave ('vertical-rad.pout', media = media)
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_vertical_radials
 
 # end class Test_Case_Known_Structure
 

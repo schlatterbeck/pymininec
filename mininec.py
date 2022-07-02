@@ -193,7 +193,7 @@ class Medium:
         there is more than one). It is 1 for linear (X-coordinate it
         seems) or circular. If there is more than one medium we need the
         coordinate (distance X for linear and radius R for circular
-        boundary), in the original code U(I).
+        boundary) of the *next* medium, in the original code U(I).
     >>> med = Medium (3, 4)
     >>> imp = med.impedance (30)
     >>> print ('%.4f%+.4fj' % (imp.real, imp.imag))
@@ -800,15 +800,10 @@ class Mininec:
                                     b9 += (self.seg [j][1] - t4 * v12.real) ** 2
                                     b9 = np.sqrt (b9)
                                 # search for the corresponding medium
-                                j2 = len (self.media)
+                                # Find minimum index where b9 > coord
                                 coord = [m.coord for m in self.media]
-                                j2 = np.argmin (b9 - coord)
-                                # obtain impedance at specular point
-                                # FIXME: It's unclear if argmin above
-                                # always finds a medium, later
-                                # comparison of j2 suggests not
-                                idx = max (j2, len (self.media) - 1)
-                                z45 = self.media [idx].impedance (self.f)
+                                j2 = np.argmin ((b9 > coord) * coord)
+                                z45 = self.media [j2].impedance (self.f)
                                 # Line 764, 765
                                 if nr != 0 and b9 <= coord [0]:
                                     prod = nr * rr
