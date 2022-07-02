@@ -1845,7 +1845,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     23
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-segment=1', '--radial-count=8'])
     >>> args.extend (['--theta=0,45', '--phi=0,180,3'])
     >>> r = main (args, sys.stdout)
     Invalid theta angle, need three comma-separated values
@@ -1903,18 +1903,18 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , default = '0,10,37'
         )
     cmd.add_argument \
-        ( '--radial_count'
+        ( '--radial-count'
         , type    = int
         , default = 0
         , help    = 'Number of radials, default=%(default)s'
         )
     cmd.add_argument \
-        ( '--radial_radius'
+        ( '--radial-radius'
         , type    = float
         , help    = 'Radius of radial wires'
         )
     cmd.add_argument \
-        ( '--radial_dist'
+        ( '--radial-distance'
         , type    = float
         , help    = 'Distance of radials'
         )
