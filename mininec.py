@@ -217,6 +217,7 @@ class Medium:
         self.height   = height   # H(I)
         self.boundary = boundary
         self.next     = None     # next medium
+        self.prev     = None     # previous medium
         self.is_ideal = False
         if diel == 0 and cond == 0:
             self.is_ideal = True
@@ -247,6 +248,38 @@ class Medium:
                     ("Non-ideal ground must have non-zero ground parameters")
     # end def __init__
 
+    def as_mininec (self):
+        r = []
+        if not self.is_ideal:
+            p = tuple \
+                (x.strip () for x in format_float ((self.diel, self.cond)))
+            r.append \
+                ( ' RELATIVE DIELECTRIC CONSTANT, CONDUCTIVITY:'
+                  '  %s , %s'
+                % p
+                )
+        if self.nradials:
+            r.append \
+                ( ' NUMBER OF RADIAL WIRES IN GROUND SCREEN: %3d'
+                % self.nradials
+                )
+            r.append \
+                ( ' RADIUS OF RADIAL WIRES:  %s'
+                % format_float ([self.radius]) [0].strip ()
+                )
+        if self.next:
+            r.append \
+                ( ' X OR R COORDINATE OF NEXT MEDIA INTERFACE:  %s'
+                % format_float ([self.coord]) [0].strip ()
+                )
+        if self.prev:
+            r.append \
+                ( ' HEIGHT OF MEDIA: %s'
+                % format_float ([self.height]) [0].strip ()
+                )
+        return '\n'.join (r)
+    # end def as_mininec
+
     def impedance (self, f):
         if self.is_ideal:
             return 0+0j
@@ -263,8 +296,13 @@ class Medium:
             # Thats the default in mininec meaning infinity
             self.coord = 1e6
         else:
+            if self.is_ideal:
+                raise ValueError ("Ideal ground must be the only medium")
+            if next.nradials:
+                raise ValueError ("Medium with radials must be first")
             # All media must have same boundary, currently we only use the first
             next.boundary = self.boundary
+            next.prev = self
     # end def set_next
 
 # end class Medium
@@ -459,16 +497,7 @@ class Mininec:
         """
         self.f        = f
         self.media    = media
-        if self.media:
-            for n, m in enumerate (self.media):
-                if n == 0:
-                    if len (self.media) == 1:
-                        m.set_next (None)
-                    self.boundary = m.boundary
-                else:
-                    self.media [n - 1].set_next (m)
-        else:
-            self.boundary = 1
+        self.check_ground ()
         self.sources  = sources
         self.geo      = geo
         self.wavelen  = w = 299.8 / f
@@ -485,7 +514,6 @@ class Mininec:
         self.w       = 2 * np.pi / w
         self.w2      = self.w ** 2 / 2
         self.flg     = 0
-        self.check_ground ()
         self.check_geo ()
         self.compute_connectivity ()
         # Check source indeces
@@ -504,15 +532,18 @@ class Mininec:
     # end def check_geo
 
     def check_ground (self):
-        if not self.media:
-            if self.media is not None:
-                raise ValueError ("Media must be None for free space")
-            return
-        for n, g in enumerate (self.media):
-            if g.is_ideal and len (self.media) != 1:
-                raise ValueError ("Ideal ground must be the only medium")
-            if g.nradials and n != 0:
-                raise ValueError ("Medium with radials must be first")
+        if not self.media and self.media is not None:
+            raise ValueError ("Media must be None for free space")
+        if self.media:
+            for n, m in enumerate (self.media):
+                if n == 0:
+                    if len (self.media) == 1:
+                        m.set_next (None)
+                    self.boundary = m.boundary
+                else:
+                    self.media [n - 1].set_next (m)
+        else:
+            self.boundary = 1
     # end def check_ground
 
     def compute (self):
@@ -1627,7 +1658,8 @@ class Mininec:
         r = []
         r.append (self.header_as_mininec ())
         r.append (self.frequency_as_mininec ())
-        #r.append (self.environment_as_mininec ())
+        r.append (self.environment_as_mininec ())
+        r.append ('')
         r.append (self.wires_as_mininec ())
         r.append ('')
         r.append (self.sources_as_mininec ())
@@ -1637,6 +1669,35 @@ class Mininec:
         r.append (self.far_field_as_mininec ())
         return '\n'.join (r)
     # end def as_mininec
+
+    def environment_as_mininec (self):
+        """ Print environment (ground setup, see Medium above)
+        """
+        r = []
+        e = 1
+        if self.media:
+            e = -1
+            l = len (self.media)
+            m = self.media [0]
+            if len (self.media) == 1 and m.is_ideal:
+                l = 0
+        r.append \
+            ('ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): %+d' % e)
+        if self.media:
+            r.append \
+                ( ' NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND): %2d'
+                % l
+                )
+            if len (self.media) > 1:
+                r.append \
+                    ( ' TYPE OF BOUNDARY (1-LINEAR, 2-CIRCULAR):  %d'
+                    % self.boundary
+                    )
+            if l:
+                for n, m in enumerate (self.media):
+                    r.append (m.as_mininec ())
+        return '\n'.join (r)
+    # end def environment_as_mininec
 
     def far_field_as_mininec (self):
         """ Print far field in mininec format
@@ -1805,6 +1866,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     <BLANKLINE>
     FREQUENCY (MHZ): 7.15
         WAVE LENGTH =  41.93007  METERS
+    <BLANKLINE>
+    ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
+     NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
     <BLANKLINE>
     NO. OF WIRES: 1
     <BLANKLINE>
