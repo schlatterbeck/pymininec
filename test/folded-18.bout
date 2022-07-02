@@ -268,6 +268,160 @@ PULSE  31     VOLTAGE = ( 1 , 0 J)
               IMPEDANCE = ( 5.966669E-03 ,-77.54983 J)
               POWER =  4.960669E-07  WATTS
  
+********************    CURRENT DATA    ********************
+ 
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              5.401964E-08  1.303599E-02  1.303599E-02  89.99975 
+J             -8.164912E-07  1.303492E-02  1.303491E-02  90.00359 
+ 
+WIRE NO.  2 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -8.164912E-07  1.303492E-02  1.303491E-02  90.00359 
+J             -2.357588E-06  1.302367E-02  1.302367E-02  90.01037 
+ 
+WIRE NO.  3 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -2.357588E-06  1.302367E-02  1.302367E-02  90.01037 
+J             -5.141964E-06  1.296496E-02  1.296496E-02  90.02274 
+ 
+WIRE NO.  4 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -5.141964E-06  1.296496E-02  1.296496E-02  90.02274 
+J             -1.026288E-05  1.270508E-02  1.270508E-02  90.04629 
+ 
+WIRE NO.  5 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -1.026288E-05  1.270508E-02  1.270508E-02  90.04629 
+ 5            -1.855841E-05  1.181914E-02  1.181915E-02  90.08997 
+ 6            -2.5745E-05    1.040963E-02  1.040966E-02  90.1417 
+ 7            -3.165356E-05  8.539056E-03  8.539114E-03  90.21239 
+ 8            -3.608086E-05  6.290246E-03  6.290348E-03  90.32864 
+ 9            -3.885946E-05  3.762759E-03  3.762959E-03  90.59171 
+J             -3.988005E-05  1.068488E-03  1.069231E-03  92.13751 
+ 
+WIRE NO.  6 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -5.401964E-08 -1.303599E-02  1.303599E-02 -90.00025 
+J             -9.7414E-07   -1.303567E-02  1.303567E-02 -90.0043 
+ 
+WIRE NO.  7 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -9.7414E-07   -1.303567E-02  1.303567E-02 -90.0043 
+J             -1.841141E-06 -.013034       1.303399E-02 -90.0081 
+ 
+WIRE NO.  8 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -1.841141E-06 -.013034       1.303399E-02 -90.0081 
+J             -3.374909E-06 -1.302167E-02  1.302167E-02 -90.01485 
+ 
+WIRE NO.  9 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -3.374909E-06 -1.302167E-02  1.302167E-02 -90.01485 
+J             -6.141863E-06 -1.296105E-02  1.296105E-02 -90.02716 
+ 
+WIRE NO.  10 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -6.141863E-06 -1.296105E-02  1.296105E-02 -90.02716 
+J             -1.121808E-05 -1.269774E-02  1.269775E-02 -90.05063 
+ 
+WIRE NO.  11 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -1.121808E-05 -1.269774E-02  1.269775E-02 -90.05063 
+ 16           -1.941977E-05 -1.180656E-02  1.180658E-02 -90.09425 
+ 17           -2.647311E-05 -1.039293E-02  1.039297E-02 -90.14595 
+ 18           -3.221474E-05 -8.519437E-03  8.519497E-03 -90.21666 
+ 19           -3.644888E-05 -6.269002E-03  6.269107E-03 -90.33312 
+ 20           -3.901702E-05 -3.741244E-03  3.741447E-03 -90.59752 
+J             -3.981908E-05 -1.048066E-03  1.048822E-03 -92.17579 
+ 
+WIRE NO.  12 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              9.921338E-07  1.289494E-02  1.289493E-02  89.99558 
+J              1.862655E-06  1.285329E-02  1.285329E-02  89.99169 
+ 
+WIRE NO.  13 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              1.862655E-06  1.285329E-02  1.285329E-02  89.99169 
+J              3.402447E-06  1.277434E-02  1.277434E-02  89.98474 
+ 
+WIRE NO.  14 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              3.402447E-06  1.277434E-02  1.277434E-02  89.98474 
+J              6.179597E-06  1.258424E-02  1.258424E-02  89.97186 
+ 
+WIRE NO.  15 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              6.179597E-06  1.258424E-02  1.258424E-02  89.97186 
+J              1.127248E-05  1.206871E-02  1.206872E-02  89.94647 
+ 
+WIRE NO.  16 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              1.127248E-05  1.206871E-02  1.206872E-02  89.94647 
+ 25            1.950003E-05  1.076829E-02  .0107683      89.89623 
+ 26            2.656763E-05  8.991605E-03  8.991644E-03  89.8307 
+ 27            3.231347E-05  6.81718E-03   6.817256E-03  89.72842 
+ 28            3.654336E-05  4.341216E-03  4.34137E-03   89.5177 
+ 29            3.910128E-05  1.673299E-03  1.673756E-03  88.66136 
+J              3.988005E-05 -1.068488E-03  1.069231E-03 -87.86249 
+ 
+WIRE NO.  17 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              6.834752E-08  1.286061E-02  1.286061E-02  89.99969 
+J              9.921338E-07  1.289494E-02  1.289493E-02  89.99558 
+ 
+WIRE NO.  18 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -6.834752E-08 -1.286061E-02  1.286061E-02 -90.00031 
+J              8.054728E-07 -1.283031E-02  1.283031E-02 -89.99641 
+ 
+WIRE NO.  19 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              8.054728E-07 -1.283031E-02  1.283031E-02 -89.99641 
+J              2.352175E-06 -1.275573E-02  1.275573E-02 -89.98943 
+ 
+WIRE NO.  20 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              2.352175E-06 -1.275573E-02  1.275573E-02 -89.98943 
+J              5.145809E-06 -1.256941E-02  1.256941E-02 -89.97654 
+ 
+WIRE NO.  21 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              5.145809E-06 -1.256941E-02  1.256941E-02 -89.97654 
+J              1.02802E-05  -.0120589      .0120589     -89.95115 
+ 
+WIRE NO.  22 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              1.02802E-05  -.0120589      .0120589     -89.95115 
+ 37            1.858269E-05 -1.076581E-02  1.076582E-02 -89.90109 
+ 38            2.576488E-05 -8.995584E-03  8.995621E-03 -89.83589 
+ 39            3.166025E-05 -6.826815E-03  6.826888E-03 -89.73428 
+ 40            3.606831E-05 -4.35558E-03   4.355729E-03 -89.52554 
+ 41            3.882361E-05 -1.691301E-03  1.691746E-03 -88.68501 
+J              3.981908E-05  1.048066E-03  1.048822E-03  87.82421 
+
 ********************     FAR FIELD      ********************
  
 ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 10 , 19 
@@ -982,4 +1136,3 @@ ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
  160           360          -.7024277     -128.476      -.7024277 
  170           360           .0917913     -129.3149      .0917913 
  180           360           .4724812     -129.9293      .4724812 
-

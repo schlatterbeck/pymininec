@@ -29,7 +29,9 @@ conversion to carriage-return convention) to be used as input to the
 original Basic code. The output of the Basic code is in files with the
 extension ``.bout`` while the output of the Python code is in files
 with the extension ``.pout``. The ``.pout`` files are compared in the
-regression tests.
+regression tests. The ``.pym`` files in the ``test`` directory are the
+command-line arguments to recreate the ``.pout`` files with
+``mininec.py``.
 
 Note that the current code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I

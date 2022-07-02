@@ -1,0 +1,5 @@
+-f 7.15 -w 20,0,0,0,0,0,10.0838,0.0127
+--medium=20,.0303,0,5 --medium=5,.001,-5
+--radial-count=16 --radial-radius=0.001
+--excitation-segment=1
+--theta=0,5,19 --phi=0,10,37

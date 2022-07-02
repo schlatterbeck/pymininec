@@ -1,7 +1,7 @@
                    ****************************************
                      MINI-NUMERICAL ELECTROMAGNETICS CODE
                                    MININEC
-                       06-23-2022              11:59:59
+                       07-02-2022              21:31:03
                    ****************************************
  
 FREQUENCY (MHZ): 28.074 
@@ -36,14 +36,28 @@ NO. OF SOURCES :  1
 PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  5 , 1 , 0 
 NUMBER OF LOADS 0 
  
-FILL MATRIX  : 0:08
-FACTOR MATRIX: 0:00
- 
 ********************    SOURCE DATA     ********************
 PULSE  5      VOLTAGE = ( 1 , 0 J)
               CURRENT = ( 9.546476E-03 ,-5.103065E-03 J)
               IMPEDANCE = ( 81.47093 , 43.55025 J)
               POWER =  4.773238E-03  WATTS
+ 
+********************    CURRENT DATA    ********************
+ 
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0 
+ 1             3.223094E-03 -2.285014E-03  3.950901E-03 -35.33474 
+ 2             5.822454E-03 -3.956823E-03  7.039703E-03 -34.19924 
+ 3             7.830166E-03 -5.054334E-03  9.319751E-03 -32.84205 
+ 4             9.105726E-03 -5.48566E-03   1.063046E-02 -31.06647 
+ 5             9.546476E-03 -5.103065E-03  1.082481E-02 -28.12671 
+ 6             9.114996E-03 -5.485157E-03  1.063814E-02 -31.03838 
+ 7             7.846141E-03 -5.053389E-03  9.332666E-03 -32.78398 
+ 8             5.840334E-03 -3.95561E-03   7.053818E-03 -34.10945 
+ 9             3.236368E-03 -2.283943E-03  3.96112E-03  -35.21107 
+E              0             0             0             0 
  
 ********************     FAR FIELD      ********************
  
@@ -51,7 +65,7 @@ ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 10 , 10
 AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 10 , 37 
  
  
-FILENAME (NAME.OUT): VDIP01.GNN
+FILENAME (NAME.OUT): VDIP01G0.GNN
  
 ********************    PATTERN DATA    ********************
 ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL

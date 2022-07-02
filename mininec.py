@@ -345,6 +345,7 @@ class Wire:
         self.n = n
         # If we are in free space, nothing to do here
         if media is None:
+            self.is_ground_start = self.is_ground_end = False
             return
         # Wire end is grounded if Z coordinate is 0
         # In the original implementation this is kept in J1
@@ -356,6 +357,17 @@ class Wire:
         if self.p1 [-1] < 0 or self.p2 [-1] < 0:
             raise ValueError ("height cannot not be negative with ground")
     # end def compute_ground
+
+    def segment_iter (self):
+        if self.seg_start or self.seg_end:
+            if self.seg_end is None:
+                yield self.seg_start
+            elif self.seg_start is None:
+                yield self.seg_end
+            else:
+                for k in range (self.seg_start, self.seg_end + 1):
+                    yield k
+    # end def segment_iter
 
     def __str__ (self):
         return 'Wire %s-%s, r=%s, seg_start=%s, seg_end=%s' \
@@ -1666,9 +1678,41 @@ class Mininec:
         r.append ('')
         #r.append (self.loads_as_mininec ())
         r.append (self.source_data_as_mininec ())
+        r.append ('')
+        r.append (self.currents_as_mininec ())
+        r.append ('')
         r.append (self.far_field_as_mininec ())
         return '\n'.join (r)
     # end def as_mininec
+
+    def currents_as_mininec (self):
+        r = []
+        r.append ('*' * 20 + '    CURRENT DATA    ' + '*' * 20)
+        r.append ('')
+        for wire in self.geo:
+            r.append ('WIRE NO.%3d :' % (wire.n + 1))
+            r.append \
+                ( 'PULSE%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE'
+                % tuple (' ' * x for x in (9, 10, 5, 5))
+                )
+            r.append \
+                ( ' NO.%s(AMPS)%s(AMPS)%s(AMPS)%s(DEGREES)'
+                % tuple (' ' * x for x in (10, 8, 8, 8))
+                )
+            if not wire.is_ground_start:
+                r.append ((' ' * 13).join (['E '] + ['0'] * 4))
+            for k in wire.segment_iter ():
+                c = self.current [k]
+                a = np.angle (c) / np.pi * 180
+                r.append \
+                    ( ('%s      ' + ' '.join (['%s ' * 2] * 2))
+                    % format_float
+                        ((k + 1, c.real, c.imag, np.abs (c), a), use_e = True)
+                    )
+            if not wire.is_ground_end:
+                r.append ((' ' * 13).join (['E '] + ['0'] * 4))
+        return '\n'.join (r)
+    # end def currents_as_mininec
 
     def environment_as_mininec (self):
         """ Print environment (ground setup, see Medium above)
@@ -1706,6 +1750,8 @@ class Mininec:
         """
         r = []
         zenith, azimuth = self.far_field_angles
+        r.append ('*' * 20 + '     FAR FIELD      ' + '*' * 20)
+        r.append ('')
         r.append \
             ( 'ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
             % (zenith.initial, zenith.inc, zenith.number)
@@ -1833,7 +1879,9 @@ class Mininec:
                 (('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS'))
             if wire.seg_start is None and wire.seg_end is None:
                 r.append \
-                    (('%-13s ' * 3 + '    %-10s %-4s %-4s %-4s') % (('-',) * 6 + ('0',)))
+                    ( ('%-13s ' * 3 + '    %-10s %-4s %-4s %-4s')
+                    % (('-',) * 6 + ('0',))
+                    )
             elif wire.seg_end is None:
                 idx = 2 * self.w_per [wire.seg_start] + wire.seg_start + 1
                 seg = tuple (self.seg [idx])
@@ -1896,6 +1944,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
                   CURRENT = ( 2.857798E-02 , 1.660854E-03 J)
                   IMPEDANCE = (  34.87418 , -2.026766 J)
                   POWER =  1.428899E-02  WATTS
+    <BLANKLINE>
+    ********************    CURRENT DATA    ********************
+    <BLANKLINE>
+    WIRE NO.  1 :
+    PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+     NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+     1             2.857798E-02 1.660854E-03  2.862621E-02  3.32609  
+     2             2.727548E-02 6.861996E-04  2.728411E-02  1.441147 
+     3             2.346945E-02 8.170879E-05  2.346959E-02  .199472  
+     4             1.744657E-02 -2.362209E-04  1.744817E-02 -.775722  
+     5             9.607630E-03 -2.685476E-04  9.611382E-03 -1.601092 
+    E              0             0             0             0
+    <BLANKLINE>
+    ********************     FAR FIELD      ********************
+    <BLANKLINE>
     ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 ,  3
     AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 ,180 ,  3
     <BLANKLINE>
