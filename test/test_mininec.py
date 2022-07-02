@@ -117,20 +117,26 @@ class _Test_Base_With_File:
         return m
     # end def folded_dipole
 
-    def vertical_quarterwave (self, filename, media, loading = False):
+    def vertical_quarterwave (self, filename, media, load = False, inv = False):
         """ Vertical 1/4 lambda directly connected to ground and fed at
             the junction to ground. Using L. B. Cebik. Verticals at and
             over ground. In Antenna Modeling Notes volume 1, antenneX
             Online Magazine, 2003, chapter 12, pages 161–178.
             The wire is 1" diameter aluminium, 20 segments at 7.15MHz
             For now we ignore aluminium loading (not yet implemented)
+            With the inv flag we create the wire upside-down for
+            increasing test coverage.
         """
         i    = 0.0254
         wl   = 397 * i
         r    = i / 2
         w = []
-        w.append (Wire (20, 0, 0, 0, 0, 0, wl, r))
-        s = Excitation (0, 1, 0)
+        if inv:
+            w.append (Wire (20, 0, 0, wl, 0, 0, 0, r))
+            s = Excitation (19, 1, 0)
+        else:
+            w.append (Wire (20, 0, 0, 0, 0, 0, wl, r))
+            s = Excitation (0, 1, 0)
         m = Mininec (7.15, w, [s], media = media)
         self.simple_setup (filename, m)
         zenith  = Angle (0,  5, 19)
@@ -297,6 +303,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = self.vertical_quarterwave ('vertical-ig.pout', ideal)
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vertical_ideal_ground
+
+    def test_vertical_ideal_ground_upside_down (self):
+        ideal = [ideal_ground]
+        m = self.vertical_quarterwave ('vertical-ig-ud.pout', ideal, inv = True)
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_vertical_ideal_ground_upside_down
 
     def test_vertical_radials (self):
         m1 = Medium (20, .0303, 0, coord = 5, nradials = 16, radius = 0.001)

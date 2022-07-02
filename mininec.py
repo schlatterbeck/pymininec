@@ -589,8 +589,7 @@ class Mininec:
                     i1   = -(i + 1)
                 if w.is_ground_end:
                     i2   = -(i + 1)
-                    # FIXME: Why is the gflag only set for the second
-                    #        ground case??
+                    # Why is the gflag only set for the second ground case??
                     gflag = True
             for j in range (i):
                 # Check start -> start
