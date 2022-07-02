@@ -11,6 +11,9 @@
 
   break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105
   condition 1 struct.unpack_from('<H', token, 2)[0] == 259
+  or e.g.
+  condition 1 struct.unpack_from('<H', token, 2)[0] in (740, 744, 812)
+
   condition 1
 
   Print the current (Basic) line number whenever the breakpoint is hit:

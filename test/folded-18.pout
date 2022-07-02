@@ -107,13 +107,13 @@ WIRE NO. 16
 WIRE NO. 17
             COORDINATES                                 END         NO. OF
    X             Y             Z          RADIUS     CONNECTION     SEGMENTS
- 2.52984       0             0                        -12
- 2.52984       0             .0254         .000512      0              1
+ 2.52984       0             .0254                      0
+ 2.52984       0             0             .000512     12              1
 
 WIRE NO. 18
             COORDINATES                                 END         NO. OF
    X             Y             Z          RADIUS     CONNECTION     SEGMENTS
- 2.52984       0             .0254                     17
+ 2.52984       0             .0254                    -17
  2.50444       0             .0254         .000512      0              1
 
 WIRE NO. 19
@@ -224,11 +224,11 @@ X             Y             Z             RADIUS        END1 END2  NO.
 
 WIRE NO. 17  COORDINATES                                CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
- 2.52984       0             0             .000512     -12    0  31
+ 2.52984       0             0             .000512       0   12  31
 
 WIRE NO. 18  COORDINATES                                CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
- 2.52984       0             .0254         .000512      17    0  32
+ 2.52984       0             .0254         .000512     -17    0  32
 
 WIRE NO. 19  COORDINATES                                CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.

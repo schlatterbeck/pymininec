@@ -102,7 +102,7 @@ class _Test_Base_With_File:
         w.append (cls ( 1,  hl -  3 * i, 0, 0,  hl -  7 * i, 0, 0, 18))
         w.append (cls ( 1,  hl -  7 * i, 0, 0,  hl - 15 * i, 0, 0, 18))
         w.append (cls ( 6,  hl - 15 * i, 0, 0,            0, 0, 0, 18))
-        w.append (cls ( 1,  hl,          0, 0,  hl,          0, d, 18))
+        w.append (cls ( 1,  hl,          0, d,  hl,          0, 0, 18))
         w.append (cls ( 1,  hl,          0, d,  hl -  1 * i, 0, d, 18))
         w.append (cls ( 1,  hl -  1 * i, 0, d,  hl -  3 * i, 0, d, 18))
         w.append (cls ( 1,  hl -  3 * i, 0, d,  hl -  7 * i, 0, d, 18))
@@ -293,14 +293,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     # end def test_folded_dipole
 
     def test_vertical_ideal_ground (self):
-        self.maxDiff = None
         ideal = [ideal_ground]
         m = self.vertical_quarterwave ('vertical-ig.pout', ideal)
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vertical_ideal_ground
 
     def test_vertical_radials (self):
-        self.maxDiff = None
         m1 = Medium (20, .0303, 0, coord = 5, nradials = 16, radius = 0.001)
         m2 = Medium (5, 0.001, -5)
         media = [m1, m2]

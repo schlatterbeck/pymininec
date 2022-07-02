@@ -1778,6 +1778,10 @@ class Mininec:
                 idx = 2 * self.w_per [wire.seg_start] + wire.seg_start + 1
                 seg = tuple (self.seg [idx])
                 r.append (self.seg_as_mininec (wire, seg, wire.seg_start))
+            elif wire.seg_start is None:
+                idx = 2 * self.w_per [wire.seg_end] + wire.seg_end + 1
+                seg = tuple (self.seg [idx])
+                r.append (self.seg_as_mininec (wire, seg, wire.seg_end))
             else:
                 assert wire.seg_start is not None
                 for k in range (wire.seg_start, wire.seg_end + 1):
