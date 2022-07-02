@@ -157,6 +157,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertRaises (ValueError, Medium, 0, 0, height = 1)
         self.assertRaises (ValueError, Medium, 1, 1, nradials = 1)
         self.assertRaises (ValueError, Medium, 1, 0)
+        self.assertRaises \
+            (ValueError, Medium, 1, 1, nradials = 1, coord = 5, dist = 7)
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         x = Excitation (4, 1, 0)
@@ -169,7 +171,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         media = [rad, rad]
         x = Excitation (4, 1, 0)
         self.assertRaises (ValueError, Mininec, 7, w, [x], media = media)
-        #Mininec (7, w, [x], media = media)
+        # Radials may not be the only medium
+        self.assertRaises (ValueError, Mininec, 7, w, [x], media = [rad])
     # end def test_excitation
 
     def test_wire (self):
@@ -280,7 +283,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 165
+        num_tests = 174
         f, t  = doctest.testmod \
             (mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.__file__)

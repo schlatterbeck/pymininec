@@ -27,6 +27,7 @@
 import sys
 import copy
 import numpy as np
+from datetime import datetime
 
 def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
@@ -188,30 +189,52 @@ class Medium:
         With diel and cond zero we asume ideal ground.
         Note that it seems only the first medium can have a
         ground screen of radials
+        The boundary is the type of boundary between different media (if
+        there is more than one). It is 1 for linear (X-coordinate it
+        seems) or circular. If there is more than one medium we need the
+        coordinate (distance X for linear and radius R for circular
+        boundary), in the original code U(I).
     >>> med = Medium (3, 4)
     >>> imp = med.impedance (30)
     >>> print ('%.4f%+.4fj' % (imp.real, imp.imag))
     0.0144+0.0144j
+    >>> med = Medium (0, 0)
+    >>> med.impedance (7)
+    0j
     """
     def __init__ \
-        (self, diel, cond, height = 0, nradials = 0, radius = 0, dist = 0):
+        ( self
+        , diel, cond, height = 0
+        , nradials = 0, radius = 0, dist = 0
+        , boundary = 1, coord = 1e6
+        ):
         self.diel     = diel     # dielectric constant T(I)
-        self.cond     = cond     # conductivity V(I)
-        self.nradials = nradials # number of radials (NR)
-        self.dist     = dist     # radial distance (RD)
-        self.radius   = radius   # radial wire radius (RR)
-        self.coord    = 1e6      # U(I)
+        self.cond     = cond     # conductivity        V(I)
+        self.nradials = nradials # number of radials   NR
+        self.dist     = dist     # radial distance     RD
+        self.radius   = radius   # radial wire radius  RR
+        self.coord    = coord    # U(I)
         self.height   = height   # H(I)
+        self.boundary = boundary
+        self.next     = None     # next medium
         self.is_ideal = False
         if diel == 0 and cond == 0:
             self.is_ideal = True
-            self.Z        = 0+0j
             self.coord    = 0
             if self.nradials:
                 raise ValueError ("Ideal ground may not use radials")
             if self.height != 0:
                 raise ValueError ("Ideal ground must have height 0")
         if self.nradials:
+            self.boundary = 2
+            # Default for radials is to extend to boundary of next medium
+            # Note that the radial distance is only used for calculation
+            # of the far field in V/m
+            if not self.dist:
+                self.dist = self.coord
+            elif self.dist > self.coord:
+                raise ValueError \
+                    ("Radial distance may not exceed distance to next medium")
             if self.radius <= 0 or self.dist <= 0:
                 raise ValueError ("Radial radius and distance must be >0")
         else:
@@ -225,9 +248,24 @@ class Medium:
     # end def __init__
 
     def impedance (self, f):
+        if self.is_ideal:
+            return 0+0j
         t = 2 * np.pi * f * 8.85e-6
         return 1 / np.sqrt (self.diel + -1j * self.cond / t)
     # end def impedance
+
+    def set_next (self, next):
+        self.next = next
+        if next is None:
+            if self.nradials:
+                raise ValueError \
+                    ("Radials only on first medium of more than one")
+            # Thats the default in mininec meaning infinity
+            self.coord = 1e6
+        else:
+            # All media must have same boundary, currently we only use the first
+            next.boundary = self.boundary
+    # end def set_next
 
 # end class Medium
 
@@ -378,7 +416,7 @@ class Mininec:
         ])
     c = 299.8 # speed of light
 
-    def __init__ (self, f, geo, sources, media = None, boundary = 1):
+    def __init__ (self, f, geo, sources, media = None):
         """ Initialize, no interactive input is done here
             f:   Frequency in MHz, (F)
             media: sequence of Medium objects, if empty use perfect ground
@@ -421,7 +459,16 @@ class Mininec:
         """
         self.f        = f
         self.media    = media
-        self.boundary = boundary
+        if self.media:
+            for n, m in enumerate (self.media):
+                if n == 0:
+                    if len (self.media) == 1:
+                        m.set_next (None)
+                    self.boundary = m.boundary
+                else:
+                    self.media [n - 1].set_next (m)
+        else:
+            self.boundary = 1
         self.sources  = sources
         self.geo      = geo
         self.wavelen  = w = 299.8 / f
@@ -1649,6 +1696,16 @@ class Mininec:
     # end def frequency_as_mininec
 
     def header_as_mininec (self):
+        """ The original mininec header
+            For reproduceability the default is without date/time.
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
+        >>> s = Excitation (4, cvolt = 1+0j)
+        >>> m = Mininec (20, w, [s])
+        >>> m.output_date = True
+        >>> len (m.header_as_mininec ().split ('\\n'))
+        6
+        """
         r = []
         r.append (' ' * 19 + '*' * 40)
         r.append (' ' * 21 + 'MINI-NUMERICAL ELECTROMAGNETICS CODE')
@@ -1817,7 +1874,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--medium=0,0'])
     >>> r = main (args, sys.stdout)
-    Medium needs three parameters
+    Medium needs 3-4 parameters
     >>> r
     23
 
@@ -1838,6 +1895,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--medium=1,1,0', '--medium=1,1,0,5'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180,nonint'])
     >>> r = main (args, sys.stdout)
     Invalid phi angle, need float, float, int
@@ -1893,7 +1951,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
                     "zero, ideal ground is asumed, if radials are "
                     "specified they apply to the first ground (which "
                     "cannot be ideal with radials), several media can be "
-                    "specified"
+                    "specified. If more than one medium is given, the "
+                    "circular or linear coordinate of medium must be given."
         , action  = 'append'
         , default = []
         )
@@ -1917,6 +1976,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         ( '--radial-distance'
         , type    = float
         , help    = 'Distance of radials'
+        , default = 0
         )
     cmd.add_argument \
         ( '--theta'
@@ -1965,23 +2025,30 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     for i, v in zip (args.excitation_segment, args.excitation_voltage):
         exc.append (Excitation (i - 1, cvolt = v))
     media = []
-    rad = []
+    rad = {}
     if args.radial_count:
-        rad = (args.radial_count, args.radial_radius, args.radial_distance)
+        rad = dict \
+            ( nradials = args.radial_count
+            , radius   = args.radial_radius
+            , dist     = args.radial_distance
+            )
     for n, m in enumerate (args.medium):
         p = m.split (',')
-        if len (p) != 3:
-            print ("Medium needs three parameters", file = f_err)
+        if not 3 <= len (p) <= 4:
+            print ("Medium needs 3-4 parameters", file = f_err)
             return 23
         try:
             p = [float (x) for x in p]
         except ValueError as err:
             print ("Invalid medium %d: %s" % (n + 1, str (err)), file = f_err)
             return 23
-        r = []
+        d = {}
         if n == 0:
-            r = rad
-        media.append (Medium (*p, *r))
+            d = dict (rad)
+        if len (p) > 3:
+            d ['coord'] = p [3]
+        p = p [:3]
+        media.append (Medium (*p, **d))
     media = media or None
     p = args.phi.split (',')
     if len (p) != 3:
