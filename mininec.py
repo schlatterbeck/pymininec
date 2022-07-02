@@ -1153,8 +1153,6 @@ class Mininec:
                         ):
                         continue
                     p2 = i + 1
-                    if p2 > n:
-                        continue
                     self.Z [p2][p1] = self.Z [i][j]
             # Here follows a GOSUB 1599 which calculates the remaining time,
             # not implemented
