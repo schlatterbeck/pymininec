@@ -320,19 +320,19 @@ class Connected_Wires:
         self.list   = []
     # end def __init__
 
-    def add (self, wire, pulse_idx):
+    def add (self, wire, pulse_idx, sign):
         assert wire not in self.wires
         assert pulse_idx not in self.pulses
         self.pulses.add (pulse_idx)
         self.wires.add (wire)
-        self.list.append ((wire, pulse_idx))
+        self.list.append ((wire, pulse_idx, sign))
     # end def add
 
     def pulse_iter (self):
         """ Yield pulse indeces sorted by wire index
         """
-        for wire, idx in sorted (self.list, key = lambda x: x [0].n):
-            yield idx
+        for wire, idx, s in sorted (self.list, key = lambda x: x [0].n):
+            yield (idx, s)
     # end def pulse_iter
 
     def __bool__ (self):
@@ -407,12 +407,14 @@ class Wire:
                 continue
             if not self.is_ground [n] and j != self.n + 1:
                 other = media [j - 1]
-                self.conn [n].add (other, self.end_segs [n])
+                self.conn [n].add (other, self.end_segs [n], 1)
                 if (other.p1 == self.endpoints [n]).all ():
-                    other.conn [0].add (self, self.end_segs [n])
+                    s = 1 if n == 1 else -1
+                    other.conn [0].add (self, self.end_segs [n], s)
                 else:
                     assert (other.p2 == self.endpoints [n]).all ()
-                    other.conn [1].add (self, self.end_segs [n])
+                    s = 1 if n == 0 else -1
+                    other.conn [1].add (self, self.end_segs [n], s)
     # end def compute_connections
 
     def segment_iter (self, yield_ends = True):
@@ -1768,8 +1770,8 @@ class Mininec:
                 if not wire.conn [0]:
                     r.append ((' ' * 13).join (['E '] + ['0'] * 4))
                 else:
-                    for p in wire.conn [0].pulse_iter ():
-                        c = self.current [p]
+                    for p, s in wire.conn [0].pulse_iter ():
+                        c = s * self.current [p]
                         a = np.angle (c) / np.pi * 180
                         r.append \
                             ( ('J ' + ' ' * 13 + fmt)
@@ -1788,8 +1790,8 @@ class Mininec:
                 if not wire.conn [1]:
                     r.append ((' ' * 13).join (['E '] + ['0'] * 4))
                 else:
-                    for p in wire.conn [1].pulse_iter ():
-                        c = self.current [p]
+                    for p, s in wire.conn [1].pulse_iter ():
+                        c = s * self.current [p]
                         a = np.angle (c) / np.pi * 180
                         r.append \
                             ( ('J ' + ' ' * 13 + fmt)
