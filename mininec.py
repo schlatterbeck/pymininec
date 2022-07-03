@@ -73,6 +73,38 @@ class Angle:
     # end def iter
 # end class Angle
 
+class Connected_Wires:
+    """ This is used to store a set of connected wires *and* the
+        corresponding segments in one data structure.
+    """
+
+    def __init__ (self):
+        self.pulses = set ()
+        self.wires  = set ()
+        self.list   = []
+    # end def __init__
+
+    def add (self, wire, pulse_idx, sign):
+        assert wire not in self.wires
+        assert pulse_idx not in self.pulses
+        self.pulses.add (pulse_idx)
+        self.wires.add (wire)
+        self.list.append ((wire, pulse_idx, sign))
+    # end def add
+
+    def pulse_iter (self):
+        """ Yield pulse indeces sorted by wire index
+        """
+        for wire, idx, s in sorted (self.list, key = lambda x: x [0].n):
+            yield (idx, s)
+    # end def pulse_iter
+
+    def __bool__ (self):
+        return bool (self.list)
+    # end def __bool__
+
+# end class Connected_Wires
+
 class Excitation:
     """ This is the "PULSE" definition in mininec.
         The idx is the index into the segments (0-based)
@@ -308,38 +340,6 @@ class Medium:
 # end class Medium
 
 ideal_ground = Medium (0, 0)
-
-class Connected_Wires:
-    """ This is used to store a set of connected wires *and* the
-        corresponding segments in one data structure.
-    """
-
-    def __init__ (self):
-        self.pulses = set ()
-        self.wires  = set ()
-        self.list   = []
-    # end def __init__
-
-    def add (self, wire, pulse_idx, sign):
-        assert wire not in self.wires
-        assert pulse_idx not in self.pulses
-        self.pulses.add (pulse_idx)
-        self.wires.add (wire)
-        self.list.append ((wire, pulse_idx, sign))
-    # end def add
-
-    def pulse_iter (self):
-        """ Yield pulse indeces sorted by wire index
-        """
-        for wire, idx, s in sorted (self.list, key = lambda x: x [0].n):
-            yield (idx, s)
-    # end def pulse_iter
-
-    def __bool__ (self):
-        return bool (self.list)
-    # end def __bool__
-
-# end class Connected_Wires
 
 class Wire:
     """ A NEC-like wire
