@@ -1679,7 +1679,7 @@ class Mininec:
         wire = self.geo [p4]
         if  (  k < 1
             or wire.r > self.srm
-            or p3 == p2 + 1
+            or p3 != p2 + 1
             or p1 != (p2 + p3) / 2
             ):
             i4 = int (p1)
@@ -1721,7 +1721,7 @@ class Mininec:
         0.6747199 -0.1555773j
         """
         wire = self.geo [p4]
-        if k < 1 or wire.r >= self.srm or (i != j or p3 == p2 + .5):
+        if k < 1 or wire.r >= self.srm or i != j or p3 != p2 + .5:
             vec1 = self.seg [p1]
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
             return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 0)

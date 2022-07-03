@@ -70,3 +70,10 @@ break mininec.py:956
 After first loop (k negative):
 python: -24.251461047089546-0.04057961218741288j
 basic:  -24.251426696777344-0.04057953506708145j
+
+# Debug currently-unreached (in python) code
+break /usr/lib/python3/dist-packages/pcbasic/basic/interpreter.py:105
+commands 1
+p struct.unpack_from('<H', token, 2)[0]
+end
+condition 1 struct.unpack_from('<H', token, 2)[0] in (33201, 33202, 91, 106)
