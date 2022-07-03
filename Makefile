@@ -9,6 +9,6 @@ all: $(CR)
 	tr '\n' '\r' < $< > $@
 
 clean:
-	rm -f $(CR)
+	rm -f $(CR) README.html MININEC.INP
 
 .PHONY: clean
