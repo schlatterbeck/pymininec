@@ -94,13 +94,22 @@ class Mininec_Gain:
                 if line.startswith ('\x1a'):
                     break
                 if delimiter != guard:
+                    if not line:
+                        break
                     d = delimiter
-                    zen, azi, vp, hp, tot = (float (l) for l in line.split (d))
+                    fields = line.split (d)
+                    zen, azi, vp, hp, tot = (float (l) for l in fields [:5])
                     self.pattern [(zen, azi)] = tot
                 if line.endswith (',D'):
                     delimiter = ','
                     continue
                 if line.startswith ('ANGLE') and line.endswith ('(DB)'):
+                    delimiter = None
+                    continue
+                # Also read NEC files
+                if  (   line.startswith ('DEGREES   DEGREES        DB')
+                    and line.endswith ('VOLTS/M   DEGREES')
+                    ):
                     delimiter = None
                     continue
     # end def read_file
