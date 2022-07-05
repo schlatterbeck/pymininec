@@ -13,6 +13,12 @@ class Linear_Scaler:
         return 10 ** ((gains - max_gain) / 10)
     # end def scale
 
+    def set_ticks (self, ax):
+        g = np.array ([-3, -6, -10])
+        ax.set_rticks (self.scale (0, g))
+        ax.set_yticklabels ([('%d' % i) for i in g], ha = 'center')
+    # end def set_ticks
+
 # end class Linear_Scaler
 
 scale_linear = Linear_Scaler ()
@@ -22,6 +28,12 @@ class ARRL_Scaler:
     def scale (self, max_gain, gains):
         return (1 / 0.89) ** ((gains - max_gain) / 2)
     # end def scale
+
+    def set_ticks (self, ax):
+        g = np.array ([-3, -10, -20, -30])
+        ax.set_rticks (self.scale (0, g))
+        ax.set_yticklabels ([('%d' % i) for i in g], ha = 'center')
+    # end def set_ticks
 
 # end class ARRL_Scaler
 
@@ -42,6 +54,12 @@ class Linear_dB_Scaler:
             )
     # end def scale
 
+    def set_ticks (self, ax):
+        g = np.arange (0, self.min_db - 10, -10)
+        ax.set_rticks (self.scale (0, g))
+        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
+    # end def set_ticks
+
 # end class Linear_dB_Scaler
 
 class Mininec_Gain:
@@ -61,6 +79,9 @@ class Mininec_Gain:
         self.phis   = np.array (list (sorted (phis)))   * np.pi / 180
         self.maxg   = max (gains)
         self.gains  = np.reshape (np.array (gains), (self.thetas.shape [0], -1))
+        idx = np.unravel_index (self.gains.argmax (), self.gains.shape)
+        self.theta_max = idx [0]
+        self.phi_max   = idx [1]
     # end def __init__
 
     def read_file (self):
@@ -84,7 +105,51 @@ class Mininec_Gain:
                     continue
     # end def read_file
 
-    def plot (self, scaler):
+    def azimuth (self, scaler):
+        gains = scaler.scale (self.maxg, self.gains)
+        self.polargains = gains [self.theta_max]
+        self.angles = self.phis
+        self.polarplot (scaler)
+    # end def azimuth
+
+    def elevation (self, scaler):
+        gains = scaler.scale (self.maxg, self.gains)
+        gains1 = gains.T [self.phi_max].T
+        # Find index of the other side of the azimuth
+        idx = self.phis.shape [0] - self.phi_max - 1
+        eps = 1e-9
+        assert abs (self.phis [idx] - self.phis [self.phi_max]) - np.pi < eps
+        # Second half must be upside down?
+        gains2 = np.flip (gains.T [idx].T)
+        self.angles = np.append (self.thetas, self.thetas + np.pi) - np.pi / 2
+        self.polargains = np.append (gains1, gains2)
+        self.polarplot (scaler)
+    # end def elevation
+
+    def polarplot (self, scaler):
+        dpi = 80
+        fig = plt.figure (dpi = dpi, figsize = (512 / dpi, 384 / dpi))
+        ax  = plt.subplot (111, projection = 'polar')
+#        if is_azimuth:
+#            angles = self.phis
+#            #ax.set_theta_offset (np.pi / 2)
+#            #ax.set_theta_direction (-1)
+#        else:
+#            angles = np.pi / 2 - self.thetas
+        ax.set_rmax (1)
+        ax.set_rlabel_position (0)
+        ax.set_thetagrids (range (0, 360, 15))
+        args = dict (linestyle = 'solid', linewidth = 1.5)
+        ax.plot (self.angles, self.polargains, **args)
+        #ax.grid (True)
+        scaler.set_ticks (ax)
+        # Might add color and size labelcolor='r' labelsize = 8
+        ax.tick_params (axis = 'y', rotation = 'auto')
+        plt.show ()
+        #fig.savefig ('zoppel.png')
+    # end def polarplot
+
+    def plot3d (self, scaler):
         gains  = scaler.scale (self.maxg, self.gains)
         P, T   = np.meshgrid (self.phis, self.thetas)
         X = np.cos (P) * np.sin (T) * gains
@@ -126,7 +191,7 @@ class Mininec_Gain:
         #surf.set_facecolor ((0, 0, 0, 0))
         #surf.set_edgecolor ((.5, .5, .5, 1))
         plt.show ()
-    # end def plot
+    # end def plot3d
 # end class Mininec_Gain
 
 if __name__ == '__main__':
@@ -135,6 +200,16 @@ if __name__ == '__main__':
     cmd.add_argument \
         ( 'filename'
         , help    = 'File to parse and plot'
+        )
+    cmd.add_argument \
+        ( '--azimuth'
+        , help    = 'Do an azimuth plot'
+        , action  = 'store_true'
+        )
+    cmd.add_argument \
+        ( '--elevation'
+        , help    = 'Do an elevation plot'
+        , action  = 'store_true'
         )
     cmd.add_argument \
         ( '--scaling-method'
@@ -154,4 +229,9 @@ if __name__ == '__main__':
     scale_linear_db = Linear_dB_Scaler (args.scaling_mindb)
 
     scaler = globals () ['scale_' + args.scaling_method]
-    mg.plot (scaler = scaler)
+    if args.azimuth:
+        mg.azimuth (scaler = scaler)
+    elif args.elevation:
+        mg.elevation (scaler = scaler)
+    else:
+        mg.plot3d (scaler = scaler)
