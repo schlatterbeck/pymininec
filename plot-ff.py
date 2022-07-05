@@ -218,6 +218,11 @@ if __name__ == '__main__':
         , action  = 'store_true'
         )
     cmd.add_argument \
+        ( '--plot3d'
+        , help    = 'Do a 3D plot'
+        , action  = 'store_true'
+        )
+    cmd.add_argument \
         ( '--scaling-method'
         , help    = 'Scaling method to use, default=%%(default)s, one of %s'
                   % (', '.join (scaling))
@@ -235,9 +240,11 @@ if __name__ == '__main__':
     scale_linear_db = Linear_dB_Scaler (args.scaling_mindb)
 
     scaler = globals () ['scale_' + args.scaling_method]
+    if not args.azimuth and not args.elevation and not args.plot3d:
+        args.plot3d = True
     if args.azimuth:
         mg.azimuth (scaler = scaler)
-    elif args.elevation:
+    if args.elevation:
         mg.elevation (scaler = scaler)
-    else:
+    if args.plot3d:
         mg.plot3d (scaler = scaler)
