@@ -113,16 +113,28 @@ class Mininec_Gain:
     # end def azimuth
 
     def elevation (self, scaler):
+        """ Elevation is a little more complicated due to theta counting
+            from zenith.
+            OK for both 90° and 180° plots:
+            self.angles = p2 - self.thetas
+            self.polargains = gains1
+            OK for both 90° and ^80° plots:
+            self.angles = p2 + self.thetas
+            self.polargains = gains2
+            But second half must (both) be flipped to avoid crossover
+        """
         gains = scaler.scale (self.maxg, self.gains)
         gains1 = gains.T [self.phi_max].T
         # Find index of the other side of the azimuth
-        idx = self.phis.shape [0] - self.phi_max - 1
+        pmx = self.phis.shape [0] - self.phis.shape [0] % 2
+        idx = (self.phi_max + pmx // 2) % pmx
+        assert idx != self.phi_max
         eps = 1e-9
         assert abs (self.phis [idx] - self.phis [self.phi_max]) - np.pi < eps
-        # Second half must be upside down?
-        gains2 = np.flip (gains.T [idx].T)
-        self.angles = np.append (self.thetas, self.thetas + np.pi) - np.pi / 2
-        self.polargains = np.append (gains1, gains2)
+        gains2 = gains.T [idx].T
+        p2 = np.pi / 2
+        self.polargains = np.append (gains1, np.flip (gains2))
+        self.angles = np.append (p2 - self.thetas, np.flip (p2 + self.thetas))
         self.polarplot (scaler)
     # end def elevation
 
@@ -130,12 +142,6 @@ class Mininec_Gain:
         dpi = 80
         fig = plt.figure (dpi = dpi, figsize = (512 / dpi, 384 / dpi))
         ax  = plt.subplot (111, projection = 'polar')
-#        if is_azimuth:
-#            angles = self.phis
-#            #ax.set_theta_offset (np.pi / 2)
-#            #ax.set_theta_direction (-1)
-#        else:
-#            angles = np.pi / 2 - self.thetas
         ax.set_rmax (1)
         ax.set_rlabel_position (0)
         ax.set_thetagrids (range (0, 360, 15))
