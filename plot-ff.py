@@ -14,9 +14,9 @@ class Linear_Scaler:
     # end def scale
 
     def set_ticks (self, ax):
-        g = np.array ([-3, -6, -10])
+        g = np.array ([0, -3, -6, -10])
         ax.set_rticks (self.scale (0, g))
-        ax.set_yticklabels ([('%d' % i) for i in g], ha = 'center')
+        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
     # end def set_ticks
 
 # end class Linear_Scaler
@@ -30,9 +30,9 @@ class ARRL_Scaler:
     # end def scale
 
     def set_ticks (self, ax):
-        g = np.array ([-3, -10, -20, -30])
+        g = np.array ([0, -3, -10, -20, -30])
         ax.set_rticks (self.scale (0, g))
-        ax.set_yticklabels ([('%d' % i) for i in g], ha = 'center')
+        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
     # end def set_ticks
 
 # end class ARRL_Scaler
