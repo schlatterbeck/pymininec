@@ -2,6 +2,8 @@ MININEC in Python
 =================
 
 .. |--| unicode:: U+2013   .. en dash
+.. |_| unicode:: U+00A0 .. Non-breaking space
+    :trim:
 
 This is an attempt to rewrite the original MININEC3 basic sources in
 Python. Currently implemented is the computation of the impedance
@@ -42,6 +44,62 @@ code yet :-) My notes from the reverse-engineering can be found in the
 file ``mininec-done`` which has explanations of some of the variables
 used in mininec and some sub routines with descriptions (mostly taken
 from ``REM`` statements) of the Basic code.
+
+Notes on Elliptic Integral Parameters
+-------------------------------------
+
+The Mininec code uses the implementation of an elliptic integral when
+computing the impedance matrix and in several other places. The integral
+uses a set of E-vector coefficients that are cited differently in
+different places. In the latest version of the open source Basic code
+these parameters are in lines 1510 |_| |--| |_| 1512
+
++---------------+--------------+--------------+--------------+--------------+
+| 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
++---------------+--------------+--------------+--------------+--------------+
+|            .5 | .12498593397 | .06880248576 | .0332835346  | .00441787012 |
++---------------+--------------+--------------+--------------+--------------+
+
+In one of the first publications on Mininec [1]_ the authors give the
+parameters on p. |_| 13 as:
+
++---------------+--------------+--------------+--------------+--------------+
+| 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
++---------------+--------------+--------------+--------------+--------------+
+|            .5 | .1249859397  | .06880248576 | .03328355346 | .00441787012 |
++---------------+--------------+--------------+--------------+--------------+
+
+This is consistent with the later Mininec paper [2]_ on version |_| 3 of
+the Mininec code on p. |_| 9, but large portions of that paper are copy
+& paste from the earlier paper.
+
+The first paper [1]_ has a listing of the Basic code of that version and
+on p.  |_| 48 the parameters are given as:
+
++---------------+--------------+--------------+--------------+--------------+
+| 1.38629436    | .09666344    | .03590092    | .03742563713 | .01451196    |
++---------------+--------------+--------------+--------------+--------------+
+|            .5 | .12498594    | .06880249    | .0332836     | .0041787     |
++---------------+--------------+--------------+--------------+--------------+
+
+In each case the first line are the *a* parameters, the second line are
+the *b* parameters. The *a* parameters are consistent in all versions
+but notice how in the *b* parameters (2nd line) the current Basic code
+has one more *3* in the second column. The rounding of the earlier Basic
+code suggests that the second *3* is a typo in the later Basic version.
+Also notice that in the 4th column the later Basic code has a *5* less
+than the version in the papers. The rounding in the earlier Basic code
+also suggests that the later Basic code is in error.
+
+I've not investigated yet how these errors affect the computed values of
+the later Mininec code. Now Mininec is known to find a resonance point
+of an antenna some percent too high which means that usually in practice
+the computed wire lengths are a little too long. It may well be that the
+elliptic integral parameters have an influence there.
+
+I've not investigated how to derive the elliptic integral parameters to
+correct possible errors in the elliptic integral implementation.
+
 
 Running examples in Basic
 -------------------------
@@ -87,3 +145,18 @@ the two links I've given contain the same code.
 .. _`contribution to pcbasic`: https://github.com/robhagemans/pcbasic/pull/183
 .. _`in my pcbasic fork`:
     https://github.com/schlatterbeck/pcbasic/blob/pydebug/debugging.rst
+
+.. [1] Alfredo J. Julian, James C. Logan, and John W. Rockway.
+    Mininec: A mini-numerical electromagnetics code. Technical Report
+    NOSC TD 516, Naval Ocean Systems Center (NOSC), San Diego,
+    California, September 1982. Available as ADA121535_ from the Defense
+    Technical Information Center.
+.. [2] J. C. Logan and J. W. Rockway. The new MININEC (version 3): A
+    mini-numerical electromagnetic code. Technical Report NOSC TD 938,
+    Naval Ocean Systems Center (NOSC), San Diego, California, September
+    1986. Available as ADA181682_ from the Defense Technical Information
+    Center. Note: The scan of that report is *very* bad. If you have
+    access to a better version, please make it available!
+
+.. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
+.. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
