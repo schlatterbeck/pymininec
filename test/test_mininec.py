@@ -287,10 +287,34 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     # end def test_vdipole_wiredia_001_ground
 
     def test_vdipole_wiredia_01_avg_ground (self):
+        """ This test computes different results on Intel vs. AMD
+            processors. The gain at 90° theta falls below the -300 dBi
+            cutoff point on AMD while it is about -297 dBi on Intel.
+            This is probably due to differences in sin/cos and/or
+            complex exponentials. The Basic version returns a little
+            less than -117 dBi there. Note that this is an error that is
+            accumulated over a sum of many contributions of each
+            segment.
+            We test here that the symmetric structure is equal for every
+            phi angle. Then we compare the results to the expected
+            result for each angle. For the special case of 90° we assert
+            that the result is within the result of the Basic version
+            and -999.
+        """
         avg = [Medium (13, 0.005)]
         m = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01gavg.pout', media = avg)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        ex = self.expected_output.split ('\n')
+        ac = m.as_mininec ().split ('\n')
+        self.assertEqual (ex [:68], ac [:68])
+        s1 = [l [25:] for l in ex [68:78]]
+        for k in range (37):
+            s2 = [l [25:] for l in ac [68 + 10 * k : 78 + 10 * k]]
+            self.assertEqual (s1 [:-1], s2 [:-1])
+            a, b, c = (float (x) for x in s2 [-1].strip ().split ())
+            assert (-999 <= a <= -117)
+            assert (-999 <= c <= -117)
+            self.assertEqual (-999, b)
     # end def test_vdipole_wiredia_01_ground
 
     def test_folded_dipole (self):
