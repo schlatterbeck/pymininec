@@ -44,6 +44,7 @@ X             Y             Z             RADIUS        END1 END2  NO.
 
 NO. OF SOURCES :  1
 PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES): 20 , 1 , 0
+NUMBER OF LOADS 0
 
 ********************    SOURCE DATA     ********************
 PULSE 20      VOLTAGE = ( 1 , 0 J)

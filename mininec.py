@@ -1878,8 +1878,8 @@ class Mininec:
         r.append (self.wires_as_mininec ())
         r.append ('')
         r.append (self.sources_as_mininec ())
+        r.append (self.loads_as_mininec ())
         r.append ('')
-        #r.append (self.loads_as_mininec ())
         r.append (self.source_data_as_mininec ())
         r.append ('')
         r.append (self.currents_as_mininec ())
@@ -2042,6 +2042,24 @@ class Mininec:
         return '\n'.join (r)
     # end def header_as_mininec
 
+    def loads_as_mininec (self):
+        """ Format loads
+        """
+        r = []
+        n = 0
+        for l in self.loads:
+            n += len (l.pulses)
+        r.append ('NUMBER OF LOADS %d' % n)
+        for l in self.loads:
+            imp = l.impedance (self.f)
+            for p in l.pulses:
+                r.append \
+                    ( 'PULSE NO.,RESISTANCE,REACTANCE: %2d , %s , %s'
+                    % ((p + 1,) + format_float ([imp.real, imp.imag]))
+                    )
+        return '\n'.join (r)
+    # end def loads_as_mininec
+
     def sources_as_mininec (self):
         r = []
         r.append ('NO. OF SOURCES : %2d' % len (self.sources))
@@ -2153,6 +2171,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     <BLANKLINE>
     NO. OF SOURCES :  1
     PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  1 , 1 , 0
+    NUMBER OF LOADS 0
     <BLANKLINE>
     ********************    SOURCE DATA     ********************
     PULSE  1      VOLTAGE = ( 1 , 0 J)

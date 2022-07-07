@@ -337,20 +337,23 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
             and -999.
         """
         avg = [Medium (13, 0.005)]
-        m = self.vertical_dipole \
+        m  = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01gavg.pout', media = avg)
-        ex = self.expected_output.split ('\n')
-        ac = m.as_mininec ().split ('\n')
-        self.assertEqual (ex [:68], ac [:68])
-        s1 = [l [25:] for l in ex [68:78]]
+        ex  = self.expected_output.split ('\n')
+        ac  = m.as_mininec ().split ('\n')
+        idx = self.expected_output.find ('PATTERN DATA')
+        l   = len (self.expected_output [:idx].split ('\n'))
+        off = l + 2
+        self.assertEqual (ex [:off], ac [:off])
+        s1  = [l [25:] for l in ex [off : off + 10]]
         for k in range (37):
-            s2 = [l [25:] for l in ac [68 + 10 * k : 78 + 10 * k]]
+            s2 = [l [25:] for l in ac [off + 10 * k : off + 10 * k + 10]]
             self.assertEqual (s1 [:-1], s2 [:-1])
             a, b, c = (float (x) for x in s2 [-1].strip ().split ())
             assert (-999 <= a <= -117)
             assert (-999 <= c <= -117)
             self.assertEqual (-999, b)
-    # end def test_vdipole_wiredia_01_ground
+    # end def test_vdipole_wiredia_01_avg_ground
 
     def test_folded_dipole (self):
         m = self.folded_dipole ('folded-18.pout')
