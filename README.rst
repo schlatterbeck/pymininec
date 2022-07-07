@@ -52,7 +52,11 @@ The Mininec code uses the implementation of an elliptic integral when
 computing the impedance matrix and in several other places. The integral
 uses a set of E-vector coefficients that are cited differently in
 different places. In the latest version of the open source Basic code
-these parameters are in lines 1510 |_| |--| |_| 1512
+these parameters are in lines 1510 |_| |--| |_| 1512. They are also
+reprinted in the publication [2]_ about that version of Mininec which
+has a listing of the Basic source code (slightly different from the
+version available online) where it is on p. |_| C-31 in lines
+1512 |_| |--| |_| 1514.
 
 +---------------+--------------+--------------+--------------+--------------+
 | 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
