@@ -107,28 +107,21 @@ class Connected_Wires:
 
 class Excitation:
     """ This is the "PULSE" definition in mininec.
-        The idx is the index into the segments (0-based)
         For convenience phase is in degrees (and converted internally)
         Magnitude is in volts
     """
-    def __init__ (self, idx, magnitude = None, phase = None, cvolt = None):
-        if idx < 0:
-            raise ValueError ("Index must be >= 0")
-        if  (  magnitude is not None and phase is None
-            or phase is not None and magnitude is None
-            or magnitude is not None and cvolt is not None
-            or phase is not None and cvolt is not None
-            ):
+    def __init__ (self, cvolt, phase = None):
+        if isinstance (cvolt, complex) and phase is not None:
             raise ValueError \
                 ("Either specify magnitude/phase or complex voltage")
 
         self.parent    = None
-        self.idx       = idx
-        if magnitude:
-            self.magnitude = magnitude
+        self.idx       = None
+        if phase is not None:
+            self.magnitude = cvolt
             self.phase_d   = phase
             self.phase     = phase / 180. * np.pi
-            self.voltage   = magnitude * np.e ** (1j * self.phase)
+            self.voltage   = cvolt * np.e ** (1j * self.phase)
         else:
             self.voltage   = cvolt
             self.magnitude = np.abs (cvolt)
@@ -197,9 +190,14 @@ class Excitation:
         return ' '.join (r)
     # end def as_mininec_short
 
-    def register (self, parent):
+    def register (self, parent, pulse):
+        """ The pulse is the index into the segments/pulses (0-based)
+            We asume that the correctness of the pulse has been verified
+            by the parent code.
+        """
         assert self.parent is None
         self.parent = parent
+        self.idx = pulse
     # end def register
 # end class Excitation
 
@@ -215,6 +213,71 @@ class Far_Field_Pattern:
         self.e_phi    = e_phi
     # end def __init__
 # end def Far_Field_Pattern
+
+class _Load:
+    """ Base class of impedance loading.
+        A load can be re-used with several pulses. We have an interface
+        to add a pulse to a load. This is convenient if a load is placed
+        on every pulse, e.g. for copper loading of all elements. Note
+        that the original mininec code allowed *either* S-Parameter
+        loads *or* impedance loads. We support both concurrently. If a
+        segment is loaded twice, loads appear to be in series.
+    """
+
+    def __init__ (self, *args, **kw):
+        self.pulses = []
+        self.n      = None
+    # end def __init__
+
+    def add_pulse (self, pulse):
+        self.pulses.append (pulse)
+    # end def add_pulse
+
+    def impedance (self, f):
+        """ Get impedance for a certain frequency
+            This probably needs reimplementation in different derived
+            classes. Especially if the impedance is frequency dependent.
+        """
+        return self._impedance
+    # end def impedance
+
+# end class _Load
+
+class Load (_Load):
+    """ A complex load
+        The original Basic code allows to specify resistance and reactance
+        See below for the second case of S-parameters.
+    """
+    def __init__ (self, impedance):
+        self._impedance = impedance
+        super ().__init__ ()
+    # end def __init__
+
+# end class Load
+
+class S_Parameter_Load (_Load):
+    """ S-Parameter (S = j omega) load from mininec implementation
+        We get two lists of parameters with equal length. They represent
+        the numerator and denominator coefficients, respectively.
+    """
+    def __init__ (self, a, b):
+        self.a = np.array (list (a))
+        self.b = np.array (list (b))
+        if len (a) != len (b):
+            raise ValueError ("S-Parameters a and b must be same length")
+        if not len(a):
+            raise ValueError ("At least two pairs of parameters must be given")
+        if len (a) % 2:
+            raise ValueError ("An even number of parameter pairs is required")
+        super ().__init__ ()
+    # end def __init__
+
+    def impedance (self, f):
+        u = d = 0
+        #for n, p in enumerate (self.
+    # end def impedance
+
+# end class S_Parameter_Load
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
@@ -487,8 +550,9 @@ class Mininec:
     """ A mininec implementation in Python
     >>> w = []
     >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-    >>> s = Excitation (4, cvolt = 1+0j)
-    >>> m = Mininec (20, w, [s])
+    >>> s = Excitation (cvolt = 1+0j)
+    >>> m = Mininec (20, w)
+    >>> m.register_source (s, 4, 0)
     >>> print (m.wires_as_mininec ())
     NO. OF WIRES: 1
     <BLANKLINE>
@@ -530,7 +594,7 @@ class Mininec:
         ])
     c = 299.8 # speed of light
 
-    def __init__ (self, f, geo, sources, media = None):
+    def __init__ (self, f, geo, media = None):
         """ Initialize, no interactive input is done here
             f:   Frequency in MHz, (F)
             media: sequence of Medium objects, if empty use perfect ground
@@ -558,8 +622,9 @@ class Mininec:
             srm: SMALL RADIUS MODIFICATION CONDITION
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
         >>> print (m.seg_idx)
         [[1 1]
          [1 1]
@@ -573,14 +638,13 @@ class Mininec:
         """
         self.f        = f
         self.media    = media
+        self.loads    = []
         self.check_ground ()
-        self.sources  = sources
+        self.sources  = []
         self.geo      = geo
         self.wavelen  = w = 299.8 / f
         if not self.media or len (self.media) == 1:
             self.boundary = 1
-        for s in self.sources:
-            s.register (self)
         # virtual dipole length for near field calculation:
         self.s0      = .001 * w
         # 1 / (4 * PI * OMEGA * EPSILON)
@@ -592,20 +656,8 @@ class Mininec:
         self.flg     = 0
         self.check_geo ()
         self.compute_connectivity ()
-        # Check source indeces
-        for n, s in enumerate (self.sources):
-            if s.idx >= len (self.c_per):
-                raise ValueError \
-                    ( "Index %d of source %d exceeds segments (%d)"
-                    % (s.idx, n + 1, len (self.c_per))
-                    )
         self.output_date = False
     # end __init__
-
-    def check_geo (self):
-        for n, wire in enumerate (self.geo):
-            wire.compute_ground (n, self.media)
-    # end def check_geo
 
     def check_ground (self):
         if not self.media and self.media is not None:
@@ -622,12 +674,18 @@ class Mininec:
             self.boundary = 1
     # end def check_ground
 
+    def check_geo (self):
+        for n, wire in enumerate (self.geo):
+            wire.compute_ground (n, self.media)
+    # end def check_geo
+
     def compute (self):
         """ Compute the currents (solution of the impedance matrix)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
         >>> m.compute ()
         >>> print (m.sources_as_mininec ())
         NO. OF SOURCES :  1
@@ -640,7 +698,7 @@ class Mininec:
                       POWER =  5.034822E-03  WATTS
         """
         self.compute_impedance_matrix ()
-        #self.compute_impedance_matrix_loads ()
+        self.compute_impedance_matrix_loads ()
         self.compute_rhs ()
         self.current = np.linalg.solve (self.Z, self.rhs)
         # Used by far field calculation
@@ -989,11 +1047,12 @@ class Mininec:
         """ This starts at line 195 (with entry-point for gosub at 196)
             in the original basic code.
             Note that we're using seg_idx instead of c_per
-        >>> s  = Excitation (4, 1, 0)
-        >>> s2 = Excitation (4, 1, 30)
+        >>> s  = Excitation (1, 0)
+        >>> s2 = Excitation (1, 30)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> m = Mininec (7, w, [s2])
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s2, 4)
         >>> m.compute_impedance_matrix ()
         >>> n = len (m.w_per)
         >>> for i in range (n):
@@ -1109,7 +1168,8 @@ class Mininec:
         0.00000000+0.00000000j
         0.00000000+0.00000000j
         0.00000000+0.00000000j
-        >>> m.sources [0] = s
+        >>> m.sources = []
+        >>> m.register_source (s, 4)
         >>> m.compute_rhs ()
         >>> for r in m.rhs:
         ...     sgn = '++-' [int (np.sign (r.imag))]
@@ -1270,6 +1330,20 @@ class Mininec:
         # addition of loads happens in compute_impedance_matrix_loads
     # end def compute_impedance_matrix
 
+    def compute_impedance_matrix_loads (self):
+        for l in self.loads:
+            for j in l.pulses:
+                f2 = 1 / self.m
+                # Looks like K in the original code line 371 is set by
+                # the preceeding loop iterating over the images. So we
+                # replace this with self.media is not None
+                if  (   self.c_per [j][0] == -self.c_per [j][1]
+                    and self.media is not None
+                    ):
+                    f2 *= 2
+                self.Z [j][j] += np.conj (f2 * l.impedance (self.f))
+    # end def compute_impedance_matrix_loads
+
     def compute_rhs (self):
         rhs = np.zeros (len (self.c_per), dtype=complex)
         for src in self.sources:
@@ -1297,7 +1371,8 @@ class Mininec:
             vecv (originally (V1, V2, V3))
             k, t, exact_kernel
             c0 - c9  # Parameter of elliptic integral
-            w: 2 * pi * f / c (constant in program)
+            w: 2 * pi * f / c
+               (omega / c, frequency-dependent constant in program)
             srm: small radius modification condition
                  0.0001 * c / f
             a(p4): wire radius
@@ -1313,8 +1388,9 @@ class Mininec:
         # if we use a exact_kernel or not
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
         >>> t  = 0.980144947186
@@ -1431,8 +1507,9 @@ class Mininec:
             i4, i5, s4, l, f2, t, d0, d3, i6
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
 
         # Original produces:
         # 5.330494 -0.1568644j
@@ -1564,8 +1641,9 @@ class Mininec:
             used as an index but as a factor.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
 
         # Original produces:
         # 0.5496336 -0.3002106j
@@ -1591,8 +1669,9 @@ class Mininec:
             vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
 
         # Original produces:
         # 0.4792338 -0.1544592j
@@ -1619,8 +1698,9 @@ class Mininec:
             vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
 
         # Original produces:
         # 0.3218219 -.1519149j
@@ -1639,6 +1719,61 @@ class Mininec:
         vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
         return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_75
+
+    def register_load (self, load, pulse = None, wire_idx = None):
+        """ Default if no pulse is given is to add the load to *all*
+            pulses. Otherwise if no wire_idx is given the pulse is an
+            absolute index, otherwise it's the index of a pulse on the
+            wire given by wire_idx. Indeces are 0-based.
+        """
+        if pulse is None:
+            for wire in self.geo:
+                for p in wire.segment_iter ():
+                    load.add_pulse (p)
+            self.loads.append (load)
+        else:
+            if pulse < 0:
+                raise ValueError ("Pulse index must be >= 0")
+            if wire_idx is not None:
+                if wire_idx >= len (self.geo):
+                    raise ValueError ('Invalid wire index %d' % (wire_idx))
+                w = self.geo [wire_idx]
+                p = w.end_segs [0] + pulse
+                if p > w.end_segs [1]:
+                    raise ValueError \
+                        ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
+            elif pulse >= len (self.c_per):
+                raise ValueError ('Invalid pulse %d' % pulse)
+            else:
+                p = pulse
+            load.add_pulse (p)
+            self.loads.append (load)
+    # end def register_load
+
+    def register_source (self, source, pulse, wire_idx = None):
+        """ Register a source, either with absolute pulse index or with
+            a pulse index relative to a wire. Indeces are 0-based.
+        """
+        if pulse < 0:
+            raise ValueError ("Pulse index must be > 0")
+        # Check source index
+        if wire_idx is not None:
+            w = self.geo [wire_idx]
+            if w.end_segs [0] is None:
+                raise ValueError \
+                    ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
+            p = w.end_segs [0] + pulse
+            if w.end_segs [1] is None or p > w.end_segs [1]:
+                raise ValueError \
+                    ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
+            self.sources.append (source)
+            source.register (self, p)
+        else:
+            if pulse >= len (self.c_per):
+                raise ValueError ('Invalid pulse %d' % pulse)
+            self.sources.append (source)
+            source.register (self, pulse)
+    # end def register_source
 
     def scalar_potential (self, k, p1, p2, p3, p4, i, j):
         """ Compute scalar potential
@@ -1662,8 +1797,9 @@ class Mininec:
             i4, i5
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
@@ -1710,8 +1846,9 @@ class Mininec:
             t1, t2
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (4, 1, 0)
-        >>> m = Mininec (7, w, [s])
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
 
         # Original produces:
         # 0.6747199 -.1555772j
@@ -1886,8 +2023,9 @@ class Mininec:
             For reproduceability the default is without date/time.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
-        >>> s = Excitation (4, cvolt = 1+0j)
-        >>> m = Mininec (20, w, [s])
+        >>> s = Excitation (cvolt = 1+0j)
+        >>> m = Mininec (20, w)
+        >>> m.register_source (s, 4)
         >>> m.output_date = True
         >>> len (m.header_as_mininec ().split ('\\n'))
         6
@@ -2071,8 +2209,69 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     >>> r
     23
 
+    >>> args = ['--attach-load=1']
+    >>> r = main (args, sys.stdout)
+    Append-load needs 2-3 parameters
+    >>> r
+    23
+    >>> args = ['--attach-load=1,2,3,4']
+    >>> r = main (args, sys.stdout)
+    Append-load needs 2-3 parameters
+    >>> r
+    23
+    >>> args = ['--attach-load=1,notanint']
+    >>> r = main (args, sys.stdout)
+    Attach-load: invalid literal for int() with base 10: 'notanint'
+    >>> r
+    23
+    >>> args = ['--attach-load=1,2']
+    >>> r = main (args, sys.stdout)
+    Load index 1 out of range
+    >>> r
+    23
+    >>> args = ['--load=1+1j']
+    >>> r = main (args, sys.stdout)
+    Error: Not all loads were used
+    >>> r
+    23
+    >>> args = ['--load=1+1j', '--attach-load=1,all', '--attach-load=5,all']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Load index 5 out of range
+    >>> r
+    23
+    >>> args = ['--load=1+1j', '--attach-load=1,1', '--attach-load=1,7']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error attaching load: Invalid pulse 6
+    >>> r
+    23
+    >>> args = ['--load=1+1j', '--attach-load=1,1,7']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error attaching load: Invalid wire index 6
+    >>> r
+    23
+    >>> args = ['--load=1+1j', '--attach-load=1,7,1']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error attaching load: Invalid pulse 6 for wire 0
+    >>> r
+    23
+    >>> args = ['--load=1+1j', '--attach-load=1,0']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error attaching load: Pulse index must be >= 0
+    >>> r
+    23
+
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--medium=0,0'])
+    >>> args.extend (['--medium=0,0,0,0,0'])
     >>> r = main (args, sys.stdout)
     Medium needs 3-4 parameters
     >>> r
@@ -2121,6 +2320,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     from argparse import ArgumentParser
     cmd = ArgumentParser ()
     cmd.add_argument \
+        ( '--attach-load'
+        , help    = 'Attach load with given index to pulse, needs '
+                    'load-index, pulse-index, optional wire index. If '
+                    'wire index is given, pulse index is relative to '
+                    'wire. To attach a load to all pulses use "all" for '
+                    'the pulse index (and leave the wire index blank).'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
         (  '--excitation-segment'
         , help    = "Segment number for excitation, can be specified "
                     "more than once, default is the single segment 5"
@@ -2143,6 +2352,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , type    = float
         , default = 7.0
         , help    = 'Frequency in MHz, default=%(default)s'
+        )
+    cmd.add_argument \
+        ( '-l', '--load'
+        , type    = complex
+        , help    = 'Complex load'
+        , action  = 'append'
+        , default = []
         )
     cmd.add_argument \
         ( '--medium'
@@ -2221,9 +2437,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
             ("Number of excitation segments must match voltages", file = f_err)
         return 23
 
-    exc = []
-    for i, v in zip (args.excitation_segment, args.excitation_voltage):
-        exc.append (Excitation (i - 1, cvolt = v))
     media = []
     rad = {}
     if args.radial_count:
@@ -2250,6 +2463,38 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         p = p [:3]
         media.append (Medium (*p, **d))
     media = media or None
+    m = Mininec (args.frequency, wires, media = media)
+    for i, v in zip (args.excitation_segment, args.excitation_voltage):
+        s = Excitation (cvolt = v)
+        m.register_source (s, i - 1)
+    loads = []
+    for l in args.load:
+        loads.append (Load (l))
+    used_loads = set ()
+    for x in args.attach_load:
+        att = x.split (',')
+        if not 2 <= len (att) <= 3:
+            print ("Append-load needs 2-3 parameters", file = f_err)
+            return 23
+        if len (att) == 2 and att [-1] == 'all':
+            att = att [:-1]
+        try:
+            att = [int (a) - 1 for a in att]
+        except ValueError as err:
+            print ("Attach-load: %s" % err, file = f_err)
+            return 23
+        if att [0] >= len (loads) or att [0] < 0:
+            print ("Load index %d out of range" % (att [0] + 1), file = f_err)
+            return 23
+        used_loads.add (att [0])
+        try:
+            m.register_load (loads [att [0]], *att [1:])
+        except ValueError as err:
+            print ("Error attaching load: %s" % err, file = f_err)
+            return 23
+    if len (used_loads) != len (loads):
+        print ("Error: Not all loads were used", file = f_err)
+        return 23
     p = args.phi.split (',')
     if len (p) != 3:
         print \
@@ -2275,7 +2520,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         print ("Invalid theta angle, need float, float, int", file = f_err)
         return 23
 
-    m = Mininec (args.frequency, wires, exc, media = media)
     m.compute ()
     m.compute_far_field (zenith, azimuth)
     print (m.as_mininec ())
@@ -2289,8 +2533,10 @@ __all__ = \
     , 'Excitation'
     , 'Far_Field_Pattern'
     , 'Gauge_Wire'
+    , 'Load'
     , 'Medium'
     , 'Mininec'
+    , 'S_Parameter_Load'
     , 'Wire'
     , 'ideal_ground'
     ]

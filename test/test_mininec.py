@@ -42,8 +42,9 @@ class _Test_Base_With_File:
     def dipole_7mhz (self, wire_dia, filename):
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, wire_dia))
-        s = Excitation (4, 1, 0)
-        m = Mininec (7, w, [s])
+        s = Excitation (1, 0)
+        m = Mininec (7, w)
+        m.register_source (s, 4)
         self.simple_setup (filename, m)
         zenith  = Angle (0, 10, 19)
         azimuth = Angle (0, 10, 37)
@@ -51,11 +52,14 @@ class _Test_Base_With_File:
         return m
     # end def dipole_7mhz
 
-    def vertical_dipole (self, wire_dia, filename, media = None):
+    def vertical_dipole (self, wire_dia, filename, media = None, load = None):
         w = []
         w.append (Wire (10, 0, 0, 7.33, 0, 0, 12.7, wire_dia))
-        s = Excitation (4, 1, 0)
-        m = Mininec (28.074, w, [s], media = media)
+        s = Excitation (1, 0)
+        m = Mininec (28.074, w, media = media)
+        m.register_source (s, 4)
+        if load:
+            m.register_load (load)
         self.simple_setup (filename, m)
         zlen = 19
         if media:
@@ -108,8 +112,9 @@ class _Test_Base_With_File:
         w.append (cls ( 1,  hl -  3 * i, 0, d,  hl -  7 * i, 0, d, 18))
         w.append (cls ( 1,  hl -  7 * i, 0, d,  hl - 15 * i, 0, d, 18))
         w.append (cls ( 6,  hl - 15 * i, 0, d,            0, 0, d, 18))
-        s = Excitation (30, 1, 0)
-        m = Mininec (28.5, w, [s], media = None)
+        s = Excitation (1, 0)
+        m = Mininec (28.5, w, media = None)
+        m.register_source (s, 30)
         self.simple_setup (filename, m)
         zenith  = Angle (0, 10, 19)
         azimuth = Angle (0, 10, 37)
@@ -133,11 +138,14 @@ class _Test_Base_With_File:
         w = []
         if inv:
             w.append (Wire (20, 0, 0, wl, 0, 0, 0, r))
-            s = Excitation (19, 1, 0)
+            s  = Excitation (1, 0)
+            ex = 19
         else:
             w.append (Wire (20, 0, 0, 0, 0, 0, wl, r))
-            s = Excitation (0, 1, 0)
-        m = Mininec (7.15, w, [s], media = media)
+            s  = Excitation (1, 0)
+            ex = 0
+        m = Mininec (7.15, w, media = media)
+        m.register_source (s, ex)
         self.simple_setup (filename, m)
         zenith  = Angle (0,  5, 19)
         azimuth = Angle (0, 10, 37)
@@ -152,8 +160,24 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     def test_excitation (self):
         """ Test error cases
         """
-        self.assertRaises (ValueError, Excitation, -1, cvolt = 5)
-        self.assertRaises (ValueError, Excitation, 1, 1, 1, 1)
+        self.assertRaises (ValueError, Excitation, 1+1j, 1)
+        w = []
+        w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        m = Mininec (7, w)
+        x = Excitation (cvolt = 5)
+        # Pulse index must be > 0
+        self.assertRaises (ValueError, m.register_source, x, -1)
+        # Invalid pulse
+        self.assertRaises (ValueError, m.register_source, x, 55)
+        # Invalid pulse for wire
+        self.assertRaises (ValueError, m.register_source, x, 11, 0)
+        # Invalid *first* pulse:
+        # We create two 1-seg wires, the first will have no pulse
+        w = []
+        w.append (Wire (1, 0, 0, 0, 1, 0, 0, 0.01))
+        w.append (Wire (1, 1, 0, 0, 2, 0, 0, 0.01))
+        m = Mininec (7, w)
+        self.assertRaises (ValueError, m.register_source, x, 0, 0)
     # end def test_excitation
 
     def test_medium (self):
@@ -167,19 +191,16 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
             (ValueError, Medium, 1, 1, nradials = 1, coord = 5, dist = 7)
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        x = Excitation (4, 1, 0)
-        self.assertRaises (ValueError, Mininec, 7, w, [x], media = [])
+        self.assertRaises (ValueError, Mininec, 7, w, media = [])
         ideal = mininec.ideal_ground
         media = [ideal, ideal]
-        x = Excitation (4, 1, 0)
-        self.assertRaises (ValueError, Mininec, 7, w, [x], media = media)
+        self.assertRaises (ValueError, Mininec, 7, w, media = media)
         rad = Medium (1, 1, nradials = 1, radius = 1, dist = 1)
         media = [rad, rad]
-        x = Excitation (4, 1, 0)
-        self.assertRaises (ValueError, Mininec, 7, w, [x], media = media)
+        self.assertRaises (ValueError, Mininec, 7, w, media = media)
         # Radials may not be the only medium
-        self.assertRaises (ValueError, Mininec, 7, w, [x], media = [rad])
-    # end def test_excitation
+        self.assertRaises (ValueError, Mininec, 7, w, media = [rad])
+    # end def test_medium
 
     def test_wire (self):
         """ Test error cases
@@ -197,8 +218,9 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         # Wrong index: Exceeds valid segments
-        s = Excitation (10, 1, 0)
-        self.assertRaises (ValueError, Mininec, 7, w, [s])
+        s = Excitation (1, 0)
+        m = Mininec (7, w)
+        self.assertRaises (ValueError, m.register_source, s, 10)
     # end def test_source_index
 
     def test_matrix_fill_vdipole_ideal_ground (self):
@@ -279,6 +301,19 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vdipole_wiredia_01_ground
 
+    def test_vdipole_wiredia_01_ground_loaded (self):
+        ideal = [ideal_ground]
+        load  = Load (2e-6)
+        m = self.vertical_dipole \
+            ( wire_dia = 0.01
+            , filename = 'vdipole-01g0l.pout'
+            , media    = ideal
+            , load     = load
+            )
+        # Attach to *all* segments
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_vdipole_wiredia_01_ground_loaded
+
     def test_vdipole_wiredia_001_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_dipole \
@@ -349,7 +384,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 176
+        num_tests = 229
         f, t  = doctest.testmod \
             (mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.__file__)

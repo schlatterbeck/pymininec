@@ -75,6 +75,9 @@ Looks like the PSI computation has three entry points:
 
 The PSI computation uses the INTEGRALS I2 & I3 as a subroutine
 
+Global variables
+M: 1 / (4 * PI * OMEGA * EPSILON): self.m
+
 Data structures
 K(6,2) single precision float
 
@@ -96,9 +99,14 @@ S(50)    Wire.seg_len
 
 ML=11 Maximum number of loads
 MA=8 Maximum order of S-Parameter loads
-LA(2,11,8)
-LP(11)
-LS(11)
+LA(2,11,8) Load._impedance.real, Load._impedance.imag
+           Resistance/Reactance load only uses first two dimensions (and
+           sets the third to 1)
+           For S-Parameter loads the first dimension is
+           numerator/denominator of the S-Parameter
+LP(11)     Load.pulse
+LS(11)     Number of S-Parameter loads
+L$         "Y" if S-Parameter loads, "N" otherwise
 
 MM=6 Maximum number of media
 NM   Number of media
