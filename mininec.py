@@ -243,7 +243,7 @@ class _Load:
 
 # end class _Load
 
-class Load (_Load):
+class Impedance_Load (_Load):
     """ A complex load
         The original Basic code allows to specify resistance and reactance
         See below for the second case of S-parameters.
@@ -253,31 +253,33 @@ class Load (_Load):
         super ().__init__ ()
     # end def __init__
 
-# end class Load
+# end class Impedance_Load
 
-class S_Parameter_Load (_Load):
-    """ S-Parameter (S = j omega) load from mininec implementation
-        We get two lists of parameters with equal length. They represent
-        the numerator and denominator coefficients, respectively.
+class Laplace_Load (_Load):
+    """ Laplace S-Parameter (S = j omega) load from mininec implementation
+        We get two lists of parameters. They represent the denominator and
+        numerator coefficients, respectively (sequence a is the denominator
+        and sequence b is the numerator). Note that in the original
+        implementation we had two successive values for each S-parameter
+        representing the real and imag parts, respectively. We directly
+        accept complex values for the parameters here.
     """
     def __init__ (self, a, b):
         self.a = np.array (list (a))
         self.b = np.array (list (b))
-        if len (a) != len (b):
-            raise ValueError ("S-Parameters a and b must be same length")
         if not len(a):
-            raise ValueError ("At least two pairs of parameters must be given")
-        if len (a) % 2:
-            raise ValueError ("An even number of parameter pairs is required")
+            raise ValueError ("At least one denominator parameter required")
         super ().__init__ ()
     # end def __init__
 
     def impedance (self, f):
-        u = d = 0
-        #for n, p in enumerate (self.
+        w = -2 * np.pi * f
+        u = sum (self.b [i] * w ** i for i in len (b))
+        d = sum (self.a [i] * w ** i for i in len (a))
+        return u / d
     # end def impedance
 
-# end class S_Parameter_Load
+# end class Laplace_Load
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
@@ -2488,7 +2490,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         m.register_source (s, i - 1)
     loads = []
     for l in args.load:
-        loads.append (Load (l))
+        loads.append (Impedance_Load (l))
     used_loads = set ()
     for x in args.attach_load:
         att = x.split (',')
@@ -2552,10 +2554,10 @@ __all__ = \
     , 'Excitation'
     , 'Far_Field_Pattern'
     , 'Gauge_Wire'
-    , 'Load'
+    , 'Impedance_Load'
     , 'Medium'
     , 'Mininec'
-    , 'S_Parameter_Load'
+    , 'Laplace_Load'
     , 'Wire'
     , 'ideal_ground'
     ]

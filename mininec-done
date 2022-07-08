@@ -103,7 +103,13 @@ LA(2,11,8) Load._impedance.real, Load._impedance.imag
            Resistance/Reactance load only uses first two dimensions (and
            sets the third to 1)
            For S-Parameter loads the first dimension is
-           numerator/denominator of the S-Parameter
+           numerator/denominator of the S-Parameter, the last dimension
+           is the k-th S-Parameter (both numerator and denominator)
+           Note two succeeding S-Parameters (in the last dimension) are
+           the real- and imaginary part of the *same* parameter,
+           respectively. This is determined from the source code,
+           unfortunately the pages documenting this in the NOSC TD 938
+           report (see README.rst) are unreadable.
 LP(11)     Load.pulse
 LS(11)     Number of S-Parameter loads
 L$         "Y" if S-Parameter loads, "N" otherwise

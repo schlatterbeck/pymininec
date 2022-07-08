@@ -303,7 +303,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_vdipole_wiredia_01_ground_loaded (self):
         ideal = [ideal_ground]
-        load  = Load (2e-6)
+        load  = Impedance_Load (2e-6)
         m = self.vertical_dipole \
             ( wire_dia = 0.01
             , filename = 'vdipole-01g0l.pout'
