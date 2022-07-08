@@ -175,6 +175,24 @@ class _Test_Base_With_File:
         return m
     # end def inverted_l
 
+    def t_antenna (self, filename):
+        w  = []
+        w.append (Wire ( 8, 0,        0,      0, 0, 0, .07958, .004))
+        w.append (Wire (17, 0, -.170423, .07958, 0, 0, .07958, .004))
+        w.append (Wire (17, 0,  .170423, .07958, 0, 0, .07958, .004))
+        m  = Mininec (299.8, w, media = [mininec.ideal_ground])
+        ex = Excitation (1, 0)
+        m.register_source (ex, 0)
+        if filename is None:
+            m.compute ()
+        else:
+            self.simple_setup (filename, m)
+            zenith  = Angle (0, 10, 10)
+            azimuth = Angle (0, 90,  2)
+            m.compute_far_field (zenith, azimuth)
+        return m
+    # end def t_antenna
+
 # end class _Test_Base_With_File
 
 class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
@@ -420,6 +438,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = self.inverted_l ('inv-l.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_inerted_l
+
+    def test_t_ant (self):
+        m = self.t_antenna ('t-ant.pout')
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_t_ant
 # end class Test_Case_Known_Structure
 
 class Test_Doctest (unittest.TestCase):

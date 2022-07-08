@@ -1908,14 +1908,15 @@ class Mininec:
                 if not wire.conn [0]:
                     r.append ((' ' * 13).join (['E '] + ['0'] * 4))
                 else:
+                    c = 0+0j
                     for p, s in wire.conn [0].pulse_iter ():
                         c = s * self.current [p]
-                        a = np.angle (c) / np.pi * 180
-                        r.append \
-                            ( ('J ' + ' ' * 13 + fmt)
-                            % format_float
-                                ((c.real, c.imag, np.abs (c), a), use_e = True)
-                            )
+                    a = np.angle (c) / np.pi * 180
+                    r.append \
+                        ( ('J ' + ' ' * 13 + fmt)
+                        % format_float
+                            ((c.real, c.imag, np.abs (c), a), use_e = True)
+                        )
             for k in wire.segment_iter (yield_ends = False):
                 c = self.current [k]
                 a = np.angle (c) / np.pi * 180
@@ -1928,14 +1929,15 @@ class Mininec:
                 if not wire.conn [1]:
                     r.append ((' ' * 13).join (['E '] + ['0'] * 4))
                 else:
+                    c = 0+0j
                     for p, s in wire.conn [1].pulse_iter ():
-                        c = s * self.current [p]
-                        a = np.angle (c) / np.pi * 180
-                        r.append \
-                            ( ('J ' + ' ' * 13 + fmt)
-                            % format_float
-                                ((c.real, c.imag, np.abs (c), a), use_e = True)
-                            )
+                        c += s * self.current [p]
+                    a = np.angle (c) / np.pi * 180
+                    r.append \
+                        ( ('J ' + ' ' * 13 + fmt)
+                        % format_float
+                            ((c.real, c.imag, np.abs (c), a), use_e = True)
+                        )
         return '\n'.join (r)
     # end def currents_as_mininec
 
