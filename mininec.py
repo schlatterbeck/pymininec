@@ -106,9 +106,11 @@ class Connected_Wires:
 # end class Connected_Wires
 
 class Excitation:
-    """ This is the "PULSE" definition in mininec.
+    """ This is the pulse source definition in mininec.
         For convenience phase is in degrees (and converted internally)
-        Magnitude is in volts
+        Magnitude is in volts, constructor can either directly give a
+        complex number for the voltage *or* floating point voltage
+        magnitude and a phase in degrees.
     """
     def __init__ (self, cvolt, phase = None):
         if isinstance (cvolt, complex) and phase is not None:
@@ -979,20 +981,17 @@ class Mininec:
                                     z8  = self.w * r * np.log (r / prod) / nr
                                     s89 = z45 * z8 * 1j
                                     t89 = z45 + (z8 * 1j)
-                                    d   = t89.real ** 2 + t89.imag ** 2
-                                    z45 = s89 * np.conj (t89) / d
+                                    z45 = s89 / t89
                                 # form SQR(1-Z^2*SIN^2)
                                 w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
                                 # vertical reflection coefficient
                                 s89 = rt3.real - w67 * z45
                                 t89 = rt3.real + w67 * z45
-                                d   = t89.real ** 2 + t89.imag ** 2
-                                v89 = s89 * np.conj (t89) / d
+                                v89 = s89 / t89
                                 # horizontal reflection coefficient
                                 s89 = w67 - rt3.real * z45
                                 t89 = w67 + rt3.real * z45
-                                d   = t89.real ** 2 + t89.imag ** 2
-                                h89 = s89 * np.conj (t89) / d - v89
+                                h89 = s89 / t89 - v89
                                 # compute contribution to sum
                                 h   = 0
                                 if self.media and j2 < len (self.media):
