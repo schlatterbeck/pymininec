@@ -60,13 +60,16 @@ class _Test_Base_With_File:
         m.register_source (s, 4)
         if load:
             m.register_load (load)
-        self.simple_setup (filename, m)
-        zlen = 19
-        if media:
-            zlen = 10
-        zenith  = Angle (0, 10, zlen)
-        azimuth = Angle (0, 10, 37)
-        m.compute_far_field (zenith, azimuth)
+        if filename is None:
+            m.compute ()
+        else:
+            self.simple_setup (filename, m)
+            zlen = 19
+            if media:
+                zlen = 10
+            zenith  = Angle (0, 10, zlen)
+            azimuth = Angle (0, 10, 37)
+            m.compute_far_field (zenith, azimuth)
         return m
     # end def vertical_dipole
 
@@ -138,20 +141,39 @@ class _Test_Base_With_File:
         w = []
         if inv:
             w.append (Wire (20, 0, 0, wl, 0, 0, 0, r))
-            s  = Excitation (1, 0)
             ex = 19
         else:
             w.append (Wire (20, 0, 0, 0, 0, 0, wl, r))
-            s  = Excitation (1, 0)
             ex = 0
+        s = Excitation (1, 0)
         m = Mininec (7.15, w, media = media)
-        m.register_source (s, ex)
-        self.simple_setup (filename, m)
-        zenith  = Angle (0,  5, 19)
-        azimuth = Angle (0, 10, 37)
-        m.compute_far_field (zenith, azimuth)
+        if filename is None:
+            m.compute ()
+        else:
+            m.register_source (s, ex)
+            self.simple_setup (filename, m)
+            zenith  = Angle (0,  5, 19)
+            azimuth = Angle (0, 10, 37)
+            m.compute_far_field (zenith, azimuth)
         return m
     # end def vertical_quarterwave
+
+    def inverted_l (self, filename):
+        w  = []
+        w.append (Wire (4, 0, 0,    0, 0,    0, .191, .004))
+        w.append (Wire (6, 0, 0, .191, 0, .309, .191, .004))
+        m  = Mininec (299.8, w, media = [mininec.ideal_ground])
+        ex = Excitation (1, 0)
+        m.register_source (ex, 0)
+        if filename is None:
+            m.compute ()
+        else:
+            self.simple_setup (filename, m)
+            zenith  = Angle (0, 5, 19)
+            azimuth = Angle (0, 5, 73)
+            m.compute_far_field (zenith, azimuth)
+        return m
+    # end def inverted_l
 
 # end class _Test_Base_With_File
 
@@ -230,7 +252,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         mat   = matrix_ideal_ground_vdipole_from_mininec
         ideal = ideal_ground
         m = self.vertical_dipole \
-            (wire_dia = 0.01, filename = 'vdipole-01.pout', media = [ideal])
+            (wire_dia = 0.01, filename = None, media = [ideal])
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
@@ -246,8 +268,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         mat   = np.array (matrix_ideal_ground_quarter_from_mininec_r) \
               + 1j * np.array (matrix_ideal_ground_quarter_from_mininec_i)
         ideal = [ideal_ground]
-        m = self.vertical_quarterwave \
-            (filename = 'vertical-ig.pout', media = ideal)
+        m = self.vertical_quarterwave (filename = None, media = ideal)
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
@@ -255,6 +276,21 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
                 self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
     # end def test_matrix_fill_quarter_ideal_ground
+
+    def test_matrix_fill_inverted_l (self):
+        """ This uses assertAlmostEqual number of decimal places to
+            compare significant digits (approximately)
+        """
+        mat   = np.array (matrix_inverted_l_r) \
+              + 1j * np.array (matrix_inverted_l_i)
+        m = self.inverted_l (filename = None)
+        for i in range (len (m.w_per)):
+            for j in range (len (m.w_per)):
+                f = int (np.log (abs (mat [i][j].real)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+    # end def test_matrix_fill_inverted_l
 
     def test_matrix_fill_quarter_radials (self):
         """ This uses assertAlmostEqual number of decimal places to
@@ -380,6 +416,10 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vertical_radials
 
+    def test_inerted_l (self):
+        m = self.inverted_l ('inv-l.pout')
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_inerted_l
 # end class Test_Case_Known_Structure
 
 class Test_Doctest (unittest.TestCase):

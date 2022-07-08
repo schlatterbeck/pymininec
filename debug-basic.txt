@@ -77,3 +77,6 @@ commands 1
 p struct.unpack_from('<H', token, 2)[0]
 end
 condition 1 struct.unpack_from('<H', token, 2)[0] in (33201, 33202, 10600)
+
+
+condition 1 struct.unpack_from('<H', token, 2)[0] == 230 and self._scalars.get (b'J%').to_value() == 5

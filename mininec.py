@@ -1263,7 +1263,7 @@ class Mininec:
                         p2 = p3
                         p3 += 1
                         p4 = i2v [j]
-                        if f8 < 2 or f8 == 1:
+                        if f8 < 2:
                             if f8 == 1:
                                 u56 = np.sign (self.seg_idx [j][1]) * u + vp
                             else:
@@ -1619,10 +1619,10 @@ class Mininec:
         kvec = np.ones (3)
         kvec [-1] = k
         if i4 == p2:
-            vec2 = k * self.seg [i4] - vec1
+            vec2 = kvec * self.seg [i4] - vec1
         else:
             i5 = i4 + 1
-            vec2 = k * (self.seg [i4] + self.seg [i5]) / 2 - vec1
+            vec2 = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
         # S(V)-S(M) GOES IN (V1,V2,V3) (this is now vecv)
         i4 = int (p3)
         if i4 == p3:
