@@ -2,6 +2,8 @@ MININEC in Python
 =================
 
 .. |--| unicode:: U+2013   .. en dash
+.. |__| unicode:: U+2013   .. en dash without spaces
+    :trim:
 .. |_| unicode:: U+00A0 .. Non-breaking space
     :trim:
 .. |-| unicode:: U+202F .. Thin non-breaking space
@@ -54,11 +56,11 @@ The Mininec code uses the implementation of an elliptic integral when
 computing the impedance matrix and in several other places. The integral
 uses a set of E-vector coefficients that are cited differently in
 different places. In the latest version of the open source Basic code
-these parameters are in lines 1510 |-| |--| |-| 1512. They are also
+these parameters are in lines 1510 |__| 1512. They are also
 reprinted in the publication [2]_ about that version of Mininec which
 has a listing of the Basic source code (slightly different from the
 version available online) where it is on p. |-| C-31 in lines
-1512 |-| |--| |-| 1514.
+1512 |__| 1514.
 
 +---------------+--------------+--------------+--------------+--------------+
 | 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
@@ -75,7 +77,7 @@ parameters on p. |-| 13 as:
 |            .5 | .1249859397  | .06880248576 | .03328355346 | .00441787012 |
 +---------------+--------------+--------------+--------------+--------------+
 
-This is consistent with the later Mininec paper [2]_ on version |_| 3 of
+This is consistent with the later Mininec paper [2]_ on version |-| 3 of
 the Mininec code on p. |-| 9, but large portions of that paper are copy
 & paste from the earlier paper.
 
@@ -187,7 +189,7 @@ the two links I've given contain the same code.
     NOSC TD 516, Naval Ocean Systems Center (NOSC), San Diego,
     California, September 1982. Available as ADA121535_ from the Defense
     Technical Information Center.
-.. [2] J. C. Logan and J. W. Rockway. The new MININEC (version 3): A
+.. [2] J. C. Logan and J. W. Rockway. The new MININEC (version |-| 3): A
     mini-numerical electromagnetic code. Technical Report NOSC TD 938,
     Naval Ocean Systems Center (NOSC), San Diego, California, September
     1986. Available as ADA181682_ from the Defense Technical Information
