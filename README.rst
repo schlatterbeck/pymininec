@@ -122,8 +122,9 @@ Note that I could only locate the 1972 version of the Handbook, not the
 parameters were corrected in a later version. It turns out that the
 reports are correct in the fourth column and the Basic program is wrong.
 But the second column contains still *another* version, note that there
-is a *5* in the 9th position, not a *3* like in the reports and not
-a missing digit like in the Basic program.
+is a *5* in the 9th position after the comma, not a *3* like in the
+Basic program and not a missing digit like in the Mininec reports [1]_
+[2]_.
 
 Since I could not be sure that there was a typo in the handbook [3]_, I
 dug deeper: The handbook cites *Approximations for Digital Computers* by
