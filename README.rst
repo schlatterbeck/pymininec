@@ -4,6 +4,8 @@ MININEC in Python
 .. |--| unicode:: U+2013   .. en dash
 .. |_| unicode:: U+00A0 .. Non-breaking space
     :trim:
+.. |-| unicode:: U+202F .. Thin non-breaking space
+    :trim:
 
 This is an attempt to rewrite the original MININEC3 basic sources in
 Python. Currently implemented is the computation of the impedance
@@ -52,11 +54,11 @@ The Mininec code uses the implementation of an elliptic integral when
 computing the impedance matrix and in several other places. The integral
 uses a set of E-vector coefficients that are cited differently in
 different places. In the latest version of the open source Basic code
-these parameters are in lines 1510 |_| |--| |_| 1512. They are also
+these parameters are in lines 1510 |-| |--| |-| 1512. They are also
 reprinted in the publication [2]_ about that version of Mininec which
 has a listing of the Basic source code (slightly different from the
-version available online) where it is on p. |_| C-31 in lines
-1512 |_| |--| |_| 1514.
+version available online) where it is on p. |-| C-31 in lines
+1512 |-| |--| |-| 1514.
 
 +---------------+--------------+--------------+--------------+--------------+
 | 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
@@ -65,7 +67,7 @@ version available online) where it is on p. |_| C-31 in lines
 +---------------+--------------+--------------+--------------+--------------+
 
 In one of the first publications on Mininec [1]_ the authors give the
-parameters on p. |_| 13 as:
+parameters on p. |-| 13 as:
 
 +---------------+--------------+--------------+--------------+--------------+
 | 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
@@ -74,11 +76,11 @@ parameters on p. |_| 13 as:
 +---------------+--------------+--------------+--------------+--------------+
 
 This is consistent with the later Mininec paper [2]_ on version |_| 3 of
-the Mininec code on p. |_| 9, but large portions of that paper are copy
+the Mininec code on p. |-| 9, but large portions of that paper are copy
 & paste from the earlier paper.
 
 The first paper [1]_ has a listing of the Basic code of that version and
-on p.  |_| 48 the parameters are given as:
+on p.  |-| 48 the parameters are given as:
 
 +---------------+--------------+--------------+--------------+--------------+
 | 1.38629436    | .09666344    | .03590092    | .03742563713 | .01451196    |
@@ -104,6 +106,36 @@ elliptic integral parameters have an influence there.
 I've not investigated how to derive the elliptic integral parameters to
 correct possible errors in the elliptic integral implementation.
 
+The reference for the elliptic integral parameters [3]_ cited in both
+reports lists the following table on p. |-| 591:
+
++---------------+--------------+--------------+--------------+--------------+
+| 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
++---------------+--------------+--------------+--------------+--------------+
+|            .5 | .12498593597 | .06880248576 | .03328355346 | .00441787012 |
++---------------+--------------+--------------+--------------+--------------+
+
+Note that I could only locate the 1972 version of the Handbook, not the
+1980 version cited by the reports. So there is a small chance that these
+parameters were corrected in a later version. It turns out that the
+reports are correct in the fourth column and the Basic program is wrong.
+But the second column contains still *another* version, note that there
+is a *5* in the 9th position, not a *3* like in the reports and not
+a missing digit like in the Basic program.
+
+Since I could not be sure that there was a typo in the handbook [3]_, I
+dug deeper: The handbook cites *Approximations for Digital Computers* by
+Hastings (without giving a year) [4]_. The version of that book I found
+is from 1955 and lists the coefficients on p. |-| 172:
+
++---------------+--------------+--------------+--------------+--------------+
+| 1.38629436112 | .09666344259 | .03590092383 | .03742563713 | .01451196212 |
++---------------+--------------+--------------+--------------+--------------+
+|            .5 | .12498593597 | .06880248576 | .03328355346 | .00441787012 |
++---------------+--------------+--------------+--------------+--------------+
+
+So apparently the handbook [3]_ is correct. And the Basic version and
+*both* Mininec reports have at least one typo.
 
 Running examples in Basic
 -------------------------
@@ -161,6 +193,12 @@ the two links I've given contain the same code.
     1986. Available as ADA181682_ from the Defense Technical Information
     Center. Note: The scan of that report is *very* bad. If you have
     access to a better version, please make it available!
+.. [3] Milton Abramowitz and Irene A. Stegun, editors. Handbook of
+    Mathematical Functions With Formulas, Graphs, and Mathematical
+    Tables.  Number 55 in Applied Mathematics Series.  National Bureau
+    of Standards, 1972.
+.. [4] Cecil Hastings, Jr. Approximations for Digital Computers.
+    Princeton University Press, 1955.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
