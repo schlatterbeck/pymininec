@@ -1470,16 +1470,13 @@ class Mininec:
         return t3 + t4 * 1j
     #end def integral_i2_i3
 
-    def psi ( self, vec1, vec2, vecv, k, p2, p3, p4, i, j
-            , fvs = 0, is_near = False
-            ):
+    def psi (self, vec2, vecv, k, p2, p3, p4, i, j, fvs = 0, is_near = False):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
             The variable fvs is used to distiguish code path at the end.
             The variable p2 is the index of the segment, seems this can
             be a float in which case the middle of two segs is used.
             The variable p4 is the index of the wire.
-            vec1 is the original input vector (X1, Y1, Z1)
             vec2 replaces (X2, Y2, Z2)
             vecv replaces (V1, V2, V3)
             i6: Use reduced kernel if 0, this was I6! (single precision)
@@ -1487,7 +1484,7 @@ class Mininec:
                 The exclamation mark is part of the variable name :-(
 
             Input:
-            vec1, vec2, vecv
+            vec2, vecv
             k:
             p2:  segment index 1 (0-based)
             p3:  segment index 2 (0-based)
@@ -1514,20 +1511,18 @@ class Mininec:
 
         # Original produces:
         # 5.330494 -0.1568644j
-        >>> vec1 = np.array ([2.141429, 0, 0])
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> r = m.psi (vec1, vec2, vecv, 1, 1, 1.5, 0, 0, 0)
+        >>> r = m.psi (vec2, vecv, 1, 1, 1.5, 0, 0, 0)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         5.3304831 -0.1568644j
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
-        >>> vec1 = np.array ([3.212143, 0, 0])
         >>> vec2 = np.array ([13.91929, 0, 0])
         >>> vecv = np.array ([16.06072, 0, 0])
         >>> x = m.psi
-        >>> r = x (vec1, vec2, vecv, k=1, p2=8, p3=9, p4=0, i=0, j=8, fvs = 1)
+        >>> r = x (vec2, vecv, k=1, p2=8, p3=9, p4=0, i=0, j=8, fvs = 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156090j
         """
@@ -1660,14 +1655,13 @@ class Mininec:
         vec1 = vec0 + p1 * vect / 2
         vec2 = vec1 - kvec * self.seg [p2]
         vecv = vec1 - kvec * self.seg [p3]
-        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
+        return self.psi (vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_56
 
-    def psi_near_field_66 (self, vec0, vec1, k, p2, p3, p4, i, j):
+    def psi_near_field_66 (self, vec0, k, p2, p3, p4, i, j):
         """ Compute psi used during computation of near field
             Original entry point in line 66
             vec0 originally is (X0, Y0, Z0)
-            vec1 originally is (X1, Y1, Z1)
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         >>> s = Excitation (1, 0)
@@ -1677,9 +1671,8 @@ class Mininec:
         # Original produces:
         # 0.4792338 -0.1544592j
         >>> vec0 = np.array ([0, -1, -1])
-        >>> vec1 = np.array ([3.212143, 0, 0])
         >>> method = m.psi_near_field_66
-        >>> r = method (vec0, vec1, k=1, p2=0.5, p3=1, p4=0, i=0, j=0)
+        >>> r = method (vec0, k=1, p2=0.5, p3=1, p4=0, i=0, j=0)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.4792338 -0.1544592j
         """
@@ -1689,10 +1682,10 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
         vecv = vec0 - kvec * self.seg [p3]
-        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
+        return self.psi (vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_66
 
-    def psi_near_field_75 (self, vec0, vec1, k, p2, p3, p4, i, j):
+    def psi_near_field_75 (self, vec0, k, p2, p3, p4, i, j):
         """ Compute psi used during computation of near field
             Original entry point in line 75
             vec0 originally is (X0, Y0, Z0)
@@ -1706,9 +1699,8 @@ class Mininec:
         # Original produces:
         # 0.3218219 -.1519149j
         >>> vec0 = np.array ([0, -1, -1])
-        >>> vec1 = np.array ([3.212143, 0, 0])
         >>> method = m.psi_near_field_75
-        >>> r = method (vec0, vec1, k=1, p2=1, p3=1.5, p4=0, i=0, j=0)
+        >>> r = method (vec0, k=1, p2=1, p3=1.5, p4=0, i=0, j=0)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.3218219 -0.1519149j
         """
@@ -1718,7 +1710,7 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * self.seg [p2]
         vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
+        return self.psi (vec2, vecv, k, p2, p3, p4, i, j, is_near = True)
     # end def psi_near_field_75
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -1823,7 +1815,7 @@ class Mininec:
             i5 = i4 + 1
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
-            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 1)
+            return self.psi (vec2, vecv, k, p2, p3, p4, i, j, fvs = 1)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1 + t2 * 1j
@@ -1862,7 +1854,7 @@ class Mininec:
         if k < 1 or wire.r >= self.srm or i != j or p3 != p2 + .5:
             vec1 = self.seg [p1]
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
-            return self.psi (vec1, vec2, vecv, k, p2, p3, p4, i, j, fvs = 0)
+            return self.psi (vec2, vecv, k, p2, p3, p4, i, j, fvs = 0)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1 + t2 * 1j
