@@ -14,15 +14,15 @@ WIRE NO. 1
             COORDINATES                                 END         NO. OF
    X             Y             Z          RADIUS     CONNECTION     SEGMENTS
  0             0             0                          0
- 21.41429      0             0             .01          0             10
+ 21.41428      0             0             .01          0             10
 
                   **** ANTENNA GEOMETRY ****
 
 WIRE NO.  1  COORDINATES                                CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
- 2.141429      0             0             .01           0    1   1
+ 2.141428      0             0             .01           0    1   1
  4.282857      0             0             .01           1    1   2
- 6.424286      0             0             .01           1    1   3
+ 6.424285      0             0             .01           1    1   3
  8.565714      0             0             .01           1    1   4
  10.70714      0             0             .01           1    1   5
  12.84857      0             0             .01           1    1   6

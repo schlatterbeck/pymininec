@@ -33,7 +33,6 @@ def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
     """
     r = []
-    eps = 1e-9 # An epsilon to avoid python rounding down on exactly .5
     for f in floats:
         if f == 0:
             fmt = '% .1f'
@@ -46,8 +45,6 @@ def format_float (floats, use_e = 0):
             fmt = '% e'
             if abs (f) == 0:
                 fmt = '% .0f'
-        if not use_e:
-            f += eps
         s = fmt % f
         if fmt != '% e':
             if '.' in s:
@@ -569,22 +566,22 @@ class Mininec:
     WIRE NO. 1
                 COORDINATES                                 END         NO. OF
        X             Y             Z          RADIUS     CONNECTION     SEGMENTS
-     0             0             0                           0
-     21.41429      0             0             .001          0             10
+     0             0             0                          0
+     21.41428      0             0             .001         0             10
     <BLANKLINE>
                       **** ANTENNA GEOMETRY ****
     <BLANKLINE>
     WIRE NO.  1  COORDINATES                                CONNECTION PULSE
     X             Y             Z             RADIUS        END1 END2  NO.
-     2.141429      0             0             .001           0    1    1
-     4.282857      0             0             .001           1    1    2
-     6.424286      0             0             .001           1    1    3
-     8.565714      0             0             .001           1    1    4
-     10.70714      0             0             .001           1    1    5
-     12.84857      0             0             .001           1    1    6
-     14.99         0             0             .001           1    1    7
-     17.13143      0             0             .001           1    1    8
-     19.27286      0             0             .001           1    0    9
+     2.141428      0             0             .001          0    1   1
+     4.282857      0             0             .001          1    1   2
+     6.424285      0             0             .001          1    1   3
+     8.565714      0             0             .001          1    1   4
+     10.70714      0             0             .001          1    1   5
+     12.84857      0             0             .001          1    1   6
+     14.99         0             0             .001          1    1   7
+     17.13143      0             0             .001          1    1   8
+     19.27286      0             0             .001          1    0   9
 
     """
     # INTRINSIC IMPEDANCE OF FREE SPACE DIVIDED BY 2 PI
