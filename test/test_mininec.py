@@ -191,11 +191,11 @@ class _Test_Base_With_File:
         return m
     # end def inverted_l
 
-    def t_antenna (self, filename):
+    def t_antenna (self, filename, r = .004):
         w  = []
-        w.append (Wire ( 8, 0,        0,      0, 0, 0, .07958, .004))
-        w.append (Wire (17, 0, -.170423, .07958, 0, 0, .07958, .004))
-        w.append (Wire (17, 0,  .170423, .07958, 0, 0, .07958, .004))
+        w.append (Wire ( 8, 0,        0,      0, 0, 0, .07958, r))
+        w.append (Wire (17, 0, -.170423, .07958, 0, 0, .07958, r))
+        w.append (Wire (17, 0,  .170423, .07958, 0, 0, .07958, r))
         m  = Mininec (299.8, w, media = [mininec.ideal_ground])
         ex = Excitation (1, 0)
         m.register_source (ex, 0)
@@ -484,6 +484,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = self.t_antenna ('t-ant.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_t_ant
+
+    def test_t_ant_thin (self):
+        m = self.t_antenna ('t-ant-thin.pout', r = 5e-5)
+        self.assertEqual (self.expected_output, m.as_mininec ())
+    # end def test_t_ant_thin
 
     def test_dipole_wiredia_01_near (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01-near.pout')
