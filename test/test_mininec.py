@@ -131,7 +131,8 @@ class _Test_Base_With_File:
         return m
     # end def folded_dipole
 
-    def vertical_quarterwave (self, filename, media, load = False, inv = False):
+    def vertical_quarterwave \
+        (self, filename, media, load = None, inv = False, dia = 0.0254):
         """ Vertical 1/4 lambda directly connected to ground and fed at
             the junction to ground. Using L. B. Cebik. Verticals at and
             over ground. In Antenna Modeling Notes volume 1, antenneX
@@ -143,7 +144,7 @@ class _Test_Base_With_File:
         """
         i    = 0.0254
         wl   = 397 * i
-        r    = i / 2
+        r    = dia / 2
         w = []
         if inv:
             w.append (Wire (20, 0, 0, wl, 0, 0, 0, r))
@@ -153,10 +154,19 @@ class _Test_Base_With_File:
             ex = 0
         s = Excitation (1, 0)
         m = Mininec (7.15, w, media = media)
+        m.register_source (s, ex)
+        if load is not None:
+            # Load only the first (index 0) segment
+            m.register_load (load, 0)
         if filename is None:
             m.compute ()
+        elif filename.endswith ('near.pout'):
+            self.simple_setup (filename, m)
+            fs = np.array ([-1, -1, 0])
+            fi = np.ones (3)
+            fn = np.array ([3, 3, 2])
+            m.compute_near_field (fs, fi, fn)
         else:
-            m.register_source (s, ex)
             self.simple_setup (filename, m)
             zenith  = Angle (0,  5, 19)
             azimuth = Angle (0, 10, 37)
@@ -225,6 +235,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = Mininec (7, w)
         self.assertRaises (ValueError, m.register_source, x, 0, 0)
     # end def test_excitation
+
+    def test_load (self):
+        """ Test error case
+        """
+        self.assertRaises (ValueError, Laplace_Load, [], [])
+    # end def test_load
 
     def test_medium (self):
         """ Test error cases
@@ -300,6 +316,25 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
                 self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
     # end def test_matrix_fill_quarter_ideal_ground
+
+    def test_matrix_fill_quarter_ideal_ground_load (self):
+        """ This uses assertAlmostEqual number of decimal places to
+            compare significant digits (approximately)
+        """
+        mat   = np.array (matrix_ideal_ground_quarter_l_from_mininec_r) \
+              + 1j * np.array (matrix_ideal_ground_quarter_l_from_mininec_i)
+        ideal = [ideal_ground]
+        l = Laplace_Load ((1., 0), (0., -2.193644e-3))
+        m = self.vertical_quarterwave \
+            (filename = None, media = ideal, load = l, dia = 0.002)
+        for i in range (len (m.w_per)):
+            for j in range (1, len (m.w_per)):
+                n = 1 if i == 0 and j == 0 else 3
+                f = int (np.log (abs (mat [i][j].real)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, n-f)
+                f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, n-f)
+    # end def test_matrix_fill_quarter_ideal_ground_load
 
     def test_matrix_fill_inverted_l (self):
         """ This uses assertAlmostEqual number of decimal places to
@@ -452,11 +487,27 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_dipole_wiredia_01_near (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01-near.pout')
-        with open ('z.out', 'w') as f:
-            print (m.near_field_as_mininec (), file = f)
         actual_output = m.near_field_as_mininec ().rstrip ()
         self.assertEqual (self.expected_output, actual_output)
     # end def test_dipole_wiredia_01_near
+
+    def test_vertical_ideal_ground_near (self):
+        ideal = [ideal_ground]
+        l = Laplace_Load ((1., 0), (0., -2.193644e-3))
+        m = self.vertical_quarterwave \
+            ('vertical-ig-near.pout', ideal, dia = 0.002, load = l)
+        #with open ('z.out', 'w') as f:
+        #    print (m.source_data_as_mininec (), file = f)
+        #    print (m.currents_as_mininec (), file = f)
+        #    print (m.near_field_as_mininec (), file = f)
+        actual_output = '\n'.join \
+            (( m.source_data_as_mininec ()
+            ,  m.currents_as_mininec ()
+            ,  m.near_field_as_mininec ()
+            )).rstrip ()
+        self.assertEqual (self.expected_output, actual_output)
+    # end def test_vertical_ideal_ground_near
+
 # end class Test_Case_Known_Structure
 
 class Test_Doctest (unittest.TestCase):
@@ -464,7 +515,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 223
+        num_tests = 226
         f, t  = doctest.testmod \
             (mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.__file__)

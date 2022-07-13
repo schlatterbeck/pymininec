@@ -265,25 +265,38 @@ class Impedance_Load (_Load):
 
 class Laplace_Load (_Load):
     """ Laplace S-Parameter (S = j omega) load from mininec implementation
-        We get two lists of parameters. They represent the denominator and
-        numerator coefficients, respectively (sequence a is the denominator
-        and sequence b is the numerator). Note that in the original
-        implementation we had two successive values for each S-parameter
-        representing the real and imag parts, respectively. We directly
-        accept complex values for the parameters here.
+        We get two lists of parameters. They represent the numerator and
+        denominator coefficients, respectively (sequence a is the denominator
+        and sequence b is the numerator).
+    >>> l = Laplace_Load ((1., 0.), (0., -2.193644e-3))
+    >>> z = l.impedance (7.15)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    -0+10.1472j
     """
-    def __init__ (self, a, b):
-        self.a = np.array (list (a))
-        self.b = np.array (list (b))
-        if not len(a):
+    def __init__ (self, b, a):
+        m = max (len (a), len (b))
+        self.a = np.zeros (m)
+        self.b = np.zeros (m)
+        self.a [:len (a)] = a
+        self.b [:len (b)] = b
+        if not len (a):
             raise ValueError ("At least one denominator parameter required")
         super ().__init__ ()
     # end def __init__
 
     def impedance (self, f):
-        w = -2 * np.pi * f
-        u = sum (self.b [i] * w ** i for i in len (b))
-        d = sum (self.a [i] * w ** i for i in len (a))
+        w  = 2 * np.pi * f
+        u1 = u2 = d1 = d2 = 0.0
+        s  = 1
+        for j in range (0, len (self.a), 2):
+            u1 += self.b [j] * s * w ** j
+            d1 += self.a [j] * s * w ** j
+            l = j + 1
+            u2 += self.b [l] * s * w ** l
+            d2 += self.a [l] * s * w ** l
+            s = -s
+        u = u1 + 1j * u2
+        d = d1 + 1j * d2
         return u / d
     # end def impedance
 
@@ -709,7 +722,7 @@ class Mininec:
         self.compute_impedance_matrix_loads ()
         self.compute_rhs ()
         self.current = np.linalg.solve (self.Z, self.rhs)
-        # Used by far field calculation
+        # Used by far field and near field calculation
         self.power = sum (s.power for s in self.sources)
     # end def compute
 
@@ -1345,7 +1358,10 @@ class Mininec:
                     and self.media is not None
                     ):
                     f2 *= 2
-                self.Z [j][j] += np.conj (f2 * l.impedance (self.f))
+                # Weird, the imag part goes to the real Z component and
+                # vice-versa, the contribution to the real part is
+                # negated, the contribution to the imag part not
+                self.Z [j][j] += -f2 * l.impedance (self.f) * 1j
     # end def compute_impedance_matrix_loads
 
     def nf_helper (self, cp, j, k, v, j12, wj, f67, f45):
@@ -1386,10 +1402,9 @@ class Mininec:
         self.h_field = []
         # virtual dipole length for near field calculation:
         s0 = .001 * self.wavelen
-        pwrsum = sum (s.power for s in self.sources)
         if pwr is None:
-            pwr = pwrsum
-        f_e = np.sqrt (pwr / pwrsum)
+            pwr = self.power
+        f_e = np.sqrt (pwr / self.power)
         f_h = f_e / s0 / (4*np.pi)
         # Compute the grid
         r = [np.arange (s, s + n * i, i)
