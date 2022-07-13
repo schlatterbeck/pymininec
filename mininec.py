@@ -33,17 +33,23 @@ def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
     """
     r = []
-    e = 1e-9 # An epsilon to avoid python rounding down on exactly .5
+    eps = 1e-9 # An epsilon to avoid python rounding down on exactly .5
     for f in floats:
         if f == 0:
             fmt = '% .1f'
         else:
-            fmt = '%% .%df' % (6 - int (np.log (abs (f)) / np.log (10)))
+            prec = 6 - int (np.log (abs (f)) / np.log (10))
+            if prec < 0:
+                prec = 0
+            fmt = '%% .%df' % prec
         if use_e and abs (f) < 1e-1:
-            fmt = '%e'
-        f += e
+            fmt = '% e'
+            if abs (f) == 0:
+                fmt = '% .0f'
+        if not use_e:
+            f += eps
         s = fmt % f
-        if fmt != '%e':
+        if fmt != '% e':
             if '.' in s:
                 s = s [:9]
                 s = s.rstrip ('0')
@@ -161,21 +167,21 @@ class Excitation:
               )
             )
         r.append \
-            ( '%sCURRENT = ( %s , %s J)'
+            ( '%sCURRENT = (%s , %s J)'
             % ( ' ' * 14
               , format_float ([self.current.real], 1) [0]
               , format_float ([self.current.imag], 1) [0]
               )
             )
         r.append \
-            ( '%sIMPEDANCE = ( %s , %s J)'
+            ( '%sIMPEDANCE = (%s , %s J)'
             % ( ' ' * 14
               , format_float ([self.impedance.real]) [0]
               , format_float ([self.impedance.imag]) [0]
               )
             )
         r.append \
-            ( '%sPOWER =  %s  WATTS'
+            ( '%sPOWER = %s  WATTS'
             % ( ' ' * 14
               , format_float ([self.power], 1) [0]
               )
@@ -649,8 +655,6 @@ class Mininec:
         self.wavelen  = w = 299.8 / f
         if not self.media or len (self.media) == 1:
             self.boundary = 1
-        # virtual dipole length for near field calculation:
-        self.s0      = .001 * w
         # 1 / (4 * PI * OMEGA * EPSILON)
         self.m       = 4.77783352 * w
         # set small radius modification condition:
@@ -697,9 +701,9 @@ class Mininec:
         >>> print (m.source_data_as_mininec ())
         ********************    SOURCE DATA     ********************
         PULSE  5      VOLTAGE = ( 1 , 0 J)
-                      CURRENT = ( 1.006964E-02 , -5.166079E-03 J)
-                      IMPEDANCE = ( 78.61622 , 40.33289 J)
-                      POWER =  5.034822E-03  WATTS
+                      CURRENT = ( 1.006964E-02 , -5.166080E-03 J)
+                      IMPEDANCE = ( 78.61622 ,  40.33289 J)
+                      POWER =  5.034821E-03  WATTS
         """
         self.compute_impedance_matrix ()
         self.compute_impedance_matrix_loads ()
@@ -890,8 +894,7 @@ class Mininec:
             Original code starts at 620 (and is called at 621)
             The angles are instances of Angle.
         """
-        # For now ground calculation is skipped, see lines 624-633
-        # We also only use calculation in dBi for now, see 641-654
+        # We only use calculation in dBi for now, see 641-654
         # Note that the volts/meter calculation asks about the power and
         # about the radial distance (?)
         # 685 has code to print radials, only used for volts/meter
@@ -1066,96 +1069,96 @@ class Mininec:
         ...                   ([abs (m.Z [i][j].imag)], 1) [0].strip ()
         ...                )
         ...              )
-        row 1
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        5.390034E-02-8.832276E-03j
-        2.352013E-02-8.218219E-03j
-        1.223068E-02-7.473395E-03j
-        6.605724E-03-6.627950E-03j
-        3.326365E-03-5.715208E-03j
-        1.258103E-03-4.769989E-03j
-        row 2
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        5.390034E-02-8.832276E-03j
-        2.352013E-02-8.218219E-03j
-        1.223068E-02-7.473395E-03j
-        6.605724E-03-6.627950E-03j
-        3.326365E-03-5.715208E-03j
-        row 3
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        5.390034E-02-8.832276E-03j
-        2.352013E-02-8.218219E-03j
-        1.223068E-02-7.473395E-03j
-        6.605724E-03-6.627950E-03j
-        row 4
-        5.390034E-02-8.832276E-03j
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        5.390034E-02-8.832276E-03j
-        2.352013E-02-8.218219E-03j
-        1.223068E-02-7.473395E-03j
-        row 5
-        2.352013E-02-8.218219E-03j
-        5.390034E-02-8.832276E-03j
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        5.390034E-02-8.832276E-03j
-        2.352013E-02-8.218219E-03j
-        row 6
-        1.223068E-02-7.473395E-03j
-        2.352013E-02-8.218219E-03j
-        5.390034E-02-8.832276E-03j
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        5.390034E-02-8.832276E-03j
-        row 7
-        6.605724E-03-6.627950E-03j
-        1.223068E-02-7.473395E-03j
-        2.352013E-02-8.218219E-03j
-        5.390034E-02-8.832276E-03j
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        .214366-9.290246E-03j
-        row 8
-        3.326365E-03-5.715208E-03j
-        6.605724E-03-6.627950E-03j
-        1.223068E-02-7.473395E-03j
-        2.352013E-02-8.218219E-03j
-        5.390034E-02-8.832276E-03j
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
-        4.240447-9.572989E-03j
-        row 9
-        1.258103E-03-4.769989E-03j
-        3.326365E-03-5.715208E-03j
-        6.605724E-03-6.627950E-03j
-        1.223068E-02-7.473395E-03j
-        2.352013E-02-8.218219E-03j
-        5.390034E-02-8.832276E-03j
-        .214366-9.290246E-03j
-        4.240447-9.572989E-03j
-        -8.485114-9.668585E-03j
+	row 1
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	5.390034E-02-8.832275E-03j
+	2.352013E-02-8.218218E-03j
+	1.223068E-02-7.473394E-03j
+	6.605723E-03-6.627949E-03j
+	3.326364E-03-5.715207E-03j
+	1.258102E-03-4.769988E-03j
+	row 2
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	5.390034E-02-8.832275E-03j
+	2.352013E-02-8.218218E-03j
+	1.223068E-02-7.473394E-03j
+	6.605723E-03-6.627949E-03j
+	3.326364E-03-5.715207E-03j
+	row 3
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	5.390034E-02-8.832275E-03j
+	2.352013E-02-8.218218E-03j
+	1.223068E-02-7.473394E-03j
+	6.605723E-03-6.627949E-03j
+	row 4
+	5.390034E-02-8.832275E-03j
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	5.390034E-02-8.832275E-03j
+	2.352013E-02-8.218218E-03j
+	1.223068E-02-7.473394E-03j
+	row 5
+	2.352013E-02-8.218218E-03j
+	5.390034E-02-8.832275E-03j
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	5.390034E-02-8.832275E-03j
+	2.352013E-02-8.218218E-03j
+	row 6
+	1.223068E-02-7.473394E-03j
+	2.352013E-02-8.218218E-03j
+	5.390034E-02-8.832275E-03j
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	5.390034E-02-8.832275E-03j
+	row 7
+	6.605723E-03-6.627949E-03j
+	1.223068E-02-7.473394E-03j
+	2.352013E-02-8.218218E-03j
+	5.390034E-02-8.832275E-03j
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	.214366-9.290245E-03j
+	row 8
+	3.326364E-03-5.715207E-03j
+	6.605723E-03-6.627949E-03j
+	1.223068E-02-7.473394E-03j
+	2.352013E-02-8.218218E-03j
+	5.390034E-02-8.832275E-03j
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
+	4.240447-9.572988E-03j
+	row 9
+	1.258102E-03-4.769988E-03j
+	3.326364E-03-5.715207E-03j
+	6.605723E-03-6.627949E-03j
+	1.223068E-02-7.473394E-03j
+	2.352013E-02-8.218218E-03j
+	5.390034E-02-8.832275E-03j
+	.214366-9.290245E-03j
+	4.240447-9.572988E-03j
+	-8.485114-9.668584E-03j
         >>> m.compute_rhs ()
         >>> for r in m.rhs:
         ...     sgn = '++-' [int (np.sign (r.imag))]
@@ -1345,6 +1348,168 @@ class Mininec:
                 self.Z [j][j] += np.conj (f2 * l.impedance (self.f))
     # end def compute_impedance_matrix_loads
 
+    def nf_helper (self, cp, j, k, v, j12, wj, f67, f45):
+        v6  = np.array ([1, 1, f67 [0]])
+        v7  = np.array ([1, 1, f67 [1]])
+        dir = [w.dirs for w in wj]
+        j3  = np.max (j12)
+        # compute psi(0,J,J+.5)
+        p2  = 2 * j3 + j + 1
+        p3  = p2 + .5
+        p4  = j12 [1]
+        u   = self.psi_near_field_75 (v, k, p2, p3, p4) * f45 [1]
+        # compute psi(0,J-.5,J)
+        p3 = p2
+        p2 = p2 - .5
+        p4 = j12 [0]
+        v   = self.psi_near_field_66 (v, k, p2, p3, p4) * f45 [0]
+        # real part of vector potential contribution
+        # imaginary part of vector potential contribution
+        kv  = np.array ([1, 1, k])
+        v35 = (v * dir [0] * v6 + u * dir [1] * v7) * kv
+        return v35
+    # end def nf_helper
+
+    def compute_near_field (self, start, inc, nvec, pwr = None):
+        """ Near field
+            Asumes that the impedance matrix has been computed.
+            Note that the input paramters are three-dimensional vectors.
+            If no power level (pwr) is given, the power is computed from
+            the voltages and currents given with the excitation.
+            start is originally  XI, YI, ZI
+            inc   is originally  XC, YC, ZC
+            nvec  is originally  NX, NY, NZ
+            power is originally  O2
+            Basic code starts at 875
+        """
+        self.e_field = []
+        self.h_field = []
+        # virtual dipole length for near field calculation:
+        s0 = .001 * self.wavelen
+        pwrsum = sum (s.power for s in self.sources)
+        if pwr is None:
+            pwr = pwrsum
+        f_e = np.sqrt (pwr / pwrsum)
+        f_h = f_e / s0 / (4*np.pi)
+        # Compute the grid
+        r = [np.arange (s, s + n * i, i)
+             for (s, n, i) in
+                 (zip (*(reversed (x) for x in (start, nvec, inc))))
+            ]
+        self.near_field_idx = np.meshgrid (*r, indexing = 'ij')
+
+        # Looks like T5, T6, T7 are 0 except for the diagonale at each
+        # iteration of I (the dimension), we build everything in one go
+        t567 = np.identity (3) * 2 * s0
+
+        for vec in self.near_field_iter ():
+            # Originally X0, Y0, Z0 but only one of them is non-0 in
+            # each iteration. This considers both versions of
+            # J8 (the values -1,1) in the original code
+            v0m = [vec + np.identity (3) * (j8 * s0 / 2)
+                   for j8 in (-1, 1)
+                  ]
+            v0m = np.array (v0m)
+            h   = np.zeros (3, dtype = complex)
+            # Loop over 3 dimensions
+            for i in range (3):
+                u78 = 0j
+                # H-field, original Basic variable K!
+                # Originally this is 6X2-dimensional in Basic, every two
+                # succeeding values are real and imag part, there seem
+                # to be two vectors which are indexed using j9 and j8
+                # takes the value -1 and 1 in the v0m initialization
+                # (originally X0, Y0, Z0)
+                kf  = np.zeros ((2, 3), dtype = complex)
+                # Loop over segments
+                for j, cp in enumerate (self.seg_idx):
+                    j12 = np.abs  (cp) - 1
+                    f45 = np.sign (cp)
+                    f67 = np.ones  (2)
+                    u56 = 0j
+                    wj  = [self.geo [g] for g in j12]
+                    for k in self.image_iter ():
+                        if cp [0] == -cp [1]:
+                            if k < 0:
+                                continue
+                            # compute vector potential A
+                            f67 = f45
+                        v35_e = self.nf_helper \
+                            (cp, j, k, vec, j12, wj, f67, f45)
+                        v35_h = np.array \
+                            ([self.nf_helper
+                                (cp, j, k, v [i], j12, wj, f67, f45)
+                              for v in v0m
+                            ])
+                        # At this point comment notes
+                        # magnetic field calculation completed
+                        # and jumps to 1042 if H field
+                        # We compute both, E and H and continue
+                        d   = sum (v35_e * t567 [i]) * self.w2
+                        # compute psi(.5,J,J+1)
+                        p2  = 2 * np.max (j12) + j + 1
+                        p3  = p2 + 1
+                        p4  = j12 [1]
+                        u   = self.psi_near_field_56 \
+                            (vec, t567 [i], k, .5, p2, p3, p4)
+                        # compute psi(-.5,J,J+1)
+                        tmp = self.psi_near_field_56 \
+                            (vec, t567 [i], k, -.5, p2, p3, p4)
+                        u   = (tmp - u) / wj [1].seg_len
+                        # compute psi(.5,J-1,J)
+                        p3  = p2
+                        p2 -= 1
+                        p4  = j12 [0]
+                        u34 = self.psi_near_field_56 \
+                            (vec, t567 [i], k, .5, p2, p3, p4)
+                        # compute psi(-.5,J-1,J)
+                        tmp = self.psi_near_field_56 \
+                            (vec, t567 [i], k, -.5, p2, p3, p4)
+                        # gradient of scalar potential
+                        u56 += (u + (u34 - tmp) / wj [0].seg_len + d) * k
+                        # Here would be a GOTO 1048 (a continue of the K loop)
+                        # that jumps over the H-field calculation
+                        # we do both, E and H field
+                        # components of vector potential A
+                        kf += v35_h * self.current [j] * k
+                    # The following code only for E-field (line 1050)
+                    u78 += u56 * self.current [j]
+
+                # Here the original code has a conditional backjump to
+                # 964 (just before the J loop) re-initializing the
+                # X0, Y0, Z0 array (v0m in this implementation).
+                # This realizes the computation of both halves of v0m.
+                # We do this in one go, see above for j8, j9.
+
+                # This originally is a ON I GOTO
+                # Hmm the kf array may not be consecutive real/imag
+                # parts after all?
+                if i == 0:
+                    h [1]  = kf [0][2] - kf [1][2]
+                    h [2]  = kf [1][1] - kf [0][1]
+                elif i==1:
+                    h [0]  = kf [1][2] - kf [0][2]
+                    h [2] += (  -kf [1][0].real + kf [0][0].real
+                             + (-kf [1][0].imag + kf [0][0].imag) * 1j
+                             )
+                else: # i==2
+                    h [0] += (  -kf [1][1].real + kf [0][1].real
+                             + (-kf [1][1].imag + kf [0][1].imag) * 1j
+                             )
+                    h [1] += (  kf [1][0].real - kf [0][0].real
+                             + (kf [1][0].imag - kf [0][0].imag) * 1j
+                             )
+
+                # imaginary part of electric field
+                # real part of electric field
+                # Don't know why real- and imag is exchanged here
+                u78 *= -1j * self.m / s0
+                if not i:
+                    self.e_field.append (np.zeros (3, dtype = complex))
+                self.e_field [-1][i] = u78 * f_e
+            self.h_field.append (h * f_h)
+    # end def compute_near_field
+
     def compute_rhs (self):
         rhs = np.zeros (len (self.c_per), dtype=complex)
         for src in self.sources:
@@ -1469,6 +1634,11 @@ class Mininec:
         t4 -= np.sin (b1) / d
         return t3 + t4 * 1j
     #end def integral_i2_i3
+
+    def near_field_iter (self):
+        for a in zip (*(x.flat for x in self.near_field_idx)):
+            yield np.array (list (reversed (a)))
+    # end def near_field_iter
 
     def psi (self, vec2, vecv, k, p2, p3, p4, exact = True, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
@@ -1636,16 +1806,15 @@ class Mininec:
         # 0.5496336 -0.3002106j
         >>> vec0 = np.array ([0, -1, -1])
         >>> vect = np.array ([8.565715E-02, 0, 0])
-        >>> method = m.psi_near_field_56
-        >>> r = method (vec0, vect, k=1, p1=0.5, p2=1, p3=2, p4=0)
+        >>> r = m.psi_near_field_56 (vec0, vect, k=1, p1=0.5, p2=1, p3=2, p4=0)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.5496335 -0.3002106j
         """
         kvec = np.ones (3)
         kvec [-1] = k
         vec1 = vec0 + p1 * vect / 2
-        vec2 = vec1 - kvec * self.seg [p2]
-        vecv = vec1 - kvec * self.seg [p3]
+        vec2 = vec1 - kvec * self.seg [int (p2)]
+        vecv = vec1 - kvec * self.seg [int (p3)]
         return self.psi (vec2, vecv, k, p2, p3, p4, exact = True)
     # end def psi_near_field_56
 
@@ -1900,7 +2069,7 @@ class Mininec:
                 ( ' NO.%s(AMPS)%s(AMPS)%s(AMPS)%s(DEGREES)'
                 % tuple (' ' * x for x in (10, 8, 8, 8))
                 )
-            fmt = ' '.join (['%s ' * 2] * 2)
+            fmt = ''.join (['%s ' * 2] * 2)
             if not wire.is_ground [0]:
                 if not wire.conn [0]:
                     r.append ((' ' * 13).join (['E '] + ['0'] * 4))
@@ -1910,7 +2079,7 @@ class Mininec:
                         c = s * self.current [p]
                     a = np.angle (c) / np.pi * 180
                     r.append \
-                        ( ('J ' + ' ' * 13 + fmt)
+                        ( ('J ' + ' ' * 12 + fmt)
                         % format_float
                             ((c.real, c.imag, np.abs (c), a), use_e = True)
                         )
@@ -1918,7 +2087,7 @@ class Mininec:
                 c = self.current [k]
                 a = np.angle (c) / np.pi * 180
                 r.append \
-                    ( ('%s      ' + fmt)
+                    ( ('%s     ' + fmt)
                     % format_float
                         ((k + 1, c.real, c.imag, np.abs (c), a), use_e = True)
                     )
@@ -1931,7 +2100,7 @@ class Mininec:
                         c += s * self.current [p]
                     a = np.angle (c) / np.pi * 180
                     r.append \
-                        ( ('J ' + ' ' * 13 + fmt)
+                        ( ('J ' + ' ' * 12 + fmt)
                         % format_float
                             ((c.real, c.imag, np.abs (c), a), use_e = True)
                         )
@@ -2060,6 +2229,99 @@ class Mininec:
         return '\n'.join (r)
     # end def loads_as_mininec
 
+    def near_field_as_mininec (self):
+        r = []
+        r.append (self.near_field_e_as_mininec ())
+        r.append (self.near_field_h_as_mininec ())
+        return '\n'.join (r)
+    # end def near_field_as_mininec
+
+    def near_field_e_as_mininec (self):
+        r = []
+        for v, coord in zip (self.e_field, self.near_field_iter ()):
+            p1 = 0j
+            p2 = 0.0
+            r.append ('*' * 20 + 'NEAR ELECTRIC FIELDS' + '*' * 20)
+            r.append \
+                ( ' ' * 9 + 'FIELD POINT: X = %s  Y = %s  Z = %s'
+                % (format_float (coord))
+                )
+            r.append \
+                ( '  VECTOR%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE' 
+                % tuple (' ' * k for k in (6, 10, 5, 5))
+                )
+            r.append \
+                ( ' COMPONENT%sV/M%sV/M%sV/M%sDEG' 
+                % tuple (' ' * k for k in (5, 11, 11, 11))
+                )
+            ax = 'XYZ'
+            for n, value in enumerate (v):
+                a   = np.angle (value)
+                b   = np.abs (value)
+                b2  = b ** 2
+                p1 += b2 * np.e ** (-2j * a)
+                p2 += b2.real
+                a   = a / np.pi * 180
+                line = \
+                    ( ('   %s' + ' ' * 10 + '%-13s ' * 4)
+                    % ((ax [n],) + format_float
+                         ((value.real, value.imag, b, a), use_e = True)
+                      )
+                    )
+                r.append (line.rstrip ())
+            pk = np.sqrt (p2 / 2 + np.linalg.norm (p1) / 2)
+            r.append \
+                ( '   MAXIMUM OR PEAK FIELD = %s V/M'
+                % format_float ((pk,), use_e = True)
+                )
+        r.append ('')
+        r.append ('')
+        return '\n'.join (r)
+    # end def near_field_e_as_mininec
+
+    def near_field_h_as_mininec (self):
+        r = []
+        for v, coord in zip (self.h_field, self.near_field_iter ()):
+            p1 = 0j
+            p2 = 0.0
+            r.append ('*' * 20 + 'NEAR MAGNETIC FIELDS' + '*' * 20)
+            r.append \
+                ( ' ' * 9 + 'FIELD POINT: X = %s  Y = %s  Z = %s'
+                % (format_float (coord))
+                )
+            r.append \
+                ( '  VECTOR%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE' 
+                % tuple (' ' * k for k in (6, 10, 5, 5))
+                )
+            r.append \
+                ( ' COMPONENT%sAMPS/M%sAMPS/M%sAMPS/M%sDEG' 
+                % tuple (' ' * k for k in (5, 8, 8, 8))
+                )
+            ax = 'XYZ'
+            for n, value in enumerate (v):
+                a   = np.angle (value)
+                b   = np.abs (value)
+                b2  = b ** 2
+                p1 += b2 * np.e ** (-2j * a)
+                p2 += b2.real
+                a   = a / np.pi * 180
+                line = \
+                    ( ('   %s' + ' ' * 10 + '%-13s ' * 4)
+                    % ((ax [n],) + format_float
+                         ((value.real, value.imag, b, a), use_e = True)
+                      )
+                    )
+                r.append (line.rstrip ())
+            pk = np.sqrt (p2 / 2 + np.linalg.norm (p1) / 2)
+            r.append \
+                ( '   MAXIMUM OR PEAK FIELD = %s  AMPS/M'
+                % format_float ((pk,), use_e = True)
+                )
+        r.append ('')
+        r.append ('')
+        return '\n'.join (r)
+    # end def near_field_h_as_mininec
+
     def sources_as_mininec (self):
         r = []
         r.append ('NO. OF SOURCES : %2d' % len (self.sources))
@@ -2175,8 +2437,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     <BLANKLINE>
     ********************    SOURCE DATA     ********************
     PULSE  1      VOLTAGE = ( 1 , 0 J)
-                  CURRENT = ( 2.857798E-02 , 1.660854E-03 J)
-                  IMPEDANCE = (  34.87418 , -2.026766 J)
+                  CURRENT = ( 2.857798E-02 ,  1.660853E-03 J)
+                  IMPEDANCE = ( 34.87418 , -2.026766 J)
                   POWER =  1.428899E-02  WATTS
     <BLANKLINE>
     ********************    CURRENT DATA    ********************
@@ -2184,11 +2446,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     WIRE NO.  1 :
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
-     1             2.857798E-02 1.660854E-03  2.862621E-02  3.32609  
-     2             2.727548E-02 6.861996E-04  2.728411E-02  1.441147 
-     3             2.346945E-02 8.170879E-05  2.346959E-02  .199472  
-     4             1.744657E-02 -2.362209E-04  1.744817E-02 -.775722  
-     5             9.607630E-03 -2.685476E-04  9.611382E-03 -1.601092 
+     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
+     2             2.727548E-02  6.861986E-04  2.728411E-02  1.441147 
+     3             2.346944E-02  8.170779E-05  2.346959E-02  .199472  
+     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
+     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
     E              0             0             0             0
     <BLANKLINE>
     ********************     FAR FIELD      ********************

@@ -46,9 +46,15 @@ class _Test_Base_With_File:
         m = Mininec (7, w)
         m.register_source (s, 4)
         self.simple_setup (filename, m)
-        zenith  = Angle (0, 10, 19)
-        azimuth = Angle (0, 10, 37)
-        m.compute_far_field (zenith, azimuth)
+        if filename.endswith ('near.pout'):
+            fs = np.array ([-2, -2, 0])
+            fi = np.ones (3)
+            fn = np.ones (3) * 5
+            m.compute_near_field (fs, fi, fn, 100)
+        else:
+            zenith  = Angle (0, 10, 19)
+            azimuth = Angle (0, 10, 37)
+            m.compute_far_field (zenith, azimuth)
         return m
     # end def dipole_7mhz
 
@@ -443,6 +449,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m = self.t_antenna ('t-ant.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_t_ant
+
+    def test_dipole_wiredia_01_near (self):
+        m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01-near.pout')
+        with open ('z.out', 'w') as f:
+            print (m.near_field_as_mininec (), file = f)
+        actual_output = m.near_field_as_mininec ().rstrip ()
+        self.assertEqual (self.expected_output, actual_output)
+    # end def test_dipole_wiredia_01_near
 # end class Test_Case_Known_Structure
 
 class Test_Doctest (unittest.TestCase):
@@ -450,7 +464,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 223
+        num_tests = 222
         f, t  = doctest.testmod \
             (mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.__file__)

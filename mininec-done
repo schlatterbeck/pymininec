@@ -40,6 +40,7 @@ Lines     Entry  Description
  496- 570  497   PRINT CURRENTS (first computes matrix if necessary)
  571- 605  572   SORT JUNCTION CURRENTS
  606- 619  607   CALCULATE S1 AND S2 (with second RETURN at 615)
+                 This is abs and angle of a complex number
  620- 872  621   FAR FIELD CALCULATION
  873-1130  875   NEAR FIELD CALCULATION
 1131-1149 1133   FREQUENCY INPUT
@@ -79,7 +80,8 @@ Global variables
 M: 1 / (4 * PI * OMEGA * EPSILON): self.m
 
 Data structures
-K(6,2) single precision float
+K!(6,2) Near-field computation H-Field real and imag part in three
+        dimensions
 
 MS=150 Maximum number of segments
 X(150)
@@ -116,7 +118,8 @@ L$         "Y" if S-Parameter loads, "N" otherwise
 
 MM=6 Maximum number of media
 NM   Number of media
-H(6)  Medium.height
+H(6)  Medium.height re-used in H-field computation, that's why media
+                    need to be at least 6 :-(
 T(6)  Medium.dieel
 U(6)  Medium.coord
 V(6)  Medium.conductivity
@@ -127,7 +130,7 @@ MP=50 Maximum number of pulses
 C%(50,2)    Currently Mininec.c_per or Mininec.seg_idx (the latter has no 0s)
 CI(50)      Current, Right hand side of equation (imag)
 CR(50)      Current, Right hand side of equation (real)
-P(50)       Pivots
+P(50)       Pivots, not needed in Python code
 W%(50)      Currently Mininec.w_per
 ZR(50,50)   Z, real part
 ZI(50,50)   Z, imag part
