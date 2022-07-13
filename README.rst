@@ -8,18 +8,32 @@ MININEC in Python
     :trim:
 .. |-| unicode:: U+202F .. Thin non-breaking space
     :trim:
+.. |numpy.linalg.solve| replace:: ``numpy.linalg.solve``
 
 This is an attempt to rewrite the original MININEC3 basic sources in
-Python. Currently implemented is the computation of the impedance
-matrix, the computation of currents resulting from solving that matrix,
-and the computation of the far field.
+Python. Currently implemented is everything except printing of absolute
+far field, this is already computed but completely untested. There
+currently are no command-line options for near field computation.
+Standard use-case like computation of feed impedance and far field are
+implemented and are quite well tested.
 
 There are several tests against the `original Basic source code`_, for
 the test cases see the subdirectory ``test``. One of the test cases is
 a simple 7MHz wire dipole with half the wavelength and 10 segments.
 In one case the wire is 0.01m (1cm) thick, we use such a thick wire to
 make the mininec code work harder because it cannot use the thin wire
-asumptions. Another test is for the thin wire case.
+assumptions. Another test is for the thin wire case. Also added are the
+inverted-L and the T antenna from the original Mininec reports. All
+these may also serve as examples.  Tests currently cover all except for
+two statements, one of them the line after::
+
+ if __name__ == '__main__':
+
+For the second one in ``compute_impedance_matrix`` near the end (as of
+this writing line 1339) I've not yet found a test case. I've not yet run
+the current tests through the basic interpreter with a breakpoint on
+that statement in Basic. It may very well be that this is still a bug
+and that it is not reachable in the current Python code.
 
 For all the test examples it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
@@ -28,7 +42,7 @@ differences are due to rounding errors in the single precision
 implementation in Basic compared to a double precision implementation in
 Python. I'm using numeric code from `numpy`_ where possible to speed up
 computation, e.g. solving the impedance matrix is done using
-``numpy.linalg.solve`` instead of a line-by-line translation from Basic.
+|numpy.linalg.solve|_ instead of a line-by-line translation from Basic.
 You can verify the differences yourself. In the ``test`` directory there
 are input files with extension ``.mini`` which are intended (after
 conversion to carriage-return convention) to be used as input to the
@@ -43,6 +57,11 @@ Note that the current code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I
 didn't (yet) understand the intention of the code. The same holds for
 Variable names which might not (yet) reflect the intention of the code.
+I *did* move things like computation of the angle of a complex number,
+or the computation of the absolute value, or multiplication/division of
+complex numbers to the corresponding complex arithmetic in python where
+I detected the pattern.
+
 So the *de-spaghettification* was not successful in some parts of the
 code yet :-) My notes from the reverse-engineering can be found in the
 file ``mininec-done`` which has explanations of some of the variables
@@ -205,3 +224,5 @@ the two links I've given contain the same code.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
+.. _`numpy.linalg.solve`:
+    https://numpy.org/doc/stable/reference/generated/numpy.linalg.solve.html
