@@ -209,6 +209,33 @@ class _Test_Base_With_File:
         return m
     # end def t_antenna
 
+    def compare_far_field_data (self, m):
+        """ dB values below -200 contain large rounding errors.
+            This makes tests fail on different architectures, notably on
+            Intel vs. AMD CPUs. Seems the trigonometric functions are
+            slightly different on these architectures. We compare values
+            above -200dB exactly and assert that the value is below -200
+            for the others.
+        """
+        ex  = self.expected_output.split ('\n')
+        ac  = m.as_mininec ().split ('\n')
+        idx = self.expected_output.find ('PATTERN DATA')
+        l   = len (self.expected_output [:idx].split ('\n'))
+        off = l + 2
+        self.assertEqual (ex [:off], ac [:off])
+        for e, a in zip (ex [off:], ac [off:]):
+            el = e.strip ().split ()
+            al = a.strip ().split ()
+            self.assertEqual (el [:2], al [:2])
+            for ef, af in zip (el, al):
+                eff = float (ef)
+                aff = float (af)
+                if eff > -200:
+                    self.assertEqual (ef, af)
+                else:
+                    self.assertLess (aff, -200)
+    # end def compare_far_field_data
+
 # end class _Test_Base_With_File
 
 class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
@@ -434,20 +461,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         avg = [Medium (13, 0.005)]
         m  = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01gavg.pout', media = avg)
-        ex  = self.expected_output.split ('\n')
-        ac  = m.as_mininec ().split ('\n')
-        idx = self.expected_output.find ('PATTERN DATA')
-        l   = len (self.expected_output [:idx].split ('\n'))
-        off = l + 2
-        self.assertEqual (ex [:off], ac [:off])
-        s1  = [l [25:] for l in ex [off : off + 10]]
-        for k in range (37):
-            s2 = [l [25:] for l in ac [off + 10 * k : off + 10 * k + 10]]
-            self.assertEqual (s1 [:-1], s2 [:-1])
-            a, b, c = (float (x) for x in s2 [-1].strip ().split ())
-            assert (-999 <= a <= -117)
-            assert (-999 <= c <= -117)
-            self.assertEqual (-999, b)
+        self.compare_far_field_data (m)
     # end def test_vdipole_wiredia_01_avg_ground
 
     def test_folded_dipole (self):
@@ -482,12 +496,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_t_ant (self):
         m = self.t_antenna ('t-ant.pout')
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        self.compare_far_field_data (m)
     # end def test_t_ant
 
     def test_t_ant_thin (self):
         m = self.t_antenna ('t-ant-thin.pout', r = 5e-5)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        self.compare_far_field_data (m)
     # end def test_t_ant_thin
 
     def test_dipole_wiredia_01_near (self):
