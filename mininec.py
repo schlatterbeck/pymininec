@@ -213,13 +213,49 @@ class Far_Field_Pattern:
     """ Values in dBi and/or V/m for far field
         Angles are in degrees for printing
     """
-    def __init__ (self, theta, phi, gain = None, e_theta = None, e_phi = None):
-        self.theta    = theta
-        self.phi      = phi
-        self.gain     = gain
-        self.e_theta  = e_theta
-        self.e_phi    = e_phi
+    def __init__ (self, theta, phi, gain, e_theta, e_phi, pwr_ratio):
+        self.theta     = theta
+        self.phi       = phi
+        self.gain      = gain
+        self._e_theta  = e_theta
+        self._e_phi    = e_phi
+        self.pwr_ratio = np.sqrt (pwr_ratio)
     # end def __init__
+
+    @property
+    def e_theta (self):
+        return self._e_theta * self.pwr_ratio
+    # end def e_theta
+
+    @property
+    def e_phi (self):
+        return self._e_phi * self.pwr_ratio
+    # end def e_phi
+
+    def db_as_mininec (self):
+        v, h, t = self.gain
+        return \
+            ( ('%s     ' * 4 + '%s')
+            % ( format_float ((self.theta, self.phi))
+              + format_float ((v, h, t))
+              )
+            )
+    # end def db_as_mininec
+
+    def abs_gain_as_mininec (self):
+        e_theta_abs   = np.abs   (self.e_theta)
+        e_phi_abs     = np.abs   (self.e_phi)
+        e_theta_angle = np.angle (self.e_theta) / np.pi * 180
+        e_phi_angle   = np.angle (self.e_phi)   / np.pi * 180
+        return \
+            ( '%6.2f %9.2f %20.3E % 8.2f %19.3E % 8.2f'
+            % ( self.theta,  self.phi
+              , e_theta_abs, e_theta_angle
+              , e_phi_abs,   e_phi_angle
+              )
+            )
+    # end def abs_gain_as_mininec
+
 # end def Far_Field_Pattern
 
 class _Load:
@@ -329,7 +365,6 @@ class Medium:
         self.diel     = diel     # dielectric constant T(I)
         self.cond     = cond     # conductivity        V(I)
         self.nradials = nradials # number of radials   NR
-        self.dist     = dist     # radial distance     RD
         self.radius   = radius   # radial wire radius  RR
         self.coord    = coord    # U(I)
         self.height   = height   # H(I)
@@ -346,19 +381,11 @@ class Medium:
                 raise ValueError ("Ideal ground must have height 0")
         if self.nradials:
             self.boundary = 2
-            # Default for radials is to extend to boundary of next medium
-            # Note that the radial distance is only used for calculation
-            # of the far field in V/m
-            if not self.dist:
-                self.dist = self.coord
-            elif self.dist > self.coord:
-                raise ValueError \
-                    ("Radial distance may not exceed distance to next medium")
-            if self.radius <= 0 or self.dist <= 0:
-                raise ValueError ("Radial radius and distance must be >0")
+            # Radials extend to boundary of next medium
+            if self.radius <= 0:
+                raise ValueError ("Radius must be >0")
         else:
             self.radius = 0.0
-            self.dist   = 0.0
         # Code from Line 628-633 in far field calculation
         if diel:
             if not self.cond:
@@ -902,10 +929,13 @@ class Mininec:
             wire.compute_connections (self.geo)
     # end def compute_connectivity
 
-    def compute_far_field (self, zenith_angle, azimuth_angle):
+    def compute_far_field \
+        (self, zenith_angle, azimuth_angle, pwr = None, dist = 0):
         """ Compute far field
             Original code starts at 620 (and is called at 621)
             The angles are instances of Angle.
+            Note that the radial distance dist is only used for
+            calculation of the far field in V/m
         """
         # We only use calculation in dBi for now, see 641-654
         # Note that the volts/meter calculation asks about the power and
@@ -920,18 +950,20 @@ class Mininec:
         # ZA: Zenith number
         # X1, Y1, Z1: vec real
         # X2, Y2, Z2: vec imag
+        self.ff_dist  = dist
+        self.ff_power = pwr or self.power
         self.far_field_angles = (zenith_angle, azimuth_angle)
         k9 = .016678 / self.power
         self.far_field_by_angle = {}
         for azi_d, azi in azimuth_angle.iter ():
             # exchange real/imag
-            v12 = np.conj (np.e ** (1j * azi) * -1j)
+            v21 = np.e ** (-1j * azi)
             for zen_d, zen in zenith_angle.iter ():
                 # Can we somehow reduce this with complex artithmetics?
                 # What is/was the intention of that code?
-                rt3  = np.e ** (1j * zen)
-                rt1  = -rt3.imag * v12.imag + 1j * (rt3.real * v12.imag)
-                rt2  =  rt3.imag * v12.real - 1j * (rt3.real * v12.real)
+                rt3  = np.e ** (-1j * zen)
+                rt1  = -rt3.imag * v21.real + 1j * (rt3.real * v21.real)
+                rt2  =  rt3.imag * v21.imag - 1j * (rt3.real * v21.imag)
                 rvec = np.array ([rt1, rt2, rt3])
                 vec  = np.zeros (3, dtype = complex)
                 for k in self.image_iter ():
@@ -979,11 +1011,11 @@ class Mininec:
                                 t4 = 1e5
                                 if rt3.real != 0:
                                     t4 = -self.seg [j][2] * rt3.imag / rt3.real
-                                b9 = t4 * v12.imag + self.seg [j][0]
+                                b9 = t4 * v21.real + self.seg [j][0]
                                 if self.boundary != 1:
                                     # Hmm this is pythagoras?
                                     b9 *= b9
-                                    b9 += (self.seg [j][1] - t4 * v12.real) ** 2
+                                    b9 += (self.seg [j][1] - t4 * v21.imag) ** 2
                                     b9 = np.sqrt (b9)
                                 # search for the corresponding medium
                                 # Find minimum index where b9 > coord
@@ -1020,23 +1052,25 @@ class Mininec:
                                 b   = f3 * s * self.current [i]
                                 w67 = b * v89
                                 w   = self.geo [l]
-                                d   = v12 * (w.dirs [0] + 1j * w.dirs [1])
+                                # FIXME: This is only triggered with
+                                # real ground and different x/y directions
+                                # and is currently untested.
+                                d   = v21.imag * w.dirs [0] \
+                                    + v21.real * w.dirs [1]
                                 z67 = d * b * h89
                                 tm1 = np.array \
-                                    ([         v12.real * z67.real
-                                       + 1j * (v12.real * z67.imag)
-                                     ,         v12.imag * z67.real
-                                       + 1j * (v12.imag * z67.imag)
+                                    ([         v21.imag * z67.real
+                                       + 1j * (v21.imag * z67.imag)
+                                     ,         v21.real * z67.real
+                                       + 1j * (v21.real * z67.imag)
                                      , 0
                                     ])
                                 tm2 = np.array ([-1, -1, 1])
                                 vec += (w.dirs * w67 + tm1) * tm2
                 h12 = sum (vec * rvec.imag) * self.g0 * -1j
-                vv  = np.array ([v12.real, v12.imag])
+                vv  = np.array ([v21.imag, v21.real])
                 x34 = sum (vec [:2] * vv) * self.g0 * -1j
-                rd = 0
-                if self.media:
-                    rd = self.media [0].dist
+                rd  = dist or 0
                 # pattern in dBi
                 p123 = np.ones (3) * -999
                 t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
@@ -1049,15 +1083,9 @@ class Mininec:
                 if rd != 0:
                     h12 /= rd
                     x34 /= rd
-                # pattern in volts/meter
-                # magnitude and phase of e(theta)
-                s1 = np.abs   (h12)
-                s2 = np.angle (h12)
-                # magnitude and phase of e(phi)
-                s3 = np.abs   (x34)
-                s4 = np.angle (x34)
+                rat = self.ff_power / self.power
                 self.far_field_by_angle [(zen_d, azi_d)] = \
-                    Far_Field_Pattern (zen_d, azi_d, p123, [s1, s2], [s3, s4])
+                    Far_Field_Pattern (zen_d, azi_d, p123, h12, x34, rat)
     # end def compute_far_field
 
     def compute_impedance_matrix (self):
@@ -2160,25 +2188,39 @@ class Mininec:
         return '\n'.join (r)
     # end def environment_as_mininec
 
-    def far_field_as_mininec (self):
-        """ Print far field in mininec format
+    def far_field_absolute_as_mininec (self):
+        """ Far field in V/m
             This may only be called when compute_far_field has already
             been called before.
         """
         r = []
-        zenith, azimuth = self.far_field_angles
-        r.append ('*' * 20 + '     FAR FIELD      ' + '*' * 20)
-        r.append ('')
+        r.append (self.far_field_header_as_mininec (is_db = False))
+        d = format_float ((self.ff_dist,)) [0].rstrip ()
+        r.append ((' ' * 14 + 'RADIAL DISTANCE = %s  METERS') % d)
+        p = format_float ((self.ff_power,)) [0].rstrip ()
+        r.append ((' ' * 14 + 'POWER LEVEL = %s  WATTS') % p)
         r.append \
-            ( 'ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
-            % (zenith.initial, zenith.inc, zenith.number)
+            ( 'ZENITH%sAZIMUTH%sE(THETA)%sE(PHI)'
+            % tuple (' ' * x for x in (3, 17, 20))
             )
         r.append \
-            ( 'AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
-            % (azimuth.initial, azimuth.inc, azimuth.number)
+            ( ' ANGLE%sANGLE%sMAG(V/M)%sPHASE(DEG)%sMAG(V/M)%sPHASE(DEG)'
+            % tuple (' ' * x for x in (4, 14, 4, 6, 4))
             )
-        r.append ('')
-        r.append ('*' * 20 + '    PATTERN DATA    ' + '*' * 20)
+        srt = lambda x: (x [1], x [0])
+        for zen, azi in sorted (self.far_field_by_angle, key = srt):
+            ff = self.far_field_by_angle [(zen, azi)]
+            r.append (ff.abs_gain_as_mininec ())
+        return '\n'.join (r)
+    # end def far_field_absolute_as_mininec
+
+    def far_field_as_mininec (self):
+        """ Print far field in dB in mininec format
+            This may only be called when compute_far_field has already
+            been called before.
+        """
+        r = []
+        r.append (self.far_field_header_as_mininec ())
         r.append \
             ( 'ZENITH%sAZIMUTH%sVERTICAL%sHORIZONTAL%sTOTAL'
             % tuple (' ' * x for x in (8, 7, 6, 4))
@@ -2190,15 +2232,34 @@ class Mininec:
         srt = lambda x: (x [1], x [0])
         for zen, azi in sorted (self.far_field_by_angle, key = srt):
             ff = self.far_field_by_angle [(zen, azi)]
-            v, h, t = ff.gain
-            r.append \
-                ( ('%s     ' * 4 + '%s')
-                % ( format_float ((zen, azi))
-                  + format_float ((v, h, t))
-                  )
-                )
+            r.append (ff.db_as_mininec ())
         return '\n'.join (r)
     # end def far_field_as_mininec
+
+    def far_field_header_as_mininec (self, is_db = True):
+        """ Print far field in dB in mininec format
+            This may only be called when compute_far_field has already
+            been called before.
+        """
+        r = []
+        zenith, azimuth = self.far_field_angles
+        r.append ('*' * 20 + '     FAR FIELD      ' + '*' * 20)
+        r.append ('')
+        if not is_db and self.ff_power != self.power:
+            p = format_float ((self.ff_power,)) [0].rstrip ()
+            r.append ('NEW POWER LEVEL = %s' % p)
+        r.append \
+            ( 'ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
+            % (zenith.initial, zenith.inc, zenith.number)
+            )
+        r.append \
+            ( 'AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
+            % (azimuth.initial, azimuth.inc, azimuth.number)
+            )
+        r.append ('')
+        r.append ('*' * 20 + '    PATTERN DATA    ' + '*' * 20)
+        return '\n'.join (r)
+    # end def far_field_header_as_mininec
 
     def frequency_as_mininec (self):
         r = []
@@ -2837,6 +2898,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , help    = 'Frequency in MHz, default=%(default)s'
         )
     cmd.add_argument \
+        ( '--ff-distance'
+        , help    = "Distance used for far-field computation"
+        , type    = float
+        )
+    cmd.add_argument \
+        ( '--ff-power'
+        , help    = "Power used for far-field computation"
+        , type    = float
+        )
+    cmd.add_argument \
         ( '--laplace-load-a'
         , help    = 'Laplace load, A (denominator) parameters (comma-separated)'
                     ' if multiple load-types are given, Laplace loads'
@@ -3113,7 +3184,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
             d ['pwr'] = args.nf_power
         m.compute_near_field (nf_start, nf_inc, nf_count, **d)
     if far_field:
-        m.compute_far_field (zenith, azimuth)
+        d = {}
+        if args.ff_power:
+            d ['pwr'] = args.ff_power
+        if args.ff_distance:
+            d ['dist'] = args.ff_distance
+        m.compute_far_field (zenith, azimuth, **d)
     print (m.as_mininec (options))
 # end def main
 

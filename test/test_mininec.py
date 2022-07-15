@@ -132,7 +132,9 @@ class _Test_Base_With_File:
     # end def folded_dipole
 
     def vertical_quarterwave \
-        (self, filename, media, load = None, inv = False, dia = 0.0254):
+        ( self, filename, media
+        , load = None, inv = False, dia = 0.0254, opt = None
+        ):
         """ Vertical 1/4 lambda directly connected to ground and fed at
             the junction to ground. Using L. B. Cebik. Verticals at and
             over ground. In Antenna Modeling Notes volume 1, antenneX
@@ -152,6 +154,8 @@ class _Test_Base_With_File:
         else:
             w.append (Wire (20, 0, 0, 0, 0, 0, wl, r))
             ex = 0
+        if opt is None:
+            opt = {}
         s = Excitation (1, 0)
         m = Mininec (7.15, w, media = media)
         m.register_source (s, ex)
@@ -170,7 +174,7 @@ class _Test_Base_With_File:
             self.simple_setup (filename, m)
             zenith  = Angle (0,  5, 19)
             azimuth = Angle (0, 10, 37)
-            m.compute_far_field (zenith, azimuth)
+            m.compute_far_field (zenith, azimuth, **opt)
         return m
     # end def vertical_quarterwave
 
@@ -523,6 +527,17 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         actual_output = m.as_mininec (opts).rstrip ()
         self.assertEqual (self.expected_output, actual_output)
     # end def test_vertical_ideal_ground_near
+
+    def test_vertical_ideal_ground_far_abs (self):
+        self.maxDiff = None
+        ideal = [ideal_ground]
+        opt = dict (pwr = 100, dist = 1000)
+        m = self.vertical_quarterwave \
+            ('vertical-ig-ffabs.pout', ideal, opt = opt)
+        opts = set (('far-field-absolute',))
+        actual_output = m.as_mininec (opts).rstrip ()
+        self.assertEqual (self.expected_output, actual_output)
+    # end def test_vertical_ideal_ground_far_abs
 
 # end class Test_Case_Known_Structure
 

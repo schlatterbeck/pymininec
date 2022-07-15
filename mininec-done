@@ -117,14 +117,14 @@ LS(11)     Number of S-Parameter loads
 L$         "Y" if S-Parameter loads, "N" otherwise
 
 MM=6 Maximum number of media
-NM   Number of media
+NM    Number of media
 H(6)  Medium.height re-used in H-field computation, that's why media
                     need to be at least 6 :-(
 T(6)  Medium.dieel
 U(6)  Medium.coord
 V(6)  Medium.conductivity
-Z1(6) Medium.Z (real)
-Z2(6) Medium.Z (imag)
+Z1(6) Medium.impedance(self.f) (real)
+Z2(6) Medium.impedance(self.f) (imag)
 
 MP=50 Maximum number of pulses
 C%(50,2)    Currently Mininec.c_per or Mininec.seg_idx (the latter has no 0s)
@@ -150,6 +150,10 @@ Not used when computing connections, looks like the variables are
 repurposed there.
 
 NR: Number of radials in environment
+
+Note that the Radial Distance RD doesn't have anything to do with
+radials: It is the distance where the far field is measured when
+printing the far field in V/m.
 
 During Far field calculations:
 AA: Azimuth angle initial
