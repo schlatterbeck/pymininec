@@ -1082,96 +1082,96 @@ class Mininec:
         ...                   ([abs (m.Z [i][j].imag)], 1) [0].strip ()
         ...                )
         ...              )
-	row 1
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	5.390034E-02-8.832275E-03j
-	2.352013E-02-8.218218E-03j
-	1.223068E-02-7.473394E-03j
-	6.605723E-03-6.627949E-03j
-	3.326364E-03-5.715207E-03j
-	1.258102E-03-4.769988E-03j
-	row 2
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	5.390034E-02-8.832275E-03j
-	2.352013E-02-8.218218E-03j
-	1.223068E-02-7.473394E-03j
-	6.605723E-03-6.627949E-03j
-	3.326364E-03-5.715207E-03j
-	row 3
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	5.390034E-02-8.832275E-03j
-	2.352013E-02-8.218218E-03j
-	1.223068E-02-7.473394E-03j
-	6.605723E-03-6.627949E-03j
-	row 4
-	5.390034E-02-8.832275E-03j
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	5.390034E-02-8.832275E-03j
-	2.352013E-02-8.218218E-03j
-	1.223068E-02-7.473394E-03j
-	row 5
-	2.352013E-02-8.218218E-03j
-	5.390034E-02-8.832275E-03j
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	5.390034E-02-8.832275E-03j
-	2.352013E-02-8.218218E-03j
-	row 6
-	1.223068E-02-7.473394E-03j
-	2.352013E-02-8.218218E-03j
-	5.390034E-02-8.832275E-03j
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	5.390034E-02-8.832275E-03j
-	row 7
-	6.605723E-03-6.627949E-03j
-	1.223068E-02-7.473394E-03j
-	2.352013E-02-8.218218E-03j
-	5.390034E-02-8.832275E-03j
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	.214366-9.290245E-03j
-	row 8
-	3.326364E-03-5.715207E-03j
-	6.605723E-03-6.627949E-03j
-	1.223068E-02-7.473394E-03j
-	2.352013E-02-8.218218E-03j
-	5.390034E-02-8.832275E-03j
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
-	4.240447-9.572988E-03j
-	row 9
-	1.258102E-03-4.769988E-03j
-	3.326364E-03-5.715207E-03j
-	6.605723E-03-6.627949E-03j
-	1.223068E-02-7.473394E-03j
-	2.352013E-02-8.218218E-03j
-	5.390034E-02-8.832275E-03j
-	.214366-9.290245E-03j
-	4.240447-9.572988E-03j
-	-8.485114-9.668584E-03j
+        row 1
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        5.390034E-02-8.832275E-03j
+        2.352013E-02-8.218218E-03j
+        1.223068E-02-7.473394E-03j
+        6.605723E-03-6.627949E-03j
+        3.326364E-03-5.715207E-03j
+        1.258102E-03-4.769988E-03j
+        row 2
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        5.390034E-02-8.832275E-03j
+        2.352013E-02-8.218218E-03j
+        1.223068E-02-7.473394E-03j
+        6.605723E-03-6.627949E-03j
+        3.326364E-03-5.715207E-03j
+        row 3
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        5.390034E-02-8.832275E-03j
+        2.352013E-02-8.218218E-03j
+        1.223068E-02-7.473394E-03j
+        6.605723E-03-6.627949E-03j
+        row 4
+        5.390034E-02-8.832275E-03j
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        5.390034E-02-8.832275E-03j
+        2.352013E-02-8.218218E-03j
+        1.223068E-02-7.473394E-03j
+        row 5
+        2.352013E-02-8.218218E-03j
+        5.390034E-02-8.832275E-03j
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        5.390034E-02-8.832275E-03j
+        2.352013E-02-8.218218E-03j
+        row 6
+        1.223068E-02-7.473394E-03j
+        2.352013E-02-8.218218E-03j
+        5.390034E-02-8.832275E-03j
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        5.390034E-02-8.832275E-03j
+        row 7
+        6.605723E-03-6.627949E-03j
+        1.223068E-02-7.473394E-03j
+        2.352013E-02-8.218218E-03j
+        5.390034E-02-8.832275E-03j
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        .214366-9.290245E-03j
+        row 8
+        3.326364E-03-5.715207E-03j
+        6.605723E-03-6.627949E-03j
+        1.223068E-02-7.473394E-03j
+        2.352013E-02-8.218218E-03j
+        5.390034E-02-8.832275E-03j
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
+        4.240447-9.572988E-03j
+        row 9
+        1.258102E-03-4.769988E-03j
+        3.326364E-03-5.715207E-03j
+        6.605723E-03-6.627949E-03j
+        1.223068E-02-7.473394E-03j
+        2.352013E-02-8.218218E-03j
+        5.390034E-02-8.832275E-03j
+        .214366-9.290245E-03j
+        4.240447-9.572988E-03j
+        -8.485114-9.668584E-03j
         >>> m.compute_rhs ()
         >>> for r in m.rhs:
         ...     sgn = '++-' [int (np.sign (r.imag))]
@@ -2514,6 +2514,92 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
      45            360           1.163918     -999           1.163918
      90            360           5.119285     -999           5.119285
 
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
+    >>> args.extend (['--near-field=1,1,1,1,1,1,1,1,1'])
+    >>> main (args)
+                       ****************************************
+                         MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                       MININEC
+                       ****************************************
+    <BLANKLINE>
+    FREQUENCY (MHZ): 7.15
+        WAVE LENGTH =  41.93007  METERS
+    <BLANKLINE>
+    ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
+     NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
+    <BLANKLINE>
+    NO. OF WIRES: 1
+    <BLANKLINE>
+    WIRE NO. 1
+                COORDINATES                                 END         NO. OF
+       X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+     0             0             0                         -1
+     0             0             10.0838       .0127        0              5
+    <BLANKLINE>
+                      **** ANTENNA GEOMETRY ****
+    <BLANKLINE>
+    WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+    X             Y             Z             RADIUS        END1 END2  NO.
+     0             0             0             .0127        -1    1   1
+     0             0             2.01676       .0127         1    1   2
+     0             0             4.03352       .0127         1    1   3
+     0             0             6.05028       .0127         1    1   4
+     0             0             8.06704       .0127         1    0   5
+    <BLANKLINE>
+    NO. OF SOURCES :  1
+    PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  1 , 1 , 0
+    NUMBER OF LOADS 0
+    <BLANKLINE>
+    ********************    SOURCE DATA     ********************
+    PULSE  1      VOLTAGE = ( 1 , 0 J)
+                  CURRENT = ( 2.857798E-02 ,  1.660853E-03 J)
+                  IMPEDANCE = ( 34.87418 , -2.026766 J)
+                  POWER =  1.428899E-02  WATTS
+    <BLANKLINE>
+    ********************    CURRENT DATA    ********************
+    <BLANKLINE>
+    WIRE NO.  1 :
+    PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+     NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
+     2             2.727548E-02  6.861986E-04  2.728411E-02  1.441147 
+     3             2.346944E-02  8.170779E-05  2.346959E-02  .199472  
+     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
+     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
+    E              0             0             0             0
+    <BLANKLINE>
+    ********************    NEAR FIELDS     ********************
+    <BLANKLINE>
+    X-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
+    Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
+    Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
+    <BLANKLINE>
+    ********************NEAR ELECTRIC FIELDS********************
+             FIELD POINT: X =  1         Y =  1         Z =  1       
+      VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+     COMPONENT     V/M           V/M           V/M           DEG
+       X           4.935949E-02 -.12629        .135593      -68.65233
+       Y           4.935949E-02 -.12629        .135593      -68.65233
+       Z          -.203845       7.772127E-04  .203847       179.7815
+       MAXIMUM OR PEAK FIELD =  .231793  V/M
+    <BLANKLINE>
+    ********************    NEAR FIELDS     ********************
+    <BLANKLINE>
+    X-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
+    Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
+    Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
+    <BLANKLINE>
+    ********************NEAR MAGNETIC FIELDS********************
+             FIELD POINT: X =  1         Y =  1         Z =  1       
+      VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+     COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
+       X          -2.236416E-03 -5.107054E-05  2.236999E-03 -178.6918
+       Y           2.236416E-03  5.107054E-05  2.236999E-03  1.308172
+       Z           0             0             0             0
+       MAXIMUM OR PEAK FIELD =  3.163594E-03  AMPS/M
+    <BLANKLINE>
+
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127,extra']
     >>> r = main (args, sys.stdout)
     Invalid number of parameters for wire 1
@@ -2633,6 +2719,38 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     >>> r
     23
 
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--near-field=1,2,3'])
+    >>> r = main (args, sys.stdout)
+    Expecting 9 near-field parameters
+    >>> r
+    23
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--near-field=1,2,3,4,5,6,7,8,zz'])
+    >>> r = main (args, sys.stdout)
+    Error near-field counts: invalid literal for int() with base 10: 'zz'
+    >>> r
+    23
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--near-field=1,2,3,4,5,aa,7,8,9'])
+    >>> r = main (args, sys.stdout)
+    Error near-field inc: could not convert string to float: 'aa'
+    >>> r
+    23
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--near-field=1,2,bb,4,5,6,7,8,9'])
+    >>> r = main (args, sys.stdout)
+    Error near-field start: could not convert string to float: 'bb'
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--option=far-field', '--option=zoppel'])
+    >>> r = main (args, sys.stdout)
+    Invalid print option: zoppel
+    >>> r
+    23
+
     >>> args = ['-f', '7.15']
     >>> args.extend (['--excitation-segment=1'])
     >>> args.extend (['--theta=0,45,nonint', '--phi=0,180,3'])
@@ -2705,7 +2823,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         )
     allowed_options = ['far-field', 'near-field', 'far-field-absolute']
     cmd.add_argument \
-        ( '--options'
+        ( '--option'
         , help    = "Computation/printing options, option can be repeated, "
                     "use one or several of %s. If none are given, far field "
                     " is printed if no near-field option is present, "
@@ -2861,7 +2979,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     except Exception:
         print ("Invalid theta angle, need float, float, int", file = f_err)
         return 23
-    nf_count = 0
+    nf_count = None
     if args.near_field:
         nf = args.near_field.split (',')
         if len (nf) != 9:
@@ -2870,20 +2988,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         try:
             nf_count = [int (x) for x in nf [6:]]
         except ValueError as err:
-            print ("Error converting near-field counts: %s" % err, file = f_err)
+            print ("Error near-field counts: %s" % err, file = f_err)
             return 23
         try:
             nf_start = [float (x) for x in nf [:3]]
         except ValueError as err:
-            print ("Error converting near-field start: %s" % err, file = f_err)
+            print ("Error near-field start: %s" % err, file = f_err)
+            return 23
         try:
             nf_inc = [float (x) for x in nf [3:6]]
         except ValueError as err:
-            print ("Error converting near-field inc: %s" % err, file = f_err)
+            print ("Error near-field inc: %s" % err, file = f_err)
             return 23
     options = set ()
     far_field = False
-    for opt in args.options:
+    for opt in args.option:
         if opt not in allowed_options:
             print ("Invalid print option: %s" % opt)
             return 23
