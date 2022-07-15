@@ -1,3 +1,70 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                   ****************************************
+
+FREQUENCY (MHZ): 7
+    WAVE LENGTH =  42.82857  METERS
+
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): +1
+
+NO. OF WIRES: 1
+
+WIRE NO. 1
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             0             0                          0
+ 21.41428      0             0             .01          0             10
+
+                  **** ANTENNA GEOMETRY ****
+
+WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+ 2.141428      0             0             .01           0    1   1
+ 4.282857      0             0             .01           1    1   2
+ 6.424285      0             0             .01           1    1   3
+ 8.565714      0             0             .01           1    1   4
+ 10.70714      0             0             .01           1    1   5
+ 12.84857      0             0             .01           1    1   6
+ 14.99         0             0             .01           1    1   7
+ 17.13143      0             0             .01           1    1   8
+ 19.27286      0             0             .01           1    0   9
+
+NO. OF SOURCES :  1
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  5 , 1 , 0
+NUMBER OF LOADS 0
+
+********************    SOURCE DATA     ********************
+PULSE  5      VOLTAGE = ( 1 , 0 J)
+              CURRENT = ( 1.006964E-02 , -5.166080E-03 J)
+              IMPEDANCE = ( 78.61622 ,  40.33289 J)
+              POWER =  5.034821E-03  WATTS
+
+********************    CURRENT DATA    ********************
+
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0
+ 1             3.333007E-03 -2.117273E-03  3.948643E-03 -32.42551 
+ 2             6.098124E-03 -3.746618E-03  7.157113E-03 -31.56609 
+ 3             8.241238E-03 -4.862084E-03  9.568588E-03 -30.53934 
+ 4             9.602605E-03 -5.369345E-03  1.100181E-02 -29.21196 
+ 5             1.006964E-02 -5.166080E-03  1.131751E-02 -27.15942 
+ 6             9.602605E-03 -5.369345E-03  1.100181E-02 -29.21196 
+ 7             8.241238E-03 -4.862084E-03  9.568588E-03 -30.53934 
+ 8             6.098124E-03 -3.746618E-03  7.157113E-03 -31.56609 
+ 9             3.333007E-03 -2.117273E-03  3.948643E-03 -32.42551 
+E              0             0             0             0
+
+********************    NEAR FIELDS     ********************
+
+X-COORDINATE (M): INITIAL,INCREMENT,NUMBER : -2 ,  1 ,  5
+Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER : -2 ,  1 ,  5
+Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  0 ,  1 ,  5
+
+NEW POWER LEVEL (WATTS) =  100
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -6,6 +73,7 @@
    Y          -4.417624     -6.495085      7.855032     -124.2215
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  17.48063 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -14,6 +82,7 @@
    Y          -7.965333     -12.21895      14.58593     -123.0997
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  24.90068 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -22,6 +91,7 @@
    Y          -13.96661     -21.90506      25.9788      -122.5215
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  34.27212 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -30,6 +100,7 @@
    Y          -19.42153     -30.93821      36.52901     -122.1186
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  41.00205 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -38,6 +109,7 @@
    Y          -21.26366     -34.62032      40.62892     -121.5581
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  42.56932 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -46,6 +118,7 @@
    Y          -3.141438     -4.725485      5.674402     -123.6154
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  21.45305 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -54,6 +127,7 @@
    Y          -8.412662     -13.10897      15.5762      -122.6903
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  37.50077 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -62,6 +136,7 @@
    Y          -28.37281     -44.70594      52.94939     -122.4014
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  72.11833 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -70,6 +145,7 @@
    Y          -47.52812     -75.35594      89.09232     -122.2402
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  94.60212 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -78,6 +154,7 @@
    Y          -48.51476     -78.71701      92.46648     -121.6463
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  93.68496 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -86,6 +163,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  23.53857 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -94,6 +172,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  49.77815 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -102,6 +181,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  4093.258 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -110,6 +190,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1035.082 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -118,6 +199,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1559.536 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -126,6 +208,7 @@
    Y           3.141438      4.725485      5.674402      56.38458
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  21.45305 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -134,6 +217,7 @@
    Y           8.412662      13.10897      15.5762       57.30975
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  37.50077 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -142,6 +226,7 @@
    Y           28.37281      44.70594      52.94939      57.59858
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  72.11833 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -150,6 +235,7 @@
    Y           47.52812      75.35594      89.09232      57.75975
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  94.60212 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -158,6 +244,7 @@
    Y           48.51476      78.71701      92.46648      58.3537
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  93.68496 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -166,6 +253,7 @@
    Y           4.417624      6.495085      7.855032      55.77847
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  17.48063 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -174,6 +262,7 @@
    Y           7.965333      12.21895      14.58593      56.90033
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  24.90068 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -182,6 +271,7 @@
    Y           13.96661      21.90506      25.9788       57.47851
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  34.27212 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -190,6 +280,7 @@
    Y           19.42153      30.93821      36.52901      57.88137
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  41.00205 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -198,6 +289,7 @@
    Y           21.26366      34.62032      40.62892      58.44192
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  42.56932 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -206,6 +298,7 @@
    Y          -4.039736     -5.894684      7.146101     -124.4236
    Z           2.019838      2.947294      3.572994      55.5764
    MAXIMUM OR PEAK FIELD =  16.57078 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -214,6 +307,7 @@
    Y          -6.831936     -10.42128      12.46108     -123.2479
    Z           3.415835      5.210431      6.230291      56.7521
    MAXIMUM OR PEAK FIELD =  22.83227 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -222,6 +316,7 @@
    Y          -11.14056     -17.4203       20.67798     -122.5996
    Z           5.569863      8.70949       10.33821      57.40041
    MAXIMUM OR PEAK FIELD =  30.28129 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -230,6 +325,7 @@
    Y          -15.01835     -23.90168      28.22838     -122.1427
    Z           7.508489      11.94975      14.1129       57.85726
    MAXIMUM OR PEAK FIELD =  35.68802 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -238,6 +334,7 @@
    Y          -16.51061     -26.86207      31.53048     -121.5767
    Z           8.254579      13.42985      15.76385      58.42329
    MAXIMUM OR PEAK FIELD =  37.19533 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -246,6 +343,7 @@
    Y          -2.742925     -4.094596      4.928424     -123.8177
    Z           2.742925      4.094596      4.928424      56.1823
    MAXIMUM OR PEAK FIELD =  19.84579 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -254,6 +352,7 @@
    Y          -6.075308     -9.419785      11.209       -122.8201
    Z           6.075308      9.419785      11.209        57.17993
    MAXIMUM OR PEAK FIELD =  31.44943 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -262,6 +361,7 @@
    Y          -14.09212     -22.19146      26.2878      -122.4165
    Z           14.09212      22.19146      26.2878       57.58345
    MAXIMUM OR PEAK FIELD =  49.94865 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -270,6 +370,7 @@
    Y          -21.59611     -34.35672      40.58049     -122.1528
    Z           21.59611      34.35672      40.58049      57.84716
    MAXIMUM OR PEAK FIELD =  62.67197 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -278,6 +379,7 @@
    Y          -22.97969     -37.38097      43.87941     -121.5808
    Z           22.97969      37.38097      43.87941      58.41917
    MAXIMUM OR PEAK FIELD =  63.75015 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -286,6 +388,7 @@
    Y           0             0             0             0
    Z           3.141438      4.725485      5.674402      56.38458
    MAXIMUM OR PEAK FIELD =  21.45305 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -294,6 +397,7 @@
    Y           0             0             0             0
    Z           8.412662      13.10897      15.5762       57.30975
    MAXIMUM OR PEAK FIELD =  37.50077 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -302,6 +406,7 @@
    Y           0             0             0             0
    Z           28.37281      44.70594      52.94939      57.59858
    MAXIMUM OR PEAK FIELD =  72.11833 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -310,6 +415,7 @@
    Y           0             0             0             0
    Z           47.52812      75.35594      89.09232      57.75975
    MAXIMUM OR PEAK FIELD =  94.60212 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -318,6 +424,7 @@
    Y           0             0             0             0
    Z           48.51476      78.71701      92.46648      58.3537
    MAXIMUM OR PEAK FIELD =  93.68496 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -326,6 +433,7 @@
    Y           2.742925      4.094596      4.928424      56.1823
    Z           2.742925      4.094596      4.928424      56.1823
    MAXIMUM OR PEAK FIELD =  19.84579 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -334,6 +442,7 @@
    Y           6.075308      9.419785      11.209        57.17993
    Z           6.075308      9.419785      11.209        57.17993
    MAXIMUM OR PEAK FIELD =  31.44943 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -342,6 +451,7 @@
    Y           14.09212      22.19146      26.2878       57.58345
    Z           14.09212      22.19146      26.2878       57.58345
    MAXIMUM OR PEAK FIELD =  49.94865 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -350,6 +460,7 @@
    Y           21.59611      34.35672      40.58049      57.84716
    Z           21.59611      34.35672      40.58049      57.84716
    MAXIMUM OR PEAK FIELD =  62.67197 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -358,6 +469,7 @@
    Y           22.97969      37.38097      43.87941      58.41917
    Z           22.97969      37.38097      43.87941      58.41917
    MAXIMUM OR PEAK FIELD =  63.75015 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -366,6 +478,7 @@
    Y           4.039736      5.894684      7.146101      55.57643
    Z           2.019838      2.947294      3.572994      55.5764
    MAXIMUM OR PEAK FIELD =  16.57078 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -374,6 +487,7 @@
    Y           6.831936      10.42128      12.46108      56.75214
    Z           3.415835      5.210431      6.230291      56.7521
    MAXIMUM OR PEAK FIELD =  22.83227 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -382,6 +496,7 @@
    Y           11.14056      17.4203       20.67798      57.40043
    Z           5.569863      8.70949       10.33821      57.40041
    MAXIMUM OR PEAK FIELD =  30.28129 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -390,6 +505,7 @@
    Y           15.01835      23.90168      28.22838      57.85726
    Z           7.508489      11.94975      14.1129       57.85726
    MAXIMUM OR PEAK FIELD =  35.68802 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -398,6 +514,7 @@
    Y           16.51061      26.86207      31.53048      58.42328
    Z           8.254579      13.42985      15.76385      58.42329
    MAXIMUM OR PEAK FIELD =  37.19533 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -406,6 +523,7 @@
    Y          -3.242982     -4.626157      5.649625     -125.0308
    Z           3.242982      4.626157      5.649625      54.96916
    MAXIMUM OR PEAK FIELD =  14.48627 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -414,6 +532,7 @@
    Y          -4.838903     -7.250851      8.717214     -123.7174
    Z           4.838903      7.250851      8.717214      56.28257
    MAXIMUM OR PEAK FIELD =  18.70046 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -422,6 +541,7 @@
    Y          -6.932553     -10.71632      12.76322     -122.8994
    Z           6.932553      10.71632      12.76322      57.10055
    MAXIMUM OR PEAK FIELD =  23.21948 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -430,6 +550,7 @@
    Y          -8.77576      -13.87622      16.41839     -122.3106
    Z           8.77576       13.87622      16.41839      57.68945
    MAXIMUM OR PEAK FIELD =  26.55417 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -438,6 +559,7 @@
    Y          -9.642702     -15.60719      18.34574     -121.7093
    Z           9.642702      15.60719      18.34574      58.29069
    MAXIMUM OR PEAK FIELD =  27.76395 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -446,6 +568,7 @@
    Y          -2.019838     -2.947294      3.572994     -124.4236
    Z           4.039736      5.894684      7.146101      55.57643
    MAXIMUM OR PEAK FIELD =  16.57078 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -454,6 +577,7 @@
    Y          -3.415835     -5.210431      6.230291     -123.2479
    Z           6.831936      10.42128      12.46108      56.75214
    MAXIMUM OR PEAK FIELD =  22.83227 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -462,6 +586,7 @@
    Y          -5.569863     -8.70949       10.33821     -122.5996
    Z           11.14056      17.4203       20.67798      57.40043
    MAXIMUM OR PEAK FIELD =  30.28129 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -470,6 +595,7 @@
    Y          -7.508489     -11.94975      14.1129      -122.1427
    Z           15.01835      23.90168      28.22838      57.85726
    MAXIMUM OR PEAK FIELD =  35.68802 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -478,6 +604,7 @@
    Y          -8.254579     -13.42985      15.76385     -121.5767
    Z           16.51061      26.86207      31.53048      58.42328
    MAXIMUM OR PEAK FIELD =  37.19533 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -486,6 +613,7 @@
    Y           0             0             0             0
    Z           4.417624      6.495085      7.855032      55.77847
    MAXIMUM OR PEAK FIELD =  17.48063 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -494,6 +622,7 @@
    Y           0             0             0             0
    Z           7.965333      12.21895      14.58593      56.90033
    MAXIMUM OR PEAK FIELD =  24.90068 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -502,6 +631,7 @@
    Y           0             0             0             0
    Z           13.96661      21.90506      25.9788       57.47851
    MAXIMUM OR PEAK FIELD =  34.27212 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -510,6 +640,7 @@
    Y           0             0             0             0
    Z           19.42153      30.93821      36.52901      57.88137
    MAXIMUM OR PEAK FIELD =  41.00205 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -518,6 +649,7 @@
    Y           0             0             0             0
    Z           21.26366      34.62032      40.62892      58.44192
    MAXIMUM OR PEAK FIELD =  42.56932 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -526,6 +658,7 @@
    Y           2.019838      2.947294      3.572994      55.5764
    Z           4.039736      5.894684      7.146101      55.57643
    MAXIMUM OR PEAK FIELD =  16.57078 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -534,6 +667,7 @@
    Y           3.415835      5.210431      6.230291      56.7521
    Z           6.831936      10.42128      12.46108      56.75214
    MAXIMUM OR PEAK FIELD =  22.83227 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -542,6 +676,7 @@
    Y           5.569863      8.70949       10.33821      57.40041
    Z           11.14056      17.4203       20.67798      57.40043
    MAXIMUM OR PEAK FIELD =  30.28129 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -550,6 +685,7 @@
    Y           7.508489      11.94975      14.1129       57.85726
    Z           15.01835      23.90168      28.22838      57.85726
    MAXIMUM OR PEAK FIELD =  35.68802 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -558,6 +694,7 @@
    Y           8.254579      13.42985      15.76385      58.42329
    Z           16.51061      26.86207      31.53048      58.42328
    MAXIMUM OR PEAK FIELD =  37.19533 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -566,6 +703,7 @@
    Y           3.242982      4.626157      5.649625      54.96916
    Z           3.242982      4.626157      5.649625      54.96916
    MAXIMUM OR PEAK FIELD =  14.48627 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -574,6 +712,7 @@
    Y           4.838903      7.250851      8.717214      56.28257
    Z           4.838903      7.250851      8.717214      56.28257
    MAXIMUM OR PEAK FIELD =  18.70046 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -582,6 +721,7 @@
    Y           6.932553      10.71632      12.76322      57.10055
    Z           6.932553      10.71632      12.76322      57.10055
    MAXIMUM OR PEAK FIELD =  23.21948 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -590,6 +730,7 @@
    Y           8.77576       13.87622      16.41839      57.68945
    Z           8.77576       13.87622      16.41839      57.68945
    MAXIMUM OR PEAK FIELD =  26.55417 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -598,6 +739,7 @@
    Y           9.642702      15.60719      18.34574      58.29069
    Z           9.642702      15.60719      18.34574      58.29069
    MAXIMUM OR PEAK FIELD =  27.76395 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -606,6 +748,7 @@
    Y          -2.48281      -3.41149       4.219314     -126.0463
    Z           3.724242      5.117277      6.329021      53.95369
    MAXIMUM OR PEAK FIELD =  12.21283 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -614,6 +757,7 @@
    Y          -3.314471     -4.812412      5.843375     -124.5565
    Z           4.971769      7.218716      8.765178      55.44353
    MAXIMUM OR PEAK FIELD =  14.87245 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -622,6 +766,7 @@
    Y          -4.272054     -6.446303      7.733386     -123.533
    Z           6.408197      9.66964       11.6003       56.46704
    MAXIMUM OR PEAK FIELD =  17.50122 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -630,6 +775,7 @@
    Y          -5.092122     -7.908615      9.406163     -122.7763
    Z           7.638348      11.86319      14.10956      57.22374
    MAXIMUM OR PEAK FIELD =  19.45125 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -638,6 +784,7 @@
    Y          -5.525704     -8.809856      10.39937     -122.0967
    Z           8.288742      13.21509      15.59942      57.90332
    MAXIMUM OR PEAK FIELD =  20.2732  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -646,6 +793,7 @@
    Y          -1.440759     -2.0246        2.484913     -125.4367
    Z           4.32235       6.073915      7.454874      54.56339
    MAXIMUM OR PEAK FIELD =  13.44722 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -654,6 +802,7 @@
    Y          -2.037529     -3.015499      3.639335     -124.0463
    Z           6.112783      9.046807      10.91837      55.95373
    MAXIMUM OR PEAK FIELD =  16.87943 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -662,6 +811,7 @@
    Y          -2.771861     -4.245936      5.07062      -123.1376
    Z           8.315997      12.73846      15.21263      56.86246
    MAXIMUM OR PEAK FIELD =  20.41499 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -670,6 +820,7 @@
    Y          -3.410809     -5.358881      6.352262     -122.4758
    Z           10.23304      16.07762      19.05794      57.52419
    MAXIMUM OR PEAK FIELD =  23.03504 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -678,6 +829,7 @@
    Y          -3.731355     -6.007667      7.072134     -121.8444
    Z           11.19474      18.02411      21.2177       58.15566
    MAXIMUM OR PEAK FIELD =  24.06732 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -686,6 +838,7 @@
    Y           0             0             0             0
    Z           4.57512       6.477573      7.930364      54.76638
    MAXIMUM OR PEAK FIELD =  13.94014 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -694,6 +847,7 @@
    Y           0             0             0             0
    Z           6.63279       9.87789       11.89818      56.11949
    MAXIMUM OR PEAK FIELD =  17.7268  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -702,6 +856,7 @@
    Y           0             0             0             0
    Z           9.240119      14.22015      16.95855      56.98457
    MAXIMUM OR PEAK FIELD =  21.69973 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -710,6 +865,7 @@
    Y           0             0             0             0
    Z           11.52174      18.16308      21.50926      57.61102
    MAXIMUM OR PEAK FIELD =  24.63909 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -718,6 +874,7 @@
    Y           0             0             0             0
    Z           12.63459      20.39898      23.99482      58.22703
    MAXIMUM OR PEAK FIELD =  25.75631 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -726,6 +883,7 @@
    Y           1.440759      2.0246        2.484913      54.56333
    Z           4.32235       6.073915      7.454874      54.56339
    MAXIMUM OR PEAK FIELD =  13.44722 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -734,6 +892,7 @@
    Y           2.037529      3.015499      3.639335      55.95367
    Z           6.112783      9.046807      10.91837      55.95373
    MAXIMUM OR PEAK FIELD =  16.87943 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -742,6 +901,7 @@
    Y           2.771861      4.245936      5.07062       56.86241
    Z           8.315997      12.73846      15.21263      56.86246
    MAXIMUM OR PEAK FIELD =  20.41499 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -750,6 +910,7 @@
    Y           3.410809      5.358881      6.352262      57.52415
    Z           10.23304      16.07762      19.05794      57.52419
    MAXIMUM OR PEAK FIELD =  23.03504 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -758,6 +919,7 @@
    Y           3.731355      6.007667      7.072134      58.15563
    Z           11.19474      18.02411      21.2177       58.15566
    MAXIMUM OR PEAK FIELD =  24.06732 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -766,6 +928,7 @@
    Y           2.48281       3.41149       4.219314      53.95366
    Z           3.724242      5.117277      6.329021      53.95369
    MAXIMUM OR PEAK FIELD =  12.21283 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -774,6 +937,7 @@
    Y           3.314471      4.812412      5.843375      55.4435
    Z           4.971769      7.218716      8.765178      55.44353
    MAXIMUM OR PEAK FIELD =  14.87245 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -782,6 +946,7 @@
    Y           4.272054      6.446303      7.733386      56.46701
    Z           6.408197      9.66964       11.6003       56.46704
    MAXIMUM OR PEAK FIELD =  17.50122 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -790,6 +955,7 @@
    Y           5.092122      7.908615      9.406163      57.22372
    Z           7.638348      11.86319      14.10956      57.22374
    MAXIMUM OR PEAK FIELD =  19.45125 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -798,6 +964,7 @@
    Y           5.525704      8.809856      10.39937      57.9033
    Z           8.288742      13.21509      15.59942      57.90332
    MAXIMUM OR PEAK FIELD =  20.2732  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -806,6 +973,7 @@
    Y          -1.907358     -2.488416      3.13532      -127.47
    Z           3.814749      4.976885      6.270702      52.53007
    MAXIMUM OR PEAK FIELD =  10.21581 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -814,6 +982,7 @@
    Y          -2.346239     -3.253387      4.011155     -125.7979
    Z           4.69254       6.506874      8.022427      54.20212
    MAXIMUM OR PEAK FIELD =  11.91022 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -822,6 +991,7 @@
    Y          -2.806228     -4.072663      4.945856     -124.5684
    Z           5.612556      8.145488      9.891904      55.43166
    MAXIMUM OR PEAK FIELD =  13.49035 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -830,6 +1000,7 @@
    Y          -3.186556     -4.790172      5.75325      -123.633
    Z           6.373246      9.580564      11.50676      56.36709
    MAXIMUM OR PEAK FIELD =  14.65019 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -838,6 +1009,7 @@
    Y          -3.39357      -5.257082      6.257254     -122.8432
    Z           6.787292      10.51442      12.5148       57.15685
    MAXIMUM OR PEAK FIELD =  15.1608  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -846,6 +1018,7 @@
    Y          -1.055953     -1.408444      1.760327     -126.86
    Z           4.223874      5.633872      7.041422      53.14007
    MAXIMUM OR PEAK FIELD =  10.9603  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -854,6 +1027,7 @@
    Y          -1.337144     -1.891371      2.316298     -125.2592
    Z           5.348698      7.565677      9.265422      54.74088
    MAXIMUM OR PEAK FIELD =  12.97857 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -862,6 +1036,7 @@
    Y          -1.64199      -2.424317      2.928044     -124.1098
    Z           6.568166      9.697599      11.71257      55.89029
    MAXIMUM OR PEAK FIELD =  14.90053 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -870,6 +1045,7 @@
    Y          -1.897867     -2.895269      3.461861     -123.2451
    Z           7.591751      11.58153      13.84798      56.75497
    MAXIMUM OR PEAK FIELD =  16.31991 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -878,6 +1054,7 @@
    Y          -2.036882     -3.197075      3.790802     -122.5015
    Z           8.147846      12.78883      15.16382      57.49852
    MAXIMUM OR PEAK FIELD =  16.94096 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -886,6 +1063,7 @@
    Y           0             0             0             0
    Z           4.384433      5.891496      7.343908      53.34349
    MAXIMUM OR PEAK FIELD =  11.24131 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -894,6 +1072,7 @@
    Y           0             0             0             0
    Z           5.615635      7.995717      9.770714      54.91847
    MAXIMUM OR PEAK FIELD =  13.3924  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -902,6 +1081,7 @@
    Y           0             0             0             0
    Z           6.967973      10.34551      12.47326      56.0387
    MAXIMUM OR PEAK FIELD =  15.45745 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -910,6 +1090,7 @@
    Y           0             0             0             0
    Z           8.10876       12.42839      14.8397       56.87802
    MAXIMUM OR PEAK FIELD =  16.98492 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -918,6 +1099,7 @@
    Y           0             0             0             0
    Z           8.726259      13.75345      16.28819      57.60578
    MAXIMUM OR PEAK FIELD =  17.64955 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -926,6 +1108,7 @@
    Y           1.055953      1.408444      1.760327      53.13999
    Z           4.223874      5.633872      7.041422      53.14007
    MAXIMUM OR PEAK FIELD =  10.9603  V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -934,6 +1117,7 @@
    Y           1.337144      1.891371      2.316298      54.7408
    Z           5.348698      7.565677      9.265422      54.74088
    MAXIMUM OR PEAK FIELD =  12.97857 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -942,6 +1126,7 @@
    Y           1.64199       2.424317      2.928044      55.89021
    Z           6.568166      9.697599      11.71257      55.89029
    MAXIMUM OR PEAK FIELD =  14.90053 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -950,6 +1135,7 @@
    Y           1.897867      2.895269      3.461861      56.75491
    Z           7.591751      11.58153      13.84798      56.75497
    MAXIMUM OR PEAK FIELD =  16.31991 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -958,6 +1144,7 @@
    Y           2.036882      3.197075      3.790802      57.49847
    Z           8.147846      12.78883      15.16382      57.49852
    MAXIMUM OR PEAK FIELD =  16.94096 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -966,6 +1153,7 @@
    Y           1.907358      2.488416      3.13532       52.53002
    Z           3.814749      4.976885      6.270702      52.53007
    MAXIMUM OR PEAK FIELD =  10.21581 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -974,6 +1162,7 @@
    Y           2.346239      3.253387      4.011155      54.20206
    Z           4.69254       6.506874      8.022427      54.20212
    MAXIMUM OR PEAK FIELD =  11.91022 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -982,6 +1171,7 @@
    Y           2.806228      4.072663      4.945856      55.43161
    Z           5.612556      8.145488      9.891904      55.43166
    MAXIMUM OR PEAK FIELD =  13.49035 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -990,6 +1180,7 @@
    Y           3.186556      4.790172      5.75325       56.36704
    Z           6.373246      9.580564      11.50676      56.36709
    MAXIMUM OR PEAK FIELD =  14.65019 V/M
+
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -999,6 +1190,13 @@
    Z           6.787292      10.51442      12.5148       57.15685
    MAXIMUM OR PEAK FIELD =  15.1608  V/M
 
+********************    NEAR FIELDS     ********************
+
+X-COORDINATE (M): INITIAL,INCREMENT,NUMBER : -2 ,  1 ,  5
+Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER : -2 ,  1 ,  5
+Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  0 ,  1 ,  5
+
+NEW POWER LEVEL (WATTS) =  100
 
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  0       
@@ -1008,6 +1206,7 @@
    Y           0             0             0             0
    Z          -4.386374E-03  5.601296E-03  7.114407E-03  128.0645
    MAXIMUM OR PEAK FIELD =  7.114407E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1016,6 +1215,7 @@
    Y           0             0             0             0
    Z          -7.600231E-03  7.743526E-03  1.085015E-02  134.4649
    MAXIMUM OR PEAK FIELD =  1.085015E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1024,6 +1224,7 @@
    Y           0             0             0             0
    Z          -1.379410E-02  1.173672E-02  1.811154E-02  139.6072
    MAXIMUM OR PEAK FIELD =  1.811154E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1032,6 +1233,7 @@
    Y           0             0             0             0
    Z          -2.462643E-02  1.860173E-02  3.086237E-02  142.9342
    MAXIMUM OR PEAK FIELD =  3.086237E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1040,6 +1242,7 @@
    Y           0             0             0             0
    Z          -3.802463E-02  2.695325E-02  4.660848E-02  144.6696
    MAXIMUM OR PEAK FIELD =  4.660848E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1048,6 +1251,7 @@
    Y           0             0             0             0
    Z          -2.607546E-03  3.069946E-03  4.027886E-03  130.3439
    MAXIMUM OR PEAK FIELD =  4.027886E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1056,6 +1260,7 @@
    Y           0             0             0             0
    Z          -5.073886E-03  4.683627E-03  6.905120E-03  137.2904
    MAXIMUM OR PEAK FIELD =  6.905120E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1064,6 +1269,7 @@
    Y           0             0             0             0
    Z          -1.243000E-02  9.376800E-03  1.557014E-02  142.9702
    MAXIMUM OR PEAK FIELD =  1.557014E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1072,6 +1278,7 @@
    Y           0             0             0             0
    Z          -3.918375E-02  2.633394E-02  4.721062E-02  146.0964
    MAXIMUM OR PEAK FIELD =  4.721062E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1080,6 +1287,7 @@
    Y           0             0             0             0
    Z          -7.262565E-02  4.736238E-02  8.670456E-02  146.8899
    MAXIMUM OR PEAK FIELD =  8.670456E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1088,6 +1296,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  0  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1096,6 +1305,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  0  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1104,6 +1314,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  0  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1112,6 +1323,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  0  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1120,6 +1332,7 @@
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  0  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1128,6 +1341,7 @@
    Y           0             0             0             0
    Z           2.607546E-03 -3.069946E-03  4.027886E-03 -49.65614
    MAXIMUM OR PEAK FIELD =  4.027886E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1136,6 +1350,7 @@
    Y           0             0             0             0
    Z           5.073886E-03 -4.683627E-03  6.905120E-03 -42.70964
    MAXIMUM OR PEAK FIELD =  6.905120E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1144,6 +1359,7 @@
    Y           0             0             0             0
    Z           1.243000E-02 -9.376800E-03  1.557014E-02 -37.02975
    MAXIMUM OR PEAK FIELD =  1.557014E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1152,6 +1368,7 @@
    Y           0             0             0             0
    Z           3.918375E-02 -2.633394E-02  4.721062E-02 -33.90358
    MAXIMUM OR PEAK FIELD =  4.721062E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1160,6 +1377,7 @@
    Y           0             0             0             0
    Z           7.262565E-02 -4.736238E-02  8.670456E-02 -33.11014
    MAXIMUM OR PEAK FIELD =  8.670456E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1168,6 +1386,7 @@
    Y           0             0             0             0
    Z           4.386374E-03 -5.601296E-03  7.114407E-03 -51.93551
    MAXIMUM OR PEAK FIELD =  7.114407E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1176,6 +1395,7 @@
    Y           0             0             0             0
    Z           7.600231E-03 -7.743526E-03  1.085015E-02 -45.53507
    MAXIMUM OR PEAK FIELD =  1.085015E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1184,6 +1404,7 @@
    Y           0             0             0             0
    Z           1.379410E-02 -1.173672E-02  1.811154E-02 -40.39283
    MAXIMUM OR PEAK FIELD =  1.811154E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1192,6 +1413,7 @@
    Y           0             0             0             0
    Z           2.462643E-02 -1.860173E-02  3.086237E-02 -37.06581
    MAXIMUM OR PEAK FIELD =  3.086237E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1200,6 +1422,7 @@
    Y           0             0             0             0
    Z           3.802463E-02 -2.695325E-02  4.660848E-02 -35.33041
    MAXIMUM OR PEAK FIELD =  4.660848E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1208,6 +1431,7 @@
    Y          -2.083613E-03  2.728921E-03  3.433431E-03  127.3628
    Z          -4.167245E-03  5.457854E-03  6.866884E-03  127.3629
    MAXIMUM OR PEAK FIELD =  7.677405E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1216,6 +1440,7 @@
    Y          -3.522465E-03  3.694209E-03  5.104404E-03  133.6367
    Z          -7.045006E-03  7.388466E-03  1.020889E-02  133.6368
    MAXIMUM OR PEAK FIELD =  1.141387E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1224,6 +1449,7 @@
    Y          -6.105811E-03  5.366870E-03  8.129220E-03  138.6853
    Z          -1.221195E-02  1.073395E-02  1.625883E-02  138.6855
    MAXIMUM OR PEAK FIELD =  1.817784E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1232,6 +1458,7 @@
    Y          -1.029647E-02  8.027226E-03  1.305579E-02  142.0597
    Z          -2.059404E-02  1.605515E-02  2.611287E-02  142.06
    MAXIMUM OR PEAK FIELD =  2.919479E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1240,6 +1467,7 @@
    Y          -1.545012E-02  1.124019E-02  1.910623E-02  143.9636
    Z          -3.090230E-02  2.248167E-02  3.821489E-02  143.9638
    MAXIMUM OR PEAK FIELD =  4.272500E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1248,6 +1476,7 @@
    Y          -2.452053E-03  2.969194E-03  3.850802E-03  129.5509
    Z          -2.452053E-03  2.969194E-03  3.850802E-03  129.5509
    MAXIMUM OR PEAK FIELD =  5.445857E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1256,6 +1485,7 @@
    Y          -4.546144E-03  4.347633E-03  6.290416E-03  136.2786
    Z          -4.546144E-03  4.347633E-03  6.290416E-03  136.2786
    MAXIMUM OR PEAK FIELD =  8.895992E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1264,6 +1494,7 @@
    Y          -9.620601E-03  7.594837E-03  1.225714E-02  141.7112
    Z          -9.620601E-03  7.594837E-03  1.225714E-02  141.7112
    MAXIMUM OR PEAK FIELD =  1.733422E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1272,6 +1503,7 @@
    Y          -2.170578E-02  1.524638E-02  2.652533E-02  144.9154
    Z          -2.170578E-02  1.524638E-02  2.652533E-02  144.9154
    MAXIMUM OR PEAK FIELD =  3.751248E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1280,6 +1512,7 @@
    Y          -3.673819E-02  2.464910E-02  4.424108E-02  146.1408
    Z          -3.673819E-02  2.464910E-02  4.424108E-02  146.1408
    MAXIMUM OR PEAK FIELD =  6.256633E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1288,6 +1521,7 @@
    Y          -2.607546E-03  3.069946E-03  4.027886E-03  130.3439
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  4.027886E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1296,6 +1530,7 @@
    Y          -5.073886E-03  4.683627E-03  6.905120E-03  137.2904
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  6.905120E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1304,6 +1539,7 @@
    Y          -1.243000E-02  9.376800E-03  1.557014E-02  142.9702
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.557014E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1312,6 +1548,7 @@
    Y          -3.918375E-02  2.633394E-02  4.721062E-02  146.0964
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  4.721062E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1320,6 +1557,7 @@
    Y          -7.262565E-02  4.736238E-02  8.670456E-02  146.8899
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  8.670456E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1328,6 +1566,7 @@
    Y          -2.452053E-03  2.969194E-03  3.850802E-03  129.5509
    Z           2.452053E-03 -2.969194E-03  3.850802E-03 -50.44905
    MAXIMUM OR PEAK FIELD =  5.445857E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1336,6 +1575,7 @@
    Y          -4.546144E-03  4.347633E-03  6.290416E-03  136.2786
    Z           4.546144E-03 -4.347633E-03  6.290416E-03 -43.72136
    MAXIMUM OR PEAK FIELD =  8.895992E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1344,6 +1584,7 @@
    Y          -9.620601E-03  7.594837E-03  1.225714E-02  141.7112
    Z           9.620601E-03 -7.594837E-03  1.225714E-02 -38.28879
    MAXIMUM OR PEAK FIELD =  1.733422E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1352,6 +1593,7 @@
    Y          -2.170578E-02  1.524638E-02  2.652533E-02  144.9154
    Z           2.170578E-02 -1.524638E-02  2.652533E-02 -35.08462
    MAXIMUM OR PEAK FIELD =  3.751248E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1360,6 +1602,7 @@
    Y          -3.673819E-02  2.464910E-02  4.424108E-02  146.1408
    Z           3.673819E-02 -2.464910E-02  4.424108E-02 -33.85921
    MAXIMUM OR PEAK FIELD =  6.256633E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1368,6 +1611,7 @@
    Y          -2.083613E-03  2.728921E-03  3.433431E-03  127.3628
    Z           4.167245E-03 -5.457854E-03  6.866884E-03 -52.63712
    MAXIMUM OR PEAK FIELD =  7.677405E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1376,6 +1620,7 @@
    Y          -3.522465E-03  3.694209E-03  5.104404E-03  133.6367
    Z           7.045006E-03 -7.388466E-03  1.020889E-02 -46.36316
    MAXIMUM OR PEAK FIELD =  1.141387E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1384,6 +1629,7 @@
    Y          -6.105811E-03  5.366870E-03  8.129220E-03  138.6853
    Z           1.221195E-02 -1.073395E-02  1.625883E-02 -41.31452
    MAXIMUM OR PEAK FIELD =  1.817784E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1392,6 +1638,7 @@
    Y          -1.029647E-02  8.027226E-03  1.305579E-02  142.0597
    Z           2.059404E-02 -1.605515E-02  2.611287E-02 -37.94003
    MAXIMUM OR PEAK FIELD =  2.919479E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  1       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1400,6 +1647,7 @@
    Y          -1.545012E-02  1.124019E-02  1.910623E-02  143.9636
    Z           3.090230E-02 -2.248167E-02  3.821489E-02 -36.03619
    MAXIMUM OR PEAK FIELD =  4.272500E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1408,6 +1656,7 @@
    Y          -3.621818E-03  5.098175E-03  6.253715E-03  125.3905
    Z          -3.621818E-03  5.098175E-03  6.253715E-03  125.3905
    MAXIMUM OR PEAK FIELD =  8.844089E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1416,6 +1665,7 @@
    Y          -5.809698E-03  6.595379E-03  8.789290E-03  131.376
    Z          -5.809698E-03  6.595379E-03  8.789290E-03  131.376
    MAXIMUM OR PEAK FIELD =  1.242993E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1424,6 +1674,7 @@
    Y          -9.240728E-03  8.849318E-03  1.279459E-02  136.2395
    Z          -9.240728E-03  8.849318E-03  1.279459E-02  136.2395
    MAXIMUM OR PEAK FIELD =  1.809428E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1432,6 +1683,7 @@
    Y          -1.414923E-02  1.199137E-02  1.854707E-02  139.719
    Z          -1.414923E-02  1.199137E-02  1.854707E-02  139.719
    MAXIMUM OR PEAK FIELD =  2.622951E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1440,6 +1692,7 @@
    Y          -2.006781E-02  1.569824E-02  2.547845E-02  141.9654
    Z          -2.006781E-02  1.569824E-02  2.547845E-02  141.9654
    MAXIMUM OR PEAK FIELD =  3.603197E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1448,6 +1701,7 @@
    Y          -4.167245E-03  5.457854E-03  6.866884E-03  127.3629
    Z          -2.083613E-03  2.728921E-03  3.433431E-03  127.3628
    MAXIMUM OR PEAK FIELD =  7.677405E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1456,6 +1710,7 @@
    Y          -7.045006E-03  7.388466E-03  1.020889E-02  133.6368
    Z          -3.522465E-03  3.694209E-03  5.104404E-03  133.6367
    MAXIMUM OR PEAK FIELD =  1.141387E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1464,6 +1719,7 @@
    Y          -1.221195E-02  1.073395E-02  1.625883E-02  138.6855
    Z          -6.105811E-03  5.366870E-03  8.129220E-03  138.6853
    MAXIMUM OR PEAK FIELD =  1.817784E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1472,6 +1728,7 @@
    Y          -2.059404E-02  1.605515E-02  2.611287E-02  142.06
    Z          -1.029647E-02  8.027226E-03  1.305579E-02  142.0597
    MAXIMUM OR PEAK FIELD =  2.919479E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1480,6 +1737,7 @@
    Y          -3.090230E-02  2.248167E-02  3.821489E-02  143.9638
    Z          -1.545012E-02  1.124019E-02  1.910623E-02  143.9636
    MAXIMUM OR PEAK FIELD =  4.272500E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1488,6 +1746,7 @@
    Y          -4.386374E-03  5.601296E-03  7.114407E-03  128.0645
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  7.114407E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1496,6 +1755,7 @@
    Y          -7.600231E-03  7.743526E-03  1.085015E-02  134.4649
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.085015E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1504,6 +1764,7 @@
    Y          -1.379410E-02  1.173672E-02  1.811154E-02  139.6072
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.811154E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1512,6 +1773,7 @@
    Y          -2.462643E-02  1.860173E-02  3.086237E-02  142.9342
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  3.086237E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1520,6 +1782,7 @@
    Y          -3.802463E-02  2.695325E-02  4.660848E-02  144.6696
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  4.660848E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1528,6 +1791,7 @@
    Y          -4.167245E-03  5.457854E-03  6.866884E-03  127.3629
    Z           2.083613E-03 -2.728921E-03  3.433431E-03 -52.63718
    MAXIMUM OR PEAK FIELD =  7.677405E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1536,6 +1800,7 @@
    Y          -7.045006E-03  7.388466E-03  1.020889E-02  133.6368
    Z           3.522465E-03 -3.694209E-03  5.104404E-03 -46.36328
    MAXIMUM OR PEAK FIELD =  1.141387E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1544,6 +1809,7 @@
    Y          -1.221195E-02  1.073395E-02  1.625883E-02  138.6855
    Z           6.105811E-03 -5.366870E-03  8.129220E-03 -41.31474
    MAXIMUM OR PEAK FIELD =  1.817784E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1552,6 +1818,7 @@
    Y          -2.059404E-02  1.605515E-02  2.611287E-02  142.06
    Z           1.029647E-02 -8.027226E-03  1.305579E-02 -37.94031
    MAXIMUM OR PEAK FIELD =  2.919479E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1560,6 +1827,7 @@
    Y          -3.090230E-02  2.248167E-02  3.821489E-02  143.9638
    Z           1.545012E-02 -1.124019E-02  1.910623E-02 -36.03644
    MAXIMUM OR PEAK FIELD =  4.272500E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1568,6 +1836,7 @@
    Y          -3.621818E-03  5.098175E-03  6.253715E-03  125.3905
    Z           3.621818E-03 -5.098175E-03  6.253715E-03 -54.60946
    MAXIMUM OR PEAK FIELD =  8.844089E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1576,6 +1845,7 @@
    Y          -5.809698E-03  6.595379E-03  8.789290E-03  131.376
    Z           5.809698E-03 -6.595379E-03  8.789290E-03 -48.62401
    MAXIMUM OR PEAK FIELD =  1.242993E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1584,6 +1854,7 @@
    Y          -9.240728E-03  8.849318E-03  1.279459E-02  136.2395
    Z           9.240728E-03 -8.849318E-03  1.279459E-02 -43.7605
    MAXIMUM OR PEAK FIELD =  1.809428E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1592,6 +1863,7 @@
    Y          -1.414923E-02  1.199137E-02  1.854707E-02  139.719
    Z           1.414923E-02 -1.199137E-02  1.854707E-02 -40.28103
    MAXIMUM OR PEAK FIELD =  2.622951E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  2       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1600,6 +1872,7 @@
    Y          -2.006781E-02  1.569824E-02  2.547845E-02  141.9654
    Z           2.006781E-02 -1.569824E-02  2.547845E-02 -38.03464
    MAXIMUM OR PEAK FIELD =  3.603197E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1608,6 +1881,7 @@
    Y          -4.434719E-03  6.978346E-03  8.268256E-03  122.4358
    Z          -2.956469E-03  4.652224E-03  5.512159E-03  122.4358
    MAXIMUM OR PEAK FIELD =  9.937200E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1616,6 +1890,7 @@
    Y          -6.771964E-03  8.633184E-03  1.097230E-02  128.111
    Z          -4.514617E-03  5.755439E-03  7.314837E-03  128.1109
    MAXIMUM OR PEAK FIELD =  1.318705E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1624,6 +1899,7 @@
    Y          -1.004085E-02  1.084055E-02  1.477621E-02  132.8068
    Z          -6.693842E-03  7.226994E-03  9.850734E-03  132.8067
    MAXIMUM OR PEAK FIELD =  1.775875E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1632,6 +1908,7 @@
    Y          -1.429761E-02  1.362123E-02  1.974739E-02  136.3878
    Z          -9.531618E-03  9.080742E-03  1.316479E-02  136.3877
    MAXIMUM OR PEAK FIELD =  2.373333E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1640,6 +1917,7 @@
    Y          -1.928596E-02  1.679395E-02  2.557313E-02  138.9511
    Z          -1.285711E-02  1.119584E-02  1.704852E-02  138.951
    MAXIMUM OR PEAK FIELD =  3.073495E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1648,6 +1926,7 @@
    Y          -4.990433E-03  7.352582E-03  8.886219E-03  124.166
    Z          -1.663466E-03  2.450853E-03  2.962060E-03  124.1659
    MAXIMUM OR PEAK FIELD =  9.366893E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1656,6 +1935,7 @@
    Y          -7.817427E-03  9.313470E-03  1.215948E-02  130.009
    Z          -2.605775E-03  3.104469E-03  4.053121E-03  130.0088
    MAXIMUM OR PEAK FIELD =  1.281720E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1664,6 +1944,7 @@
    Y          -1.200935E-02  1.209667E-02  1.704564E-02  134.7925
    Z          -4.003025E-03  4.032166E-03  5.681775E-03  134.7922
    MAXIMUM OR PEAK FIELD =  1.796765E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1672,6 +1953,7 @@
    Y          -1.773129E-02  1.578659E-02  2.374058E-02  138.3206
    Z          -5.910228E-03  5.262069E-03  7.913290E-03  138.3203
    MAXIMUM OR PEAK FIELD =  2.502470E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1680,6 +1962,7 @@
    Y          -2.454587E-02  2.007730E-02  3.171116E-02  140.7185
    Z          -8.181608E-03  6.692215E-03  1.056998E-02  140.7183
    MAXIMUM OR PEAK FIELD =  3.342636E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1688,6 +1971,7 @@
    Y          -5.203145E-03  7.494611E-03  9.123700E-03  124.7704
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  9.123700E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1696,6 +1980,7 @@
    Y          -8.240974E-03  9.587499E-03  1.264254E-02  130.6808
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.264254E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1704,6 +1989,7 @@
    Y          -1.286293E-02  1.263972E-02  1.803378E-02  135.5015
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.803378E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1712,6 +1998,7 @@
    Y          -1.930772E-02  1.677985E-02  2.558029E-02  139.0069
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  2.558029E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1720,6 +2007,7 @@
    Y          -2.702963E-02  2.162816E-02  3.461760E-02  141.3344
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  3.461760E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1728,6 +2016,7 @@
    Y          -4.990433E-03  7.352582E-03  8.886219E-03  124.166
    Z           1.663466E-03 -2.450853E-03  2.962060E-03 -55.83412
    MAXIMUM OR PEAK FIELD =  9.366893E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1736,6 +2025,7 @@
    Y          -7.817427E-03  9.313470E-03  1.215948E-02  130.009
    Z           2.605775E-03 -3.104469E-03  4.053121E-03 -49.99116
    MAXIMUM OR PEAK FIELD =  1.281720E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1744,6 +2034,7 @@
    Y          -1.200935E-02  1.209667E-02  1.704564E-02  134.7925
    Z           4.003025E-03 -4.032166E-03  5.681775E-03 -45.20779
    MAXIMUM OR PEAK FIELD =  1.796765E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1752,6 +2043,7 @@
    Y          -1.773129E-02  1.578659E-02  2.374058E-02  138.3206
    Z           5.910228E-03 -5.262069E-03  7.913290E-03 -41.67972
    MAXIMUM OR PEAK FIELD =  2.502470E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1760,6 +2052,7 @@
    Y          -2.454587E-02  2.007730E-02  3.171116E-02  140.7185
    Z           8.181608E-03 -6.692215E-03  1.056998E-02 -39.28174
    MAXIMUM OR PEAK FIELD =  3.342636E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1768,6 +2061,7 @@
    Y          -4.434719E-03  6.978346E-03  8.268256E-03  122.4358
    Z           2.956469E-03 -4.652224E-03  5.512159E-03 -57.56421
    MAXIMUM OR PEAK FIELD =  9.937200E-03  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1776,6 +2070,7 @@
    Y          -6.771964E-03  8.633184E-03  1.097230E-02  128.111
    Z           4.514617E-03 -5.755439E-03  7.314837E-03 -51.88905
    MAXIMUM OR PEAK FIELD =  1.318705E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1784,6 +2079,7 @@
    Y          -1.004085E-02  1.084055E-02  1.477621E-02  132.8068
    Z           6.693842E-03 -7.226994E-03  9.850734E-03 -47.19329
    MAXIMUM OR PEAK FIELD =  1.775875E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1792,6 +2088,7 @@
    Y          -1.429761E-02  1.362123E-02  1.974739E-02  136.3878
    Z           9.531618E-03 -9.080742E-03  1.316479E-02 -43.61231
    MAXIMUM OR PEAK FIELD =  2.373333E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  3       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1800,6 +2097,7 @@
    Y          -1.928596E-02  1.679395E-02  2.557313E-02  138.9511
    Z           1.285711E-02 -1.119584E-02  1.704852E-02 -41.04904
    MAXIMUM OR PEAK FIELD =  3.073495E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1808,6 +2106,7 @@
    Y          -4.620587E-03  8.414305E-03  9.599498E-03  118.7727
    Z          -2.310280E-03  4.207144E-03  4.799735E-03  118.7726
    MAXIMUM OR PEAK FIELD =  1.073256E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1816,6 +2115,7 @@
    Y          -6.827594E-03  1.005462E-02  1.215366E-02  124.1785
    Z          -3.413770E-03  5.027294E-03  6.076802E-03  124.1784
    MAXIMUM OR PEAK FIELD =  1.358819E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1824,6 +2124,7 @@
    Y          -9.678817E-03  1.206287E-02  1.546585E-02  128.7423
    Z          -4.839357E-03  6.031403E-03  7.732865E-03  128.7422
    MAXIMUM OR PEAK FIELD =  1.729132E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1832,6 +2133,7 @@
    Y          -1.316687E-02  1.442301E-02  1.952920E-02  132.3932
    Z          -6.583346E-03  7.211447E-03  9.764498E-03  132.393
    MAXIMUM OR PEAK FIELD =  2.183426E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1840,6 +2142,7 @@
    Y          -1.714059E-02  1.702690E-02  2.416020E-02  135.1906
    Z          -8.570159E-03  8.513367E-03  1.207994E-02  135.1905
    MAXIMUM OR PEAK FIELD =  2.701186E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1848,6 +2151,7 @@
    Y          -5.115960E-03  8.759107E-03  1.014372E-02  120.2881
    Z          -1.278979E-03  2.189770E-03  2.535918E-03  120.2879
    MAXIMUM OR PEAK FIELD =  1.045590E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1856,6 +2160,7 @@
    Y          -7.641457E-03  1.059741E-02  1.306510E-02  125.7942
    Z          -1.910341E-03  2.649338E-03  3.266251E-03  125.794
    MAXIMUM OR PEAK FIELD =  1.346719E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1864,6 +2169,7 @@
    Y          -1.099554E-02  1.291675E-02  1.696303E-02  130.4065
    Z          -2.748838E-03  3.229158E-03  4.240704E-03  130.4063
    MAXIMUM OR PEAK FIELD =  1.748508E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1872,6 +2178,7 @@
    Y          -1.518877E-02  1.570974E-02  2.185165E-02  134.034
    Z          -3.797104E-03  3.927380E-03  5.462812E-03  134.0338
    MAXIMUM OR PEAK FIELD =  2.252414E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y = -1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1880,6 +2187,7 @@
    Y          -2.001746E-02  1.883114E-02  2.748291E-02  136.7491
    Z          -5.004227E-03  4.707699E-03  6.870569E-03  136.7488
    MAXIMUM OR PEAK FIELD =  2.832870E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1888,6 +2196,7 @@
    Y          -5.298739E-03  8.885109E-03  1.034513E-02  120.8102
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.034513E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1896,6 +2205,7 @@
    Y          -7.950695E-03  1.080211E-02  1.341265E-02  126.3542
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.341265E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1904,6 +2214,7 @@
    Y          -1.151172E-02  1.324973E-02  1.755206E-02  130.985
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1.755206E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1912,6 +2223,7 @@
    Y          -1.600229E-02  1.622570E-02  2.278917E-02  134.6028
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  2.278917E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  0         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1920,6 +2232,7 @@
    Y          -2.119410E-02  1.956747E-02  2.884572E-02  137.2852
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  2.884572E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1928,6 +2241,7 @@
    Y          -5.115960E-03  8.759107E-03  1.014372E-02  120.2881
    Z           1.278979E-03 -2.189770E-03  2.535918E-03 -59.71207
    MAXIMUM OR PEAK FIELD =  1.045590E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1936,6 +2250,7 @@
    Y          -7.641457E-03  1.059741E-02  1.306510E-02  125.7942
    Z           1.910341E-03 -2.649338E-03  3.266251E-03 -54.206
    MAXIMUM OR PEAK FIELD =  1.346719E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1944,6 +2259,7 @@
    Y          -1.099554E-02  1.291675E-02  1.696303E-02  130.4065
    Z           2.748838E-03 -3.229158E-03  4.240704E-03 -49.59373
    MAXIMUM OR PEAK FIELD =  1.748508E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1952,6 +2268,7 @@
    Y          -1.518877E-02  1.570974E-02  2.185165E-02  134.034
    Z           3.797104E-03 -3.927380E-03  5.462812E-03 -45.96622
    MAXIMUM OR PEAK FIELD =  2.252414E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  1         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1960,6 +2277,7 @@
    Y          -2.001746E-02  1.883114E-02  2.748291E-02  136.7491
    Z           5.004227E-03 -4.707699E-03  6.870569E-03 -43.25116
    MAXIMUM OR PEAK FIELD =  2.832870E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -2         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1968,6 +2286,7 @@
    Y          -4.620587E-03  8.414305E-03  9.599498E-03  118.7727
    Z           2.310280E-03 -4.207144E-03  4.799735E-03 -61.22737
    MAXIMUM OR PEAK FIELD =  1.073256E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X = -1         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1976,6 +2295,7 @@
    Y          -6.827594E-03  1.005462E-02  1.215366E-02  124.1785
    Z           3.413770E-03 -5.027294E-03  6.076802E-03 -55.82164
    MAXIMUM OR PEAK FIELD =  1.358819E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  0         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1984,6 +2304,7 @@
    Y          -9.678817E-03  1.206287E-02  1.546585E-02  128.7423
    Z           4.839357E-03 -6.031403E-03  7.732865E-03 -51.25784
    MAXIMUM OR PEAK FIELD =  1.729132E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  1         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -1992,6 +2313,7 @@
    Y          -1.316687E-02  1.442301E-02  1.952920E-02  132.3932
    Z           6.583346E-03 -7.211447E-03  9.764498E-03 -47.60698
    MAXIMUM OR PEAK FIELD =  2.183426E-02  AMPS/M
+
 ********************NEAR MAGNETIC FIELDS********************
          FIELD POINT: X =  2         Y =  2         Z =  4       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
@@ -2000,5 +2322,3 @@
    Y          -1.714059E-02  1.702690E-02  2.416020E-02  135.1906
    Z           8.570159E-03 -8.513367E-03  1.207994E-02 -44.80953
    MAXIMUM OR PEAK FIELD =  2.701186E-02  AMPS/M
-
-

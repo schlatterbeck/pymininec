@@ -1398,12 +1398,14 @@ class Mininec:
             power is originally  O2
             Basic code starts at 875
         """
+        self.nf_param = np.array ([list (start), list (inc), list (nvec)])
         self.e_field = []
         self.h_field = []
         # virtual dipole length for near field calculation:
         s0 = .001 * self.wavelen
         if pwr is None:
             pwr = self.power
+        self.nf_power = pwr
         f_e = np.sqrt (pwr / self.power)
         f_h = f_e / s0 / (4*np.pi)
         # Compute the grid
@@ -2051,7 +2053,9 @@ class Mininec:
 
     # All the *as_mininec methods
 
-    def as_mininec (self):
+    def as_mininec (self, options = None):
+        if options is None:
+            options = set (('far-field',))
         r = []
         r.append (self.header_as_mininec ())
         r.append (self.frequency_as_mininec ())
@@ -2066,7 +2070,12 @@ class Mininec:
         r.append ('')
         r.append (self.currents_as_mininec ())
         r.append ('')
-        r.append (self.far_field_as_mininec ())
+        if 'far-field' in options:
+            r.append (self.far_field_as_mininec ())
+        if 'far-field-absolute' in options:
+            r.append (self.far_field_absolute_as_mininec ())
+        if 'near-field' in options:
+            r.append (self.near_field_as_mininec ())
         return '\n'.join (r)
     # end def as_mininec
 
@@ -2246,7 +2255,9 @@ class Mininec:
 
     def near_field_as_mininec (self):
         r = []
+        r.append (self.near_field_header_as_mininec ())
         r.append (self.near_field_e_as_mininec ())
+        r.append (self.near_field_header_as_mininec ())
         r.append (self.near_field_h_as_mininec ())
         return '\n'.join (r)
     # end def near_field_as_mininec
@@ -2289,8 +2300,7 @@ class Mininec:
                 ( '   MAXIMUM OR PEAK FIELD = %s V/M'
                 % format_float ((pk,), use_e = True)
                 )
-        r.append ('')
-        r.append ('')
+            r.append ('')
         return '\n'.join (r)
     # end def near_field_e_as_mininec
 
@@ -2332,10 +2342,28 @@ class Mininec:
                 ( '   MAXIMUM OR PEAK FIELD = %s  AMPS/M'
                 % format_float ((pk,), use_e = True)
                 )
-        r.append ('')
-        r.append ('')
+            r.append ('')
         return '\n'.join (r)
     # end def near_field_h_as_mininec
+
+    def near_field_header_as_mininec (self):
+        r = []
+        r.append ('*' * 20 + '    NEAR FIELDS     ' + '*' * 20)
+        r.append ('')
+        for coord, (nf_s, nf_i, nf_c) in zip ('XYZ', self.nf_param.T):
+            ff = tuple \
+                (x.rstrip () for x in format_float ((nf_s, nf_i, nf_c)))
+            r.append \
+                ('%s-COORDINATE (M): INITIAL,INCREMENT,NUMBER : %s , %s , %s'
+                % ((coord,) + ff)
+                )
+        r.append ('')
+        if self.nf_power != self.power:
+            p = format_float ((self.nf_power,)) [0].rstrip ()
+            r.append ('NEW POWER LEVEL (WATTS) = %s' % p)
+            r.append ('')
+        return '\n'.join (r)
+    # end def near_field_header_as_mininec
 
     def sources_as_mininec (self):
         r = []
@@ -2669,6 +2697,24 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , default = []
         )
     cmd.add_argument \
+        ( '--near-field'
+        , help    = "Near-field definition, give three comma-separated "
+                    "start values, then three comma-separated "
+                    "increments, then three comma-separated counts for X, "
+                    "Y and Z direction, respectively."
+        )
+    allowed_options = ['far-field', 'near-field', 'far-field-absolute']
+    cmd.add_argument \
+        ( '--options'
+        , help    = "Computation/printing options, option can be repeated, "
+                    "use one or several of %s. If none are given, far field "
+                    " is printed if no near-field option is present, "
+                    " otherwise near field is printed."
+                  % ', '.join (allowed_options)
+        , action  = "append"
+        , default = []
+        )
+    cmd.add_argument \
         ( '--phi'
         , help    = "Phi angle: start, increment, count"
         , default = '0,10,37'
@@ -2815,10 +2861,47 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     except Exception:
         print ("Invalid theta angle, need float, float, int", file = f_err)
         return 23
-
+    nf_count = 0
+    if args.near_field:
+        nf = args.near_field.split (',')
+        if len (nf) != 9:
+            print ("Expecting 9 near-field parameters", file = f_err)
+            return 23
+        try:
+            nf_count = [int (x) for x in nf [6:]]
+        except ValueError as err:
+            print ("Error converting near-field counts: %s" % err, file = f_err)
+            return 23
+        try:
+            nf_start = [float (x) for x in nf [:3]]
+        except ValueError as err:
+            print ("Error converting near-field start: %s" % err, file = f_err)
+        try:
+            nf_inc = [float (x) for x in nf [3:6]]
+        except ValueError as err:
+            print ("Error converting near-field inc: %s" % err, file = f_err)
+            return 23
+    options = set ()
+    far_field = False
+    for opt in args.options:
+        if opt not in allowed_options:
+            print ("Invalid print option: %s" % opt)
+            return 23
+        options.add (opt)
+        if opt.startswith ('far'):
+            far_field = True
+    if not options:
+        if nf_count:
+            options.add ('near-field')
+        else:
+            options.add ('far-field')
+            far_field = True
     m.compute ()
-    m.compute_far_field (zenith, azimuth)
-    print (m.as_mininec ())
+    if 'near-field' in options:
+        m.compute_near_field (nf_start, nf_inc, nf_count)
+    if far_field:
+        m.compute_far_field (zenith, azimuth)
+    print (m.as_mininec (options))
 # end def main
 
 if __name__ == '__main__':

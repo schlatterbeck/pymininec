@@ -407,6 +407,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     # end def test_dipole_wiredia_01
 
     def test_dipole_wiredia_001 (self):
+        self.maxDiff = None
         m = self.dipole_7mhz (wire_dia = 0.001, filename = 'dipole-001.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_dipole_wiredia_001
@@ -489,10 +490,10 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_vertical_radials
 
-    def test_inerted_l (self):
+    def test_inverted_l (self):
         m = self.inverted_l ('inv-l.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
-    # end def test_inerted_l
+    # end def test_inverted_l
 
     def test_t_ant (self):
         m = self.t_antenna ('t-ant.pout')
@@ -506,7 +507,10 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_dipole_wiredia_01_near (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01-near.pout')
-        actual_output = m.near_field_as_mininec ().rstrip ()
+        opts = set (('near-field',))
+        #with open ('z.out', 'w') as f:
+        #    print (m.as_mininec (opts).rstrip (), file = f)
+        actual_output = m.as_mininec (opts).rstrip ()
         self.assertEqual (self.expected_output, actual_output)
     # end def test_dipole_wiredia_01_near
 
@@ -515,15 +519,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         l = Laplace_Load ((1., 0), (0., -2.193644e-3))
         m = self.vertical_quarterwave \
             ('vertical-ig-near.pout', ideal, dia = 0.002, load = l)
-        #with open ('z.out', 'w') as f:
-        #    print (m.source_data_as_mininec (), file = f)
-        #    print (m.currents_as_mininec (), file = f)
-        #    print (m.near_field_as_mininec (), file = f)
-        actual_output = '\n'.join \
-            (( m.source_data_as_mininec ()
-            ,  m.currents_as_mininec ()
-            ,  m.near_field_as_mininec ()
-            )).rstrip ()
+        opts = set (('near-field',))
+        actual_output = m.as_mininec (opts).rstrip ()
         self.assertEqual (self.expected_output, actual_output)
     # end def test_vertical_ideal_ground_near
 
