@@ -2516,7 +2516,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
-    >>> args.extend (['--near-field=1,1,1,1,1,1,1,1,1'])
+    >>> args.extend (['--near-field=1,1,1,1,1,1,1,1,1', '--nf-power=100'])
     >>> main (args)
                        ****************************************
                          MINI-NUMERICAL ELECTROMAGNETICS CODE
@@ -2575,14 +2575,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
     Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
     <BLANKLINE>
+    NEW POWER LEVEL (WATTS) =  100
+    <BLANKLINE>
     ********************NEAR ELECTRIC FIELDS********************
              FIELD POINT: X =  1         Y =  1         Z =  1       
       VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
      COMPONENT     V/M           V/M           V/M           DEG
-       X           4.935949E-02 -.12629        .135593      -68.65233
-       Y           4.935949E-02 -.12629        .135593      -68.65233
-       Z          -.203845       7.772127E-04  .203847       179.7815
-       MAXIMUM OR PEAK FIELD =  .231793  V/M
+       X           4.129238     -10.56496      11.34324     -68.65233
+       Y           4.129238     -10.56496      11.34324     -68.65233
+       Z          -17.05298      6.501882E-02  17.05311      179.7815
+       MAXIMUM OR PEAK FIELD =  19.391   V/M
     <BLANKLINE>
     ********************    NEAR FIELDS     ********************
     <BLANKLINE>
@@ -2590,14 +2592,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
     Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  1 ,  1 ,  1
     <BLANKLINE>
+    NEW POWER LEVEL (WATTS) =  100
+    <BLANKLINE>
     ********************NEAR MAGNETIC FIELDS********************
              FIELD POINT: X =  1         Y =  1         Z =  1       
       VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
      COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
-       X          -2.236416E-03 -5.107054E-05  2.236999E-03 -178.6918
-       Y           2.236416E-03  5.107054E-05  2.236999E-03  1.308172
+       X          -.187091      -4.272377E-03  .187139      -178.6918
+       Y           .187091       4.272377E-03  .187139       1.308172
        Z           0             0             0             0
-       MAXIMUM OR PEAK FIELD =  3.163594E-03  AMPS/M
+       MAXIMUM OR PEAK FIELD =  .264655   AMPS/M
     <BLANKLINE>
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127,extra']
@@ -2821,6 +2825,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
                     "increments, then three comma-separated counts for X, "
                     "Y and Z direction, respectively."
         )
+    cmd.add_argument \
+        ( '--nf-power'
+        , help    = "Power used for near-field computation"
+        , type    = float
+        )
     allowed_options = ['far-field', 'near-field', 'far-field-absolute']
     cmd.add_argument \
         ( '--option'
@@ -3017,7 +3026,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
             far_field = True
     m.compute ()
     if 'near-field' in options:
-        m.compute_near_field (nf_start, nf_inc, nf_count)
+        d = {}
+        if args.nf_power:
+            d ['pwr'] = args.nf_power
+        m.compute_near_field (nf_start, nf_inc, nf_count, **d)
     if far_field:
         m.compute_far_field (zenith, azimuth)
     print (m.as_mininec (options))
