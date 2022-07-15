@@ -268,12 +268,12 @@ class Laplace_Load (_Load):
         We get two lists of parameters. They represent the numerator and
         denominator coefficients, respectively (sequence a is the denominator
         and sequence b is the numerator).
-    >>> l = Laplace_Load ((1., 0.), (0., -2.193644e-3))
+    >>> l = Laplace_Load (b = (1., 0.), a = (0., -2.193644e-3))
     >>> z = l.impedance (7.15)
     >>> print ("%g%+gj" % (z.real, z.imag))
     -0+10.1472j
     """
-    def __init__ (self, b, a):
+    def __init__ (self, a, b):
         m = max (len (a), len (b))
         self.a = np.zeros (m)
         self.b = np.zeros (m)
@@ -2684,6 +2684,43 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     >>> r
     23
 
+    >>> args = ['--laplace-load-b=1', '--laplace-load-b=1']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error in Laplace load: At least one denominator parameter required
+    >>> r
+    23
+    >>> args = ['--laplace-load-a=1', '--laplace-load-b=1']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error: Not all loads were used
+    >>> r
+    23
+    >>> args = ['--laplace-load-a=1', '--laplace-load-b=1']
+    >>> args = ['--laplace-load-a=1,2']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error: Not all loads were used
+    >>> r
+    23
+    >>> args = ['--laplace-load-a=1', '--laplace-load-b=1,b']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error in Laplace load B: could not convert string to float: 'b'
+    >>> r
+    23
+    >>> args = ['--laplace-load-a=1,a', '--laplace-load-b=1']
+    >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
+    >>> args.extend (['--excitation-segment=1'])
+    >>> r = main (args, sys.stdout)
+    Error in Laplace load A: could not convert string to float: 'a'
+    >>> r
+    23
+
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--medium=0,0,0,0,0'])
     >>> r = main (args, sys.stdout)
@@ -2798,6 +2835,22 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , type    = float
         , default = 7.0
         , help    = 'Frequency in MHz, default=%(default)s'
+        )
+    cmd.add_argument \
+        ( '--laplace-load-a'
+        , help    = 'Laplace load, A (denominator) parameters (comma-separated)'
+                    ' if multiple load-types are given, Laplace loads'
+                    ' are numbered last.'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--laplace-load-b'
+        , help    = 'Laplace load, B (numerator) parameters (comma-separated)'
+                    ' if multiple load-types are given, Laplace loads'
+                    ' are numbered last.'
+        , action  = 'append'
+        , default = []
         )
     cmd.add_argument \
         ( '-l', '--load'
@@ -2939,6 +2992,35 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     loads = []
     for l in args.load:
         loads.append (Impedance_Load (l))
+    laplace = []
+    for a in args.laplace_load_a:
+        try:
+            af = [float (x) for x in a.split (',')]
+        except ValueError as err:
+            print ("Error in Laplace load A: %s" % err, file = f_err)
+            return 23
+        laplace.append ([af])
+    for n, b in enumerate (args.laplace_load_b):
+        try:
+            bf = [float (x) for x in b.split (',')]
+        except ValueError as err:
+            print ("Error in Laplace load B: %s" % err, file = f_err)
+            return 23
+        if n < len (laplace):
+            laplace [n].append (bf)
+        else:
+            laplace.append ([[], bf])
+    for x in laplace:
+        if len (x) == 1:
+            x.append ([])
+    for a, b in laplace:
+        try:
+            l = Laplace_Load (a = a, b = b)
+        except ValueError as err:
+            print ("Error in Laplace load: %s" % err, file = f_err)
+            return 23
+        loads.append (l)
+
     used_loads = set ()
     for x in args.attach_load:
         att = x.split (',')

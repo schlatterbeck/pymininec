@@ -1,0 +1,7 @@
+-f 7.15 -w 20,0,0,0,0,0,10.0838,0.001
+--medium=0,0,0
+--excitation-segment=1
+--near-field=-1,-1,0,1,1,1,3,3,2
+--laplace-load-b=1.0,0.0
+--laplace-load-a=0.0,-2.193644e-3
+--attach-load=1,1

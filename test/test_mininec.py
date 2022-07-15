@@ -351,7 +351,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         mat   = np.array (matrix_ideal_ground_quarter_l_from_mininec_r) \
               + 1j * np.array (matrix_ideal_ground_quarter_l_from_mininec_i)
         ideal = [ideal_ground]
-        l = Laplace_Load ((1., 0), (0., -2.193644e-3))
+        l = Laplace_Load (b = (1., 0), a = (0., -2.193644e-3))
         m = self.vertical_quarterwave \
             (filename = None, media = ideal, load = l, dia = 0.002)
         for i in range (len (m.w_per)):
@@ -516,7 +516,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_vertical_ideal_ground_near (self):
         ideal = [ideal_ground]
-        l = Laplace_Load ((1., 0), (0., -2.193644e-3))
+        l = Laplace_Load (b = (1., 0), a = (0., -2.193644e-3))
         m = self.vertical_quarterwave \
             ('vertical-ig-near.pout', ideal, dia = 0.002, load = l)
         opts = set (('near-field',))
@@ -531,7 +531,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 250
+        num_tests = 276
         f, t  = doctest.testmod \
             (mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.__file__)
