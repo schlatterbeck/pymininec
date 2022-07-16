@@ -240,8 +240,11 @@ the two links I've given contain the same code.
     Princeton University Press, 1955.
 .. [5] Rafik Paul Zeineddin. Numerical electromagnetics codes: Problems,
     solutions and applications. Master’s thesis, Ohio University, March 1993.
+    Available from the `OhioLINK Electronic Theses & Dissertations Center`_
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
 .. _`numpy.linalg.solve`:
     https://numpy.org/doc/stable/reference/generated/numpy.linalg.solve.html
+.. _`OhioLINK Electronic Theses & Dissertations Center`:
+    https://etd.ohiolink.edu/apexprod/rws_etd/send_file/send?accession=ohiou1176315682
