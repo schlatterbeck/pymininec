@@ -51,6 +51,25 @@ regression tests. The ``.pym`` files in the ``test`` directory are the
 command-line arguments to recreate the ``.pout`` files with
 ``mininec.py``.
 
+In his thesis [5]_, Zeineddin investigates numerical instabilities when
+comparing near and far field. He solves this by doing certain
+computations for the near field in double precision arithmetics.
+I've tried to replicate these experiments and the numerical
+instabilities are reproduceable in the Basic version. In the Python
+version the instabilities are not present (because everything is in
+double precision). But the absolute values computed in Python are lower
+than the ones reported by Zeineddin (and the Basic code *does* reproduce
+Zeineddins values). So it may well be that there is still a problem in
+the computations of the currents in the Python code, the computed
+currents are too low in that example. You can find the files in
+``test/ohio*`` (the thesis was at Ohio University). This time there is a
+python script ``ohio.py`` to compute the near and far field values
+without recomputing the impedance matrix. This script can plot the near
+and far field values into a plot and the difference into a second plot.
+There are two distances for which these are computed. There is a second
+script to plot the Basic near and far field patterns
+``plot_bas_ohio.py``.
+
 Note that the current code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I
 didn't (yet) understand the intention of the code. The same holds for
@@ -219,6 +238,8 @@ the two links I've given contain the same code.
     of Standards, 1972.
 .. [4] Cecil Hastings, Jr. Approximations for Digital Computers.
     Princeton University Press, 1955.
+.. [5] Rafik Paul Zeineddin. Numerical electromagnetics codes: Problems,
+    solutions and applications. Master’s thesis, Ohio University, March 1993.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf

@@ -2195,9 +2195,9 @@ class Mininec:
         """
         r = []
         r.append (self.far_field_header_as_mininec (is_db = False))
-        d = format_float ((self.ff_dist,)) [0].rstrip ()
+        d = format_float ((self.ff_dist,), use_e = True) [0].rstrip ()
         r.append ((' ' * 14 + 'RADIAL DISTANCE = %s  METERS') % d)
-        p = format_float ((self.ff_power,)) [0].rstrip ()
+        p = format_float ((self.ff_power,), use_e = True) [0].rstrip ()
         r.append ((' ' * 14 + 'POWER LEVEL = %s  WATTS') % p)
         r.append \
             ( 'ZENITH%sAZIMUTH%sE(THETA)%sE(PHI)'
@@ -2248,14 +2248,12 @@ class Mininec:
         if not is_db and self.ff_power != self.power:
             p = format_float ((self.ff_power,)) [0].rstrip ()
             r.append ('NEW POWER LEVEL = %s' % p)
-        r.append \
-            ( 'ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
-            % (zenith.initial, zenith.inc, zenith.number)
-            )
-        r.append \
-            ( 'AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:%3d ,%3d ,%3d'
-            % (azimuth.initial, azimuth.inc, azimuth.number)
-            )
+        ze = tuple (x.rstrip () for x in format_float
+            ((zenith.initial, zenith.inc, zenith.number), use_e = True))
+        r.append ('ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:%s ,%s ,%s' % ze)
+        az = tuple (x.rstrip () for x in format_float
+            ((azimuth.initial, azimuth.inc, azimuth.number), use_e = True))
+        r.append ('AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:%s ,%s ,%s' % az)
         r.append ('')
         r.append ('*' * 20 + '    PATTERN DATA    ' + '*' * 20)
         return '\n'.join (r)
@@ -2356,7 +2354,7 @@ class Mininec:
                       )
                     )
                 r.append (line.rstrip ())
-            pk = np.sqrt (p2 / 2 + np.linalg.norm (p1) / 2)
+            pk = np.sqrt (p2 / 2 + abs (p1) / 2)
             r.append \
                 ( '   MAXIMUM OR PEAK FIELD = %s V/M'
                 % format_float ((pk,), use_e = True)

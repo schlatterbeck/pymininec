@@ -1,0 +1,997 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                       07-16-2022              14:52:03
+                   ****************************************
+ 
+FREQUENCY (MHZ): 299.8 
+    WAVE LENGTH =  1  METERS
+ 
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1 
+ NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0 
+ 
+NO. OF WIRES: 1 
+ 
+WIRE NO. 1 
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             0             17                          0 
+ 0             0             17.5          .0001         0             10 
+ 
+                  **** ANTENNA GEOMETRY ****
+ 
+WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+ 0             0             17.05         .0001          0    1    1
+ 0             0             17.1          .0001          1    1    2
+ 0             0             17.15         .0001          1    1    3
+ 0             0             17.2          .0001          1    1    4
+ 0             0             17.25         .0001          1    1    5
+ 0             0             17.3          .0001          1    1    6
+ 0             0             17.35         .0001          1    1    7
+ 0             0             17.4          .0001          1    1    8
+ 0             0             17.45         .0001          1    0    9
+ 
+NO. OF SOURCES :  1 
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  5 , 1 , 0 
+NUMBER OF LOADS 0 
+ 
+********************    SOURCE DATA     ********************
+PULSE  5      VOLTAGE = ( 1 , 0 J)
+              CURRENT = ( 1.003989E-02 ,-5.325723E-03 J)
+              IMPEDANCE = ( 77.73057 , 41.23267 J)
+              POWER =  5.019944E-03  WATTS
+ 
+********************    CURRENT DATA    ********************
+ 
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0 
+ 1             3.290209E-03 -2.09288E-03   3.899438E-03 -32.46015 
+ 2             6.054809E-03 -3.740953E-03  7.117263E-03 -31.70977 
+ 3             8.203817E-03 -4.893564E-03  9.552464E-03 -30.81601 
+ 4             9.570717E-03 -5.452197E-03  1.101477E-02 -29.66908 
+ 5             1.003989E-02 -5.325723E-03  1.136498E-02 -27.944 
+ 6             9.570708E-03 -5.452174E-03  1.101475E-02 -29.669 
+ 7             8.203801E-03 -4.893524E-03  9.552428E-03 -30.81585 
+ 8             6.054793E-03 -3.740909E-03  7.117227E-03 -31.70954 
+ 9             3.290199E-03 -2.092847E-03  3.899412E-03 -32.45984 
+E              0             0             0             0 
+ 
+********************    NEAR FIELDS     ********************
+ 
+X-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  2000 , .05 , 21 
+Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  0 , .05 , 1 
+Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  300 , .05 , 1 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           5.78262E-06   9.550169E-05  9.567659E-05  86.53497 
+   Y           0             0             0             0 
+   Z          -1.300731E-04 -6.270813E-04  6.404295E-04 -101.7185 
+   MAXIMUM OR PEAK FIELD =  6.473941E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.05  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           3.837333E-05  7.763241E-05  8.659851E-05  63.69704 
+   Y           0             0             0             0 
+   Z          -2.899432E-04 -5.61347E-04   6.31805E-04  -117.317 
+   MAXIMUM OR PEAK FIELD =  6.377102E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.1  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           7.795154E-05  5.147314E-05  9.341266E-05  33.43767 
+   Y           0             0             0             0 
+   Z          -4.61594E-04  -4.358731E-04  6.348656E-04 -136.6416 
+   MAXIMUM OR PEAK FIELD =  6.415033E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.15  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           8.659937E-05  2.559134E-05  9.030153E-05  16.46315 
+   Y           0             0             0             0 
+   Z          -5.629224E-04 -2.803546E-04  6.288722E-04 -153.5251 
+   MAXIMUM OR PEAK FIELD =  6.351322E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.2  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           8.823891E-05  1.673393E-06  8.825476E-05  1.086447 
+   Y           0             0             0             0 
+   Z          -6.342773E-04 -8.967892E-05  6.405856E-04 -171.9524 
+   MAXIMUM OR PEAK FIELD =  6.465495E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.25  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           9.319259E-05 -1.407406E-05  9.424934E-05 -8.587983 
+   Y           0             0             0             0 
+   Z          -6.278779E-04  1.143903E-04  6.382129E-04  169.6748 
+   MAXIMUM OR PEAK FIELD =  6.451283E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.3  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           8.339528E-05 -4.198672E-05  9.336839E-05 -26.72372 
+   Y           0             0             0             0 
+   Z          -5.552236E-04  2.941326E-04  6.283209E-04  152.0874 
+   MAXIMUM OR PEAK FIELD =  6.352173E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.35  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           7.05313E-05  -6.216984E-05  9.401995E-05 -41.39457 
+   Y           0             0             0             0 
+   Z          -4.445782E-04  4.431468E-04  6.277171E-04  135.0924 
+   MAXIMUM OR PEAK FIELD =  6.346936E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.4  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           4.386998E-05 -8.478772E-05  9.546481E-05 -62.64251 
+   Y           0             0             0             0 
+   Z          -2.931332E-04  5.633119E-04  6.350175E-04  117.4913 
+   MAXIMUM OR PEAK FIELD =  6.421531E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.45  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -5.368015E-06 -9.717077E-05  9.731892E-05 -93.16199 
+   Y           0             0             0             0 
+   Z          -1.042368E-04  6.286798E-04  6.372625E-04  99.41415 
+   MAXIMUM OR PEAK FIELD =  6.443098E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.5  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -1.702925E-05 -9.194903E-05  9.351266E-05 -100.4925 
+   Y           0             0             0             0 
+   Z           1.028567E-04  6.298536E-04  6.381966E-04  80.72531 
+   MAXIMUM OR PEAK FIELD =  6.450082E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.55  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -2.728035E-05 -8.799427E-05  9.212604E-05 -107.2247 
+   Y           0             0             0             0 
+   Z           2.954004E-04  5.680624E-04  6.402782E-04  62.52494 
+   MAXIMUM OR PEAK FIELD =  6.466683E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.6  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -6.482486E-05 -6.45717E-05   9.149735E-05 -135.1121 
+   Y           0             0             0             0 
+   Z           4.493427E-04  4.45994E-04   6.33103E-04   44.78571 
+   MAXIMUM OR PEAK FIELD =  6.396804E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.65  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -8.977664E-05 -3.155614E-05  9.51611E-05  -160.6336 
+   Y           0             0             0             0 
+   Z           5.623921E-04  2.907194E-04  6.330897E-04  27.33596 
+   MAXIMUM OR PEAK FIELD =  6.400686E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.7  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -8.803814E-05 -2.339534E-05  9.109365E-05 -165.1181 
+   Y           0             0             0             0 
+   Z           6.238005E-04  1.097706E-04  6.333849E-04  9.980201 
+   MAXIMUM OR PEAK FIELD =  6.398555E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.75  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -9.354307E-05 -6.432095E-06  9.376394E-05 -176.0665 
+   Y           0             0             0             0 
+   Z           6.264671E-04 -1.000032E-04  6.343987E-04 -9.069624 
+   MAXIMUM OR PEAK FIELD =  6.409503E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.8  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -7.928094E-05  3.129734E-05  8.52349E-05   158.4576 
+   Y           0             0             0             0 
+   Z           5.748607E-04 -2.772607E-04  6.382306E-04 -25.74844 
+   MAXIMUM OR PEAK FIELD =  6.438671E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.85  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -6.506421E-05  5.710165E-05  8.656758E-05  138.7292 
+   Y           0             0             0             0 
+   Z           4.693574E-04 -4.337546E-04  6.390926E-04 -42.74243 
+   MAXIMUM OR PEAK FIELD =  6.449251E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.9  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X          -3.15176E-05   8.133161E-05  8.722494E-05  111.1823 
+   Y           0             0             0             0 
+   Z           2.912443E-04 -5.67829E-04   6.381637E-04 -62.84634 
+   MAXIMUM OR PEAK FIELD =  6.440343E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2000.95  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           8.902704E-06  1.012262E-04  1.016169E-04  84.97384 
+   Y           0             0             0             0 
+   Z           1.159609E-04 -6.244951E-04  6.351701E-04 -79.4807 
+   MAXIMUM OR PEAK FIELD =  6.426838E-04  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  2001  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           2.359066E-05  9.387482E-05  9.679359E-05  75.89372 
+   Y           0             0             0             0 
+   Z          -8.069957E-05 -6.339771E-04  6.390926E-04 -97.25423 
+   MAXIMUM OR PEAK FIELD =  6.462799E-04  V/M 
+ 
+********************    NEAR FIELDS     ********************
+ 
+X-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  20000 , .05 , 21 
+Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  0 , .05 , 1 
+Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER :  300 , .05 , 1 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           3.384063E-06 -2.110946E-06  3.98848E-06  -31.95551 
+   MAXIMUM OR PEAK FIELD =  3.988479E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.05  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -4.085155E-06  5.953195E-06  7.220042E-06  124.4584 
+   MAXIMUM OR PEAK FIELD =  7.220041E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.1  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           1.421953E-06 -3.466162E-06  3.746495E-06 -67.69467 
+   MAXIMUM OR PEAK FIELD =  3.746495E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.15  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           2.681413E-07 -3.856772E-06  3.866081E-06 -86.02291 
+   MAXIMUM OR PEAK FIELD =  3.86608E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.2  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -9.36179E-07  -3.877013E-06  3.98844E-06  -103.5753 
+   MAXIMUM OR PEAK FIELD =  3.988439E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.25  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -2.034648E-06 -3.272146E-06  3.853144E-06 -121.8737 
+   MAXIMUM OR PEAK FIELD =  3.853144E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.3  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -3.067816E-06 -2.548726E-06  3.98842E-06  -140.2804 
+   MAXIMUM OR PEAK FIELD =  3.988419E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.35  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -3.461434E-06 -1.408355E-06  3.736976E-06 -157.8601 
+   MAXIMUM OR PEAK FIELD =  3.736975E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.4  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -4.009629E-06 -2.948057E-07  4.020452E-06 -175.7949 
+   MAXIMUM OR PEAK FIELD =  4.020451E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.45  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -3.693011E-06  8.979043E-07  3.8006E-06    166.3345 
+   MAXIMUM OR PEAK FIELD =  3.8006E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.5  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -3.386018E-06  2.10762E-06   3.988381E-06  148.0999 
+   MAXIMUM OR PEAK FIELD =  3.98838E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.55  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -2.376178E-06  2.843335E-06  3.705506E-06  129.8855 
+   MAXIMUM OR PEAK FIELD =  3.705506E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.6  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -1.411784E-06  3.496701E-06  3.770948E-06  111.9863 
+   MAXIMUM OR PEAK FIELD =  3.770948E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.65  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z          -2.502908E-07  3.67929E-06   3.687793E-06  93.89167 
+   MAXIMUM OR PEAK FIELD =  3.687793E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.7  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           9.324023E-07  3.87782E-06   3.98834E-06   76.48016 
+   MAXIMUM OR PEAK FIELD =  3.988339E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.75  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           2.013437E-06  3.223383E-06  3.800542E-06  58.00966 
+   MAXIMUM OR PEAK FIELD =  3.800542E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.8  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           3.065272E-06  2.55163E-06   3.988321E-06  39.77508 
+   MAXIMUM OR PEAK FIELD =  3.98832E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.85  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           3.373387E-06  1.370141E-06  3.64102E-06   22.10511 
+   MAXIMUM OR PEAK FIELD =  3.641019E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.9  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           3.763197E-06  2.408081E-07  3.770894E-06  3.661381 
+   MAXIMUM OR PEAK FIELD =  3.770893E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20000.95  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           3.70804E-06  -8.860475E-07  3.812432E-06 -13.439 
+   MAXIMUM OR PEAK FIELD =  3.812432E-06  V/M 
+ 
+********************NEAR ELECTRIC FIELDS********************
+         FIELD POINT: X =  20001  Y =  0  Z =  300 
+  VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
+ COMPONENT     V/M           V/M           V/M           DEG
+   X           0             0             0             0 
+   Y           0             0             0             0 
+   Z           3.387974E-06 -2.104286E-06  3.988281E-06 -31.8446 
+   MAXIMUM OR PEAK FIELD =  3.98828E-06  V/M 
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.46923 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.375  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.366E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.46945 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.424  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.367E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.46966 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.474  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.368E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.46987 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.523  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.369E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47008 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.573  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.370E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47029 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.622  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.370E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.4705 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.672  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.371E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47071 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.721  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.372E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47092 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.77  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.373E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47113 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.82  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.374E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47134 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.869  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.374E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47154 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.919  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.375E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47176 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2022.968  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.376E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47196 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.018  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.377E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47218 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.067  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.378E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47238 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.117  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.378E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.4726 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.166  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.379E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47281 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.216  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.380E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47302 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.265  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.381E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47323 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.314  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.382E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  81.47344 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  2023.364  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 81.47      0.00            6.382E-04   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14063 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.25  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.843E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14063 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.3  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.841E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14063 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.35  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.841E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14063 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.4  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.841E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14063 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.45  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.841E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14064 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.5  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.840E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14064 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.55  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.840E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14064 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.6  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.840E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14065 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.65  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14065 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.7  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14065 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.75  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14065 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.8  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.85  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.9  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20002.95  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.839E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20003  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.838E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20003.05  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.838E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20003.1  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.838E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14066 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20003.15  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.838E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14067 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20003.2  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.837E-06   %-120.38           0.000E+00     0.00
+ 
+********************     FAR FIELD      ********************
+ 
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  89.14067 , 1 , 1 
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 1 , 1 
+ 
+ 
+********************    PATTERN DATA    ********************
+              RADIAL DISTANCE =  20003.25  METERS
+              POWER LEVEL =  5.019944E-03  WATTS
+ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+ ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+ 89.14      0.00            3.837E-06   %-120.38           0.000E+00     0.00
+
