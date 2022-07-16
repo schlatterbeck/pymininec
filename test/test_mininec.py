@@ -29,6 +29,7 @@ import mininec
 import numpy as np
 from mininec import *
 from zmatrix import *
+from ohio import Near_Far_Comparison
 
 class _Test_Base_With_File:
 
@@ -411,7 +412,6 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     # end def test_dipole_wiredia_01
 
     def test_dipole_wiredia_001 (self):
-        self.maxDiff = None
         m = self.dipole_7mhz (wire_dia = 0.001, filename = 'dipole-001.pout')
         self.assertEqual (self.expected_output, m.as_mininec ())
     # end def test_dipole_wiredia_001
@@ -529,7 +529,6 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     # end def test_vertical_ideal_ground_near
 
     def test_vertical_ideal_ground_far_abs (self):
-        self.maxDiff = None
         ideal = [ideal_ground]
         opt = dict (pwr = 100, dist = 1000)
         m = self.vertical_quarterwave \
@@ -538,6 +537,18 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         actual_output = m.as_mininec (opts).rstrip ()
         self.assertEqual (self.expected_output, actual_output)
     # end def test_vertical_ideal_ground_far_abs
+
+    def test_near_far (self):
+        r = []
+        nfc = Near_Far_Comparison ()
+        r.append (nfc.output_currents ())
+        r.append (nfc.output_near ())
+        r.append (nfc.output_far  ())
+        actual_output = '\n'.join (r).rstrip ()
+        with open (os.path.join ('test', 'ohio.pout'), 'r') as f:
+            self.expected_output = f.read ().rstrip ()
+        self.assertEqual (self.expected_output, actual_output)
+    # end def test_near_far
 
 # end class Test_Case_Known_Structure
 

@@ -74,8 +74,8 @@ E              0             0             0             0
 
 ********************     FAR FIELD      ********************
 
-ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 ,  5 , 19
-AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 ,  5 , 73
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER: 0 , 5 , 19
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER: 0 , 5 , 73
 
 ********************    PATTERN DATA    ********************
 ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL

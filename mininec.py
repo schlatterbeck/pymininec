@@ -2557,8 +2557,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     <BLANKLINE>
     ********************     FAR FIELD      ********************
     <BLANKLINE>
-    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 ,  3
-    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 ,180 ,  3
+    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 , 3
+    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 180 , 3
     <BLANKLINE>
     ********************    PATTERN DATA    ********************
     ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
@@ -2633,8 +2633,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     ********************     FAR FIELD      ********************
     <BLANKLINE>
     NEW POWER LEVEL =  100
-    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 ,  3
-    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 ,180 ,  3
+    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER: 0 , 45 , 3
+    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER: 0 , 180 , 3
     <BLANKLINE>
     ********************    PATTERN DATA    ********************
                   RADIAL DISTANCE =  1000  METERS

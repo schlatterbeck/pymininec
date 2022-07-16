@@ -28,23 +28,27 @@ class Near_Far_Comparison:
     # end def __init__
 
     def output_currents (self):
-        print (self.m.currents_as_mininec ())
+        return self.m.currents_as_mininec ()
     # end def output_currents
 
     def output_near (self):
+        r = []
         m = self.m
         m.compute_near_field ([self.xd [0],0,self.height], [.05,1,1], [21,1,1])
-        print (m.near_field_e_as_mininec ())
+        r.append (m.near_field_e_as_mininec ())
         m.compute_near_field ([self.xd [1],0,self.height], [.05,1,1], [21,1,1])
-        print (m.near_field_e_as_mininec ())
+        r.append (m.near_field_e_as_mininec ())
+        return '\n'.join (r)
     # end def output_near
 
     def output_far (self):
+        r = []
         m = self.m
         for a, d in zip (self.a, self.d):
             for aa, dd in zip (a, d):
                 m.compute_far_field (Angle (aa, 1, 1), self.phi, dist = dd)
-                print (m.far_field_absolute_as_mininec ())
+                r.append (m.far_field_absolute_as_mininec ())
+        return '\n'.join (r)
     # end def output_far
 
     def output_mininec_params (self):
@@ -105,7 +109,7 @@ class Near_Far_Comparison:
 if __name__ == '__main__':
     nfc = Near_Far_Comparison ()
     nfc.plot_near_far ()
-    #nfc.output_currents ()
-    #nfc.output_near ()
-    #nfc.output_far  ()
+    #print (nfc.output_currents ())
+    #print (nfc.output_near ())
+    #print (nfc.output_far  ())
     ##nfc.output_mininec_params ()
