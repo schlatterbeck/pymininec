@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
@@ -19,6 +20,7 @@ class Scaler:
 
 class Linear_Scaler (Scaler):
     ticks = np.array ([0, -3, -6, -10])
+    title = 'Linear scale'
 
     def scale (self, max_gain, gains):
         return 10 ** ((gains - max_gain) / 10)
@@ -30,6 +32,7 @@ scale_linear = Linear_Scaler ()
 
 class Linear_Voltage_Scaler (Scaler):
     ticks = np.array ([0, -3, -6, -10, -20])
+    title = 'Linear voltage'
 
     def scale (self, max_gain, gains):
         return 10 ** ((gains - max_gain) / 20)
@@ -41,6 +44,7 @@ scale_linear_voltage = Linear_Voltage_Scaler ()
 
 class ARRL_Scaler (Scaler):
     ticks = np.array ([0, -3, -10, -20, -30])
+    title = 'ARRL scale'
 
     def scale (self, max_gain, gains):
         return (1 / 0.89) ** ((gains - max_gain) / 2)
@@ -51,6 +55,7 @@ class ARRL_Scaler (Scaler):
 scale_arrl = ARRL_Scaler ()
 
 class Linear_dB_Scaler (Scaler):
+    title = 'Linear dB'
 
     def __init__ (self, min_db = -50):
         if min_db >= 0:
@@ -72,7 +77,11 @@ class Mininec_Gain:
 
     def __init__ (self, filename):
         self.filename = filename
+        self.f        = None
+        # Default title from filename
+        self.title    = os.path.splitext (filename) [0]
         self.pattern  = {}
+        # This might override title
         self.read_file ()
         thetas = set ()
         phis   = set ()
@@ -81,13 +90,22 @@ class Mininec_Gain:
             gains.append (self.pattern [(theta, phi)])
             thetas.add (theta)
             phis.add   (phi)
-        self.thetas = np.array (list (sorted (thetas))) * np.pi / 180
-        self.phis   = np.array (list (sorted (phis)))   * np.pi / 180
-        self.maxg   = max (gains)
-        self.gains  = np.reshape (np.array (gains), (self.thetas.shape [0], -1))
+        self.thetas_d = np.array (list (sorted (thetas)))
+        self.phis_d   = np.array (list (sorted (phis)))
+        self.thetas   = self.thetas_d * np.pi / 180
+        self.phis     = self.phis_d   * np.pi / 180
+        self.maxg     = max (gains)
+        self.gains    = np.reshape \
+            (np.array (gains), (self.thetas.shape [0], -1))
         idx = np.unravel_index (self.gains.argmax (), self.gains.shape)
-        self.theta_max = idx [0]
-        self.phi_max   = idx [1]
+        self.theta_maxidx, self.phi_maxidx = idx
+        self.theta_max = self.thetas_d [self.theta_maxidx]
+        self.phi_max   = self.phis_d   [self.phi_maxidx]
+        self.desc      = ['Title: %s' % self.title]
+        if self.f is not None:
+            self.desc.append ('Frequency: %.2f MHz' % self.f)
+        self.desc.append ('Outer ring: %.2f dBi' % self.maxg)
+        self.lbl_deg   = 0
     # end def __init__
 
     def read_file (self):
@@ -96,6 +114,8 @@ class Mininec_Gain:
         with open (self.filename, 'r') as f:
             for line in f:
                 line = line.strip ()
+                if self.f is None and line.startswith ('FREQUENCY'):
+                    self.f = float (line.split (':') [1].split () [0])
                 # File might end with Ctrl-Z (DOS EOF)
                 if line.startswith ('\x1a'):
                     break
@@ -121,8 +141,12 @@ class Mininec_Gain:
     # end def read_file
 
     def azimuth (self, scaler):
+        self.desc.insert (0, 'Azimuth Pattern')
+        self.desc.append ('Scaling: %s' % scaler.title)
+        self.desc.append ('Elevation: %.2f°' % (90 - self.theta_max))
+        self.lbl_deg  = self.phi_max
         gains = scaler.scale (self.maxg, self.gains)
-        self.polargains = gains [self.theta_max]
+        self.polargains = gains [self.theta_maxidx]
         self.angles = self.phis
         self.polarplot (scaler)
     # end def azimuth
@@ -138,14 +162,17 @@ class Mininec_Gain:
             self.polargains = gains2
             But second half must (both) be flipped to avoid crossover
         """
+        self.desc.insert (0, 'Elevation Pattern')
+        self.desc.append ('Scaling: %s' % scaler.title)
+        self.lbl_deg  = 90 - self.theta_max
         gains = scaler.scale (self.maxg, self.gains)
-        gains1 = gains.T [self.phi_max].T
+        gains1 = gains.T [self.phi_maxidx].T
         # Find index of the other side of the azimuth
         pmx = self.phis.shape [0] - self.phis.shape [0] % 2
-        idx = (self.phi_max + pmx // 2) % pmx
-        assert idx != self.phi_max
+        idx = (self.phi_maxidx + pmx // 2) % pmx
+        assert idx != self.phi_maxidx
         eps = 1e-9
-        assert abs (self.phis [idx] - self.phis [self.phi_max]) - np.pi < eps
+        assert abs (self.phis [idx] - self.phis [self.phi_maxidx]) - np.pi < eps
         gains2 = gains.T [idx].T
         p2 = np.pi / 2
         self.polargains = np.append (gains1, np.flip (gains2))
@@ -158,8 +185,9 @@ class Mininec_Gain:
         fig = plt.figure (dpi = dpi, figsize = (512 / dpi, 384 / dpi))
         ax  = plt.subplot (111, projection = 'polar')
         ax.set_rmax (1)
-        ax.set_rlabel_position (0)
+        ax.set_rlabel_position (self.lbl_deg  or 0)
         ax.set_thetagrids (range (0, 360, 15))
+        plt.figtext (0.005, 0.01, '\n'.join (self.desc))
         args = dict (linestyle = 'solid', linewidth = 1.5)
         ax.plot (self.angles, self.polargains, **args)
         #ax.grid (True)
