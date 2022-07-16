@@ -11,11 +11,9 @@ MININEC in Python
 .. |numpy.linalg.solve| replace:: ``numpy.linalg.solve``
 
 This is an attempt to rewrite the original MININEC3 basic sources in
-Python. Currently implemented is everything except printing of absolute
-far field, this is already computed but completely untested. There
-currently are no command-line options for near field computation.
-Standard use-case like computation of feed impedance and far field are
-implemented and are quite well tested.
+Python. Standard use-case like computation of feed impedance and far
+field are implemented and are quite well tested. There is only a command
+line interface.
 
 There are several tests against the `original Basic source code`_, for
 the test cases see the subdirectory ``test``. One of the test cases is
@@ -30,7 +28,7 @@ two statements, one of them the line after::
  if __name__ == '__main__':
 
 For the second one in ``compute_impedance_matrix`` near the end (as of
-this writing line 1339) I've not yet found a test case. I've not yet run
+this writing line 1367) I've not yet found a test case. I've not yet run
 the current tests through the basic interpreter with a breakpoint on
 that statement in Basic. It may very well be that this is still a bug
 and that it is not reachable in the current Python code.

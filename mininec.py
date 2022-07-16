@@ -2577,6 +2577,84 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
+    >>> args.extend (['--theta=0,45,3', '--phi=0,180,3'])
+    >>> args.extend (['--ff-power=100', '--ff-distance=1000'])
+    >>> args.extend (['--option=far-field-absolute'])
+    >>> main (args)
+                       ****************************************
+                         MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                       MININEC
+                       ****************************************
+    <BLANKLINE>
+    FREQUENCY (MHZ): 7.15
+        WAVE LENGTH =  41.93007  METERS
+    <BLANKLINE>
+    ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
+     NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
+    <BLANKLINE>
+    NO. OF WIRES: 1
+    <BLANKLINE>
+    WIRE NO. 1
+                COORDINATES                                 END         NO. OF
+       X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+     0             0             0                         -1
+     0             0             10.0838       .0127        0              5
+    <BLANKLINE>
+                      **** ANTENNA GEOMETRY ****
+    <BLANKLINE>
+    WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+    X             Y             Z             RADIUS        END1 END2  NO.
+     0             0             0             .0127        -1    1   1
+     0             0             2.01676       .0127         1    1   2
+     0             0             4.03352       .0127         1    1   3
+     0             0             6.05028       .0127         1    1   4
+     0             0             8.06704       .0127         1    0   5
+    <BLANKLINE>
+    NO. OF SOURCES :  1
+    PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  1 , 1 , 0
+    NUMBER OF LOADS 0
+    <BLANKLINE>
+    ********************    SOURCE DATA     ********************
+    PULSE  1      VOLTAGE = ( 1 , 0 J)
+                  CURRENT = ( 2.857798E-02 ,  1.660853E-03 J)
+                  IMPEDANCE = ( 34.87418 , -2.026766 J)
+                  POWER =  1.428899E-02  WATTS
+    <BLANKLINE>
+    ********************    CURRENT DATA    ********************
+    <BLANKLINE>
+    WIRE NO.  1 :
+    PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+     NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
+     2             2.727548E-02  6.861986E-04  2.728411E-02  1.441147 
+     3             2.346944E-02  8.170779E-05  2.346959E-02  .199472  
+     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
+     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
+    E              0             0             0             0
+    <BLANKLINE>
+    ********************     FAR FIELD      ********************
+    <BLANKLINE>
+    NEW POWER LEVEL =  100
+    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 ,  3
+    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 ,180 ,  3
+    <BLANKLINE>
+    ********************    PATTERN DATA    ********************
+                  RADIAL DISTANCE =  1000  METERS
+                  POWER LEVEL =  100  WATTS
+    ZENITH   AZIMUTH                 E(THETA)                    E(PHI)
+     ANGLE    ANGLE              MAG(V/M)    PHASE(DEG)      MAG(V/M)    PHASE(DEG)
+      0.00      0.00            0.000E+00     0.00           0.000E+00     0.00
+     45.00      0.00            8.854E-02    90.84           0.000E+00     0.00
+     90.00      0.00            1.396E-01    90.68           0.000E+00     0.00
+      0.00    180.00            0.000E+00     0.00           0.000E+00     0.00
+     45.00    180.00            8.854E-02    90.84           0.000E+00     0.00
+     90.00    180.00            1.396E-01    90.68           0.000E+00     0.00
+      0.00    360.00            0.000E+00     0.00           0.000E+00     0.00
+     45.00    360.00            8.854E-02    90.84           0.000E+00     0.00
+     90.00    360.00            1.396E-01    90.68           0.000E+00     0.00
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
     >>> args.extend (['--near-field=1,1,1,1,1,1,1,1,1', '--nf-power=100'])
     >>> main (args)
                        ****************************************
