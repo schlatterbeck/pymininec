@@ -361,11 +361,10 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
             (filename = None, media = ideal, load = l, dia = 0.002)
         for i in range (len (m.w_per)):
             for j in range (1, len (m.w_per)):
-                n = 1 if i == 0 and j == 0 else 3
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, n-f)
+                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, n-f)
+                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
     # end def test_matrix_fill_quarter_ideal_ground_load
 
     def test_matrix_fill_inverted_l (self):
@@ -405,6 +404,25 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
                 self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
     # end def test_matrix_fill_quarter_radials
+
+    def test_matrix_fill_ohio_example (self):
+        """ This uses assertAlmostEqual number of decimal places to
+            compare significant digits (approximately)
+            Note that the matrix is identical to the ideal ground case.
+            This is because mininec computes the currents in the wires
+            using ideal ground (which in turn make problems with wires
+            too near to ground with a parallel component).
+        """
+        mat = np.array (matrix_ohio_r) + 1j * np.array (matrix_ohio_i)
+        nfc = Near_Far_Comparison ()
+        m   = nfc.m
+        for i in range (len (m.w_per)):
+            for j in range (len (m.w_per)):
+                f = int (np.log (abs (mat [i][j].real)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
+                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+    # end def test_matrix_fill_ohio_example
 
     def test_dipole_wiredia_01 (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01.pout')

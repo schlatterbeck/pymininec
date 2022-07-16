@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mininec import *
+from zmatrix import matrix_ohio_r, matrix_ohio_i
 
 class Near_Far_Comparison:
 
@@ -104,11 +105,42 @@ class Near_Far_Comparison:
             plt.show ()
     # end def plot_near_far
 
+    def plot_z_errors (self):
+        """ Plot differences in z-matrix of Basic an Python implementation
+        """
+        err_r_p = []
+        err_i_p = []
+        err_r_b = []
+        err_i_b = []
+        mat = np.array (matrix_ohio_r) + 1j * np.array (matrix_ohio_i)
+        mat = mat.flatten ()
+        z   = self.m.Z.flatten ()
+        err   = mat - z
+        err_r = err.real
+        err_i = err.imag
+        err_r_b = err_r / mat.real * 100
+        err_r_p = err_r / z.real   * 100
+        err_i_b = err_i / mat.imag * 100
+        err_i_p = err_i / z.imag   * 100
+        x = np.arange (0, len (err_i_p), 1)
+        fig = plt.figure ()
+        ax  = plt.subplot (111)
+        ax.plot (x, err_r_p)
+        ax.plot (x, err_i_p)
+        plt.show ()
+        #fig = plt.figure ()
+        #ax  = plt.subplot (111)
+        #ax.plot (x, err_r_b)
+        #ax.plot (x, err_i_b)
+        #plt.show ()
+    # end def plot_z_errors
+
 # end class Near_Far_Comparison
 
 if __name__ == '__main__':
     nfc = Near_Far_Comparison ()
     nfc.plot_near_far ()
+    #nfc.plot_z_errors ()
     #print (nfc.output_currents ())
     #print (nfc.output_near ())
     #print (nfc.output_far  ())

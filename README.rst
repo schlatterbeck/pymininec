@@ -57,20 +57,31 @@ computations for the near field in double precision arithmetics.
 I've tried to replicate these experiments and the numerical
 instabilities are reproduceable in the Basic version. In the Python
 version the instabilities are not present (because everything is in
-double precision). But the absolute values computed in Python are lower
-than the ones reported by Zeineddin (and the Basic code *does* reproduce
-Zeineddins values). So it may well be that there is still a problem in
-the computations of the currents in the Python code, the computed
-currents are too low in that example. You can find the files in
+double precision). But the absolute field values computed in Python are
+lower than the ones reported by Zeineddin (and the Basic code *does*
+reproduce Zeineddins values).
+
+It doesn't look like there is a problem in the computations of the
+currents in the Python code, the computed currents are lower than in
+Basic which leads to lower field values. But the computed impedance
+matrix when comparing both versions has very low error, see the test
+``test_matrix_fill_ohio_example`` in ``test/test_mininec.py`` and the
+routine ``plot_z_errors`` to plot the errors (in percent) in
+``test/ohio.py``. Compared to the values computed by NEC [5]_, the Basic
+code produces slightly higher values for near and far field while the
+Python code produces slightly lower values than NEC. I've not tried to
+simulate this in NEC yet.
+
+You can find the files in
 ``test/ohio*`` (the thesis was at Ohio University). This time there is a
 python script ``ohio.py`` to compute the near and far field values
-without recomputing the impedance matrix. This script can plot the near
-and far field values into a plot and the difference into a second plot.
-There are two distances for which these are computed. There is a second
-script to plot the Basic near and far field patterns
-``plot_bas_ohio.py``.
+without recomputing the impedance matrix. This script can show the near
+and far field values in a plot and the difference in a second plot.
+There are two distances for which these are computed, so the code
+produces four plots. There is a second script to plot the Basic near and
+far field differences ``plot_bas_ohio.py``.
 
-Note that the current code is still hard to understand |--| it's the
+The current Python code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I
 didn't (yet) understand the intention of the code. The same holds for
 Variable names which might not (yet) reflect the intention of the code.
@@ -200,7 +211,7 @@ You can run `pcbasic`_ with the command-line option ``--input=`` to specify
 an input file. Note that the input file has to be converted to carriage
 return line endings (no newlines). I've described how I'm debugging the
 Basic code using the Python debugger in a `contribution to pcbasic`_,
-the file can be found `in my pcbasic fork`_ on github.
+this has been moved to the `pcbasic wiki`_.
 
 In the file ``debug-basic.txt`` you can find my notes on how to debug
 mininec using the python debugger. This is more or less a random
@@ -218,8 +229,8 @@ the two links I've given contain the same code.
 .. _`pcbasic`: https://github.com/robhagemans/pcbasic
 .. _`Debian`: https://packages.debian.org/stable/python3-pcbasic
 .. _`contribution to pcbasic`: https://github.com/robhagemans/pcbasic/pull/183
-.. _`in my pcbasic fork`:
-    https://github.com/schlatterbeck/pcbasic/blob/pydebug/debugging.rst
+.. _`pcbasic wiki`:
+    https://github.com/robhagemans/pcbasic/wiki/Debugging-Basic-with-the-Python-Debugger
 
 .. [1] Alfredo J. Julian, James C. Logan, and John W. Rockway.
     Mininec: A mini-numerical electromagnetics code. Technical Report
