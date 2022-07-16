@@ -7,44 +7,56 @@ from mpl_toolkits.mplot3d import Axes3D
 from argparse import ArgumentParser
 from matplotlib import cm
 
-class Linear_Scaler:
+class Scaler:
+
+    def set_ticks (self, ax):
+        g = self.ticks
+        ax.set_rticks (self.scale (0, g))
+        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
+    # end def set_ticks
+
+# end class Scaler
+
+class Linear_Scaler (Scaler):
+    ticks = np.array ([0, -3, -6, -10])
 
     def scale (self, max_gain, gains):
         return 10 ** ((gains - max_gain) / 10)
     # end def scale
 
-    def set_ticks (self, ax):
-        g = np.array ([0, -3, -6, -10])
-        ax.set_rticks (self.scale (0, g))
-        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
-    # end def set_ticks
-
 # end class Linear_Scaler
 
 scale_linear = Linear_Scaler ()
 
-class ARRL_Scaler:
+class Linear_Voltage_Scaler (Scaler):
+    ticks = np.array ([0, -3, -6, -10, -20])
+
+    def scale (self, max_gain, gains):
+        return 10 ** ((gains - max_gain) / 20)
+    # end def scale
+
+# end class Linear_Voltage_Scaler
+
+scale_linear_voltage = Linear_Voltage_Scaler ()
+
+class ARRL_Scaler (Scaler):
+    ticks = np.array ([0, -3, -10, -20, -30])
 
     def scale (self, max_gain, gains):
         return (1 / 0.89) ** ((gains - max_gain) / 2)
     # end def scale
 
-    def set_ticks (self, ax):
-        g = np.array ([0, -3, -10, -20, -30])
-        ax.set_rticks (self.scale (0, g))
-        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
-    # end def set_ticks
-
 # end class ARRL_Scaler
 
 scale_arrl = ARRL_Scaler ()
 
-class Linear_dB_Scaler:
+class Linear_dB_Scaler (Scaler):
 
     def __init__ (self, min_db = -50):
         if min_db >= 0:
             raise ValueError ("min_db must be < 0")
         self.min_db = min_db
+        self.ticks = np.arange (0, self.min_db - 10, -10)
     # end def __init__
 
     def scale (self, max_gain, gains):
@@ -53,12 +65,6 @@ class Linear_dB_Scaler:
             / -self.min_db
             )
     # end def scale
-
-    def set_ticks (self, ax):
-        g = np.arange (0, self.min_db - 10, -10)
-        ax.set_rticks (self.scale (0, g))
-        ax.set_yticklabels ([''] + [('%d' % i) for i in g [1:]], ha = 'center')
-    # end def set_ticks
 
 # end class Linear_dB_Scaler
 
@@ -211,7 +217,7 @@ class Mininec_Gain:
 
 if __name__ == '__main__':
     cmd = ArgumentParser ()
-    scaling = ['arrl', 'linear', 'linear_db']
+    scaling = ['arrl', 'linear', 'linear_db', 'linear_voltage']
     cmd.add_argument \
         ( 'filename'
         , help    = 'File to parse and plot'
