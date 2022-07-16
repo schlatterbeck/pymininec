@@ -43,8 +43,8 @@ class Linear_Voltage_Scaler (Scaler):
 scale_linear_voltage = Linear_Voltage_Scaler ()
 
 class ARRL_Scaler (Scaler):
-    ticks = np.array ([0, -3, -10, -20, -30])
-    title = 'ARRL scale'
+    ticks = np.array ([0, -3, -6, -10, -20, -30])
+    title = 'ARRL'
 
     def scale (self, max_gain, gains):
         return (1 / 0.89) ** ((gains - max_gain) / 2)
@@ -82,7 +82,7 @@ class Gain_Plot:
         self.filename = filename
         self.f        = None
         # Default title from filename
-        self.title    = os.path.splitext (filename) [0]
+        self.title    = os.path.splitext (os.path.basename (filename)) [0]
         self.pattern  = {}
         # This might override title
         self.read_file ()
@@ -170,6 +170,7 @@ class Gain_Plot:
         self.desc.insert (0, 'Elevation Pattern')
         self.desc.append ('Scaling: %s' % scaler.title)
         self.lbl_deg  = 90 - self.theta_max
+        self.labels   = None
         gains = scaler.scale (self.maxg, self.gains)
         gains1 = gains.T [self.phi_maxidx].T
         # Find index of the other side of the azimuth
