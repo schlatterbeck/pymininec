@@ -73,7 +73,10 @@ class Linear_dB_Scaler (Scaler):
 
 # end class Linear_dB_Scaler
 
-class Mininec_Gain:
+class Gain_Plot:
+    dpi   =  80
+    fig_x = 512
+    fig_y = 384
 
     def __init__ (self, filename):
         self.filename = filename
@@ -106,6 +109,7 @@ class Mininec_Gain:
             self.desc.append ('Frequency: %.2f MHz' % self.f)
         self.desc.append ('Outer ring: %.2f dBi' % self.maxg)
         self.lbl_deg   = 0
+        self.labels    = None
     # end def __init__
 
     def read_file (self):
@@ -144,10 +148,11 @@ class Mininec_Gain:
         self.desc.insert (0, 'Azimuth Pattern')
         self.desc.append ('Scaling: %s' % scaler.title)
         self.desc.append ('Elevation: %.2f°' % (90 - self.theta_max))
-        self.lbl_deg  = self.phi_max
+        self.lbl_deg = (self.phi_max - 90) % 360
+        self.labels  = 'XY'
         gains = scaler.scale (self.maxg, self.gains)
         self.polargains = gains [self.theta_maxidx]
-        self.angles = self.phis
+        self.angles = (self.phis - np.pi / 2)
         self.polarplot (scaler)
     # end def azimuth
 
@@ -157,7 +162,7 @@ class Mininec_Gain:
             OK for both 90° and 180° plots:
             self.angles = p2 - self.thetas
             self.polargains = gains1
-            OK for both 90° and ^80° plots:
+            OK for both 90° and 180° plots:
             self.angles = p2 + self.thetas
             self.polargains = gains2
             But second half must (both) be flipped to avoid crossover
@@ -181,12 +186,20 @@ class Mininec_Gain:
     # end def elevation
 
     def polarplot (self, scaler):
-        dpi = 80
-        fig = plt.figure (dpi = dpi, figsize = (512 / dpi, 384 / dpi))
+        dpi  = self.dpi
+        x, y = self.fig_x, self.fig_y
+        fig = plt.figure (dpi = dpi, figsize = (x / dpi, y / dpi))
         ax  = plt.subplot (111, projection = 'polar')
         ax.set_rmax (1)
         ax.set_rlabel_position (self.lbl_deg  or 0)
         ax.set_thetagrids (range (0, 360, 15))
+        if self.labels:
+            d = dict (fontsize = 18)
+            o  = (self.fig_x - self.fig_y) / self.fig_y / 2
+            sc = self.fig_y / self.fig_x
+            xp = sc * .92 + o
+            plt.figtext (xp,  0.5,  self.labels [0], va = 'center', **d)
+            plt.figtext (0.5, 0.95, self.labels [1], **d)
         plt.figtext (0.005, 0.01, '\n'.join (self.desc))
         args = dict (linestyle = 'solid', linewidth = 1.5)
         ax.plot (self.angles, self.polargains, **args)
@@ -241,7 +254,7 @@ class Mininec_Gain:
         #surf.set_edgecolor ((.5, .5, .5, 1))
         plt.show ()
     # end def plot3d
-# end class Mininec_Gain
+# end class Gain_Plot
 
 if __name__ == '__main__':
     cmd = ArgumentParser ()
@@ -278,7 +291,7 @@ if __name__ == '__main__':
         , default = -50
         )
     args = cmd.parse_args ()
-    mg = Mininec_Gain (args.filename)
+    gp   = Gain_Plot (args.filename)
 
     scale_linear_db = Linear_dB_Scaler (args.scaling_mindb)
 
@@ -286,8 +299,8 @@ if __name__ == '__main__':
     if not args.azimuth and not args.elevation and not args.plot3d:
         args.plot3d = True
     if args.azimuth:
-        mg.azimuth (scaler = scaler)
+        gp.azimuth (scaler = scaler)
     if args.elevation:
-        mg.elevation (scaler = scaler)
+        gp.elevation (scaler = scaler)
     if args.plot3d:
-        mg.plot3d (scaler = scaler)
+        gp.plot3d (scaler = scaler)
