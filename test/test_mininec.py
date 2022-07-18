@@ -214,7 +214,7 @@ class _Test_Base_With_File:
         return m
     # end def t_antenna
 
-    def compare_far_field_data (self, m):
+    def compare_far_field_data (self, m, may_fail_last_digit = False):
         """ dB values below -200 contain large rounding errors.
             This makes tests fail on different architectures, notably on
             Intel vs. AMD CPUs. Seems the trigonometric functions are
@@ -236,10 +236,48 @@ class _Test_Base_With_File:
                 eff = float (ef)
                 aff = float (af)
                 if eff > -200:
-                    self.assertEqual (ef, af)
+                    if may_fail_last_digit:
+                        self.assertEqual (ef [:-1], af [:-1])
+                    else:
+                        self.assertEqual (ef, af)
                 else:
                     self.assertLess (aff, -200)
     # end def compare_far_field_data
+
+    def compare_near_field_data (self, m, opts = None):
+        """ Near field data below absolute values of 1e-15 may be
+            different on different architectures
+        """
+        if opts is None:
+            opts = set (('near-field',))
+        ex  = self.expected_output.rstrip ().split ('\n')
+        ac  = m.as_mininec (opts).rstrip ().split ('\n')
+        idx = self.expected_output.find ('FIELD POINT: X')
+        l   = len (self.expected_output [:idx].split ('\n'))
+        off = l - 2
+        self.assertEqual (ex [:off], ac [:off])
+        for e, a in zip (ex [off:], ac [off:]):
+            el = e.strip ().split ()
+            al = a.strip ().split ()
+            if not el:
+                self.assertEqual (e, a)
+                continue
+            if el [0] in 'XYZ':
+                fe = [float (x) for x in el [1:]]
+                fa = [float (x) for x in al [1:]]
+                found = False
+                for n, (ffe, ffa) in enumerate (zip (fe, fa)):
+                    # Don't compare angle if below threshold
+                    if found and n == 3:
+                        continue
+                    if ffe != 0 and abs (ffe) < 1e-15:
+                        self.assertLess (abs (ffa), 1e-15)
+                        found = True
+                    else:
+                        self.assertEqual (ffe, ffa)
+            else:
+                self.assertEqual (e, a)
+    # end def compare_near_field_data
 
 # end class _Test_Base_With_File
 
@@ -489,7 +527,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_folded_dipole (self):
         m = self.folded_dipole ('folded-18.pout')
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        self.compare_far_field_data (m, may_fail_last_digit = True)
     # end def test_folded_dipole
 
     def test_vertical_ideal_ground (self):
@@ -541,9 +579,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         l = Laplace_Load (b = (1., 0), a = (0., -2.193644e-3))
         m = self.vertical_quarterwave \
             ('vertical-ig-near.pout', ideal, dia = 0.002, load = l)
-        opts = set (('near-field',))
-        actual_output = m.as_mininec (opts).rstrip ()
-        self.assertEqual (self.expected_output, actual_output)
+        self.compare_near_field_data (m)
     # end def test_vertical_ideal_ground_near
 
     def test_vertical_ideal_ground_far_abs (self):
