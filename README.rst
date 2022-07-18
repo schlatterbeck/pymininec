@@ -23,15 +23,19 @@ make the mininec code work harder because it cannot use the thin wire
 assumptions. Another test is for the thin wire case. Also added are the
 inverted-L and the T antenna from the original Mininec reports. All
 these may also serve as examples.  Tests currently cover all except for
-two statements, one of them the line after::
+the line after::
 
  if __name__ == '__main__':
 
-For the second one in ``compute_impedance_matrix`` near the end (as of
-this writing line 1367) I've not yet found a test case. I've not yet run
-the current tests through the basic interpreter with a breakpoint on
-that statement in Basic. It may very well be that this is still a bug
-and that it is not reachable in the current Python code.
+There was a second line that was flagged as not covered by the
+``pytest`` framework. This is a ``continue`` statement in
+``compute_impedance_matrix`` near the end (as of this writing line 1377).
+This looks like a bug in the test framework or in Python: When I set a
+breakpoint in the python debugger on the continue statement, the
+breakpoint is never reached. When I put an assignment statement before
+the continue statement, the continue statement is reported as covered by
+the tests *and* when I set a breakpoint it is reached. I've `reported
+this as a bug in the pytest project`_ and `as a bug in python`_.
 
 For all the test examples it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
@@ -259,3 +263,7 @@ the two links I've given contain the same code.
     https://numpy.org/doc/stable/reference/generated/numpy.linalg.solve.html
 .. _`OhioLINK Electronic Theses & Dissertations Center`:
     https://etd.ohiolink.edu/apexprod/rws_etd/send_file/send?accession=ohiou1176315682
+.. _`reported this as a bug in the pytest project`:
+    https://github.com/pytest-dev/pytest/issues/10152
+.. _`as a bug in python`:
+    https://github.com/python/cpython/issues/94974
