@@ -19,17 +19,17 @@ all: $(VERSION)
 	tr '\n' '\r' < $< > $@
 
 coverage:
-	python3 -m pytest --cov-report term-missing --cov mininec test
+	$(PYTHON) -m pytest --cov-report term-missing --cov mininec test
 
 test:
-	python3 -m pytest test
+	$(PYTHON) -m pytest test
 
 # Generate basic input files with carriage return instead of linefeed
 basic_input: $(CR)
 
 clean:
 	rm -f $(CR) README.html MININEC.INP mininec/Version.py announce_pypi
-	rm -rf dist build upload upload_homepage ReleaseNotes.txt
+	rm -rf dist build upload upload_homepage ReleaseNotes.txt zoppel.png
 
 .PHONY: clean test coverage basic_input
 

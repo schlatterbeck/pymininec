@@ -1364,20 +1364,14 @@ class Mininec:
                     # 325-327
                     # The following continue statement *is* reached by
                     # the current tests but is flagged as not reached by
-                    # the pytest framework. The statement is reached for
+                    # the pytest framework if the python version is
+                    # below 3.10. The statement is reached for
                     # the t-ant.pym example with p1 == 8 and j == 7.
-                    # Adding the xyzzy assignment actually improves the
-                    # test coverage by one statement. A bug in pytest or
-                    # in Python: The debugger also never stops there
-                    # when I set a breakpoint. But the continue
-                    # statement *is* executed, it's just not registered
-                    # as executed.
                     if  (   self.seg_idx [p1][1] != self.seg_idx [j][1]
                         and (  self.seg_idx [p1][1] != -self.seg_idx [j][1]
                             or d [0] + d [1] != 0
                             )
                         ):
-                        xyzzy = 42
                         continue
                     p2 = i + 1
                     self.Z [p2][p1] = self.Z [i][j]

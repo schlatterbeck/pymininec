@@ -19,6 +19,9 @@ __pycache__
 pymininec.egg-info
 build
 dist
+announce_pypi
+upload_pypi
 .coverage
 *.hacked
 old
+zoppel.png

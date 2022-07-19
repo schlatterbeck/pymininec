@@ -322,3 +322,6 @@ def main (argv = sys.argv [1:]):
     if args.plot3d:
         gp.plot3d (scaler = scaler)
 # end def main
+
+if __name__ == '__main__':
+    main ()

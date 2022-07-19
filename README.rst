@@ -89,17 +89,18 @@ inverted-L and the T antenna from the original Mininec reports. All
 these may also serve as examples.  Tests statement coverage is currently
 at 100%.
 
-There was a line that was flagged as not covered by the
-``pytest`` framework. This is a ``continue`` statement in
-``compute_impedance_matrix`` near the end (as of this writing line 1381).
-This looks like a bug in the test framework or in Python: When I set a
-breakpoint in the python debugger on the continue statement, the
-breakpoint is never reached. When I put an assignment statement before
-the continue statement, the continue statement is reported as covered by
-the tests *and* when I set a breakpoint it is reached. Note that the
-continue statement *is* executed properly, it is just not correctly
-reported to Python's introspection. I've `reported this as a bug in the
-pytest project`_ and `as a bug in python`_.
+There is a line that is flagged as not covered by the ``pytest``
+framework if the Python version is below 3.10. This is a ``continue``
+statement in ``compute_impedance_matrix`` near the end (as of this
+writing line 1375). This is a bug in Python in versions below 3.10:
+When setting a breakpoint in the python debugger on the continue
+statement, the breakpoint is never reached although the continue
+statement is correctly executed. A workaround would be to put a dummy
+assignment before the continue statement and verify the test coverage
+now reports the continue statement as covered.
+I've `reported this as a bug in the pytest project`_ and `as a bug in
+python`_, the bugs are closed now because Python3.9 does no longer get
+maintenance.
 
 For all the test examples it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
