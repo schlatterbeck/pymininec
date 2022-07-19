@@ -3283,9 +3283,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     print (m.as_mininec (options))
 # end def main
 
-if __name__ == '__main__':
-    sys.exit (main ())
-
 __all__ = \
     [ 'Angle'
     , 'Excitation'

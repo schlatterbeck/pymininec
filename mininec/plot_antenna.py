@@ -257,7 +257,7 @@ class Gain_Plot:
     # end def plot3d
 # end class Gain_Plot
 
-if __name__ == '__main__':
+def main ():
     cmd = ArgumentParser ()
     scaling = ['arrl', 'linear', 'linear_db', 'linear_voltage']
     cmd.add_argument \
@@ -305,3 +305,7 @@ if __name__ == '__main__':
         gp.elevation (scaler = scaler)
     if args.plot3d:
         gp.plot3d (scaler = scaler)
+# end def main
+
+if __name__ == '__main__':
+    main ()

@@ -2,7 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mininec import *
+from mininec.mininec import *
 from zmatrix import matrix_ohio_r, matrix_ohio_i
 
 class Near_Far_Comparison:

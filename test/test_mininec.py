@@ -25,9 +25,9 @@ import os
 import unittest
 import pytest
 import doctest
-import mininec
 import numpy as np
-from mininec import *
+import mininec
+from mininec.mininec import *
 from zmatrix import *
 from ohio import Near_Far_Comparison
 
@@ -183,7 +183,7 @@ class _Test_Base_With_File:
         w  = []
         w.append (Wire (4, 0, 0,    0, 0,    0, .191, .004))
         w.append (Wire (6, 0, 0, .191, 0, .309, .191, .004))
-        m  = Mininec (299.8, w, media = [mininec.ideal_ground])
+        m  = Mininec (299.8, w, media = [ideal_ground])
         ex = Excitation (1, 0)
         m.register_source (ex, 0)
         if filename is None:
@@ -201,7 +201,7 @@ class _Test_Base_With_File:
         w.append (Wire ( 8, 0,        0,      0, 0, 0, .07958, r))
         w.append (Wire (17, 0, -.170423, .07958, 0, 0, .07958, r))
         w.append (Wire (17, 0,  .170423, .07958, 0, 0, .07958, r))
-        m  = Mininec (299.8, w, media = [mininec.ideal_ground])
+        m  = Mininec (299.8, w, media = [ideal_ground])
         ex = Excitation (1, 0)
         m.register_source (ex, 0)
         if filename is None:
@@ -324,7 +324,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         self.assertRaises (ValueError, Mininec, 7, w, media = [])
-        ideal = mininec.ideal_ground
+        ideal = ideal_ground
         media = [ideal, ideal]
         self.assertRaises (ValueError, Mininec, 7, w, media = media)
         rad = Medium (1, 1, nradials = 1, radius = 1, dist = 1)
@@ -340,7 +340,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.assertRaises (ValueError, Wire, 7, 1, 1, 1, 2, 2, 2, 0)
         self.assertRaises (ValueError, Wire, 7, 1, 1, 1, 1, 1, 1, 1)
         wire = Wire (7, 0, 0, 0, 1, 1, 0, 0.01)
-        ideal = mininec.ideal_ground
+        ideal = ideal_ground
         self.assertRaises (ValueError, wire.compute_ground, 0, ideal)
         wire = Wire (7, 0, 0, -1, 1, 1, -1, 0.01)
         self.assertRaises (ValueError, wire.compute_ground, 0, ideal)
@@ -613,8 +613,8 @@ class Test_Doctest (unittest.TestCase):
     def test_mininec (self):
         num_tests = 282
         f, t  = doctest.testmod \
-            (mininec, verbose = False, optionflags = self.flags)
-        fn = os.path.basename (mininec.__file__)
+            (mininec.mininec, verbose = False, optionflags = self.flags)
+        fn = os.path.basename (mininec.mininec.__file__)
         format_ok  = '%(fn)s passes all of %(t)s doc-tests'
         format_nok = '%(fn)s fails %(f)s of %(t)s doc-tests'
         if f:
