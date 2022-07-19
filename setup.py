@@ -26,12 +26,12 @@
 from warnings import filterwarnings
 from setuptools import setup
 try :
-    from mininec.version import VERSION
+    from mininec.Version import VERSION
 except :
     VERSION = None
 
 with open ('README.rst') as f:
-    description = f.read ().split ('\n')
+    description = f.read ()
 
 filterwarnings \
     ( "ignore"
@@ -46,6 +46,7 @@ setup \
     , description      =
         "Python version of the original MININEC Antenna Optimization code"
     , long_description = ''.join (description)
+    , long_description_content_type='text/x-rst'
     , license          = license
     , author           = "Ralf Schlatterbeck"
     , author_email     = "rsc@runtux.com"
