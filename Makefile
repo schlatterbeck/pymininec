@@ -3,7 +3,7 @@
 MINI=$(wildcard test/*.mini)
 CR=$(patsubst %.mini,%.CR,$(notdir $(MINI)))
 
-all: $(CR) test
+all: test
 
 %.CR: test/%.mini
 	tr '\n' '\r' < $< > $@
@@ -14,7 +14,9 @@ coverage:
 test:
 	python3 -m pytest test
 
+basic_input: $(CR)
+
 clean:
 	rm -f $(CR) README.html MININEC.INP
 
-.PHONY: clean test coverage
+.PHONY: clean test coverage basic_input

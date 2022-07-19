@@ -78,8 +78,9 @@ class Gain_Plot:
     fig_x = 512
     fig_y = 384
 
-    def __init__ (self, filename):
+    def __init__ (self, filename, outfile = None):
         self.filename = filename
+        self.outfile  = outfile
         self.f        = None
         # Default title from filename
         self.title    = os.path.splitext (os.path.basename (filename)) [0]
@@ -190,7 +191,7 @@ class Gain_Plot:
         dpi  = self.dpi
         x, y = self.fig_x, self.fig_y
         fig = plt.figure (dpi = dpi, figsize = (x / dpi, y / dpi))
-        ax  = plt.subplot (111, projection = 'polar')
+        ax  = fig.add_subplot (111, projection = 'polar')
         ax.set_rmax (1)
         ax.set_rlabel_position (self.lbl_deg  or 0)
         ax.set_thetagrids (range (0, 360, 15))
@@ -208,8 +209,10 @@ class Gain_Plot:
         scaler.set_ticks (ax)
         # Might add color and size labelcolor='r' labelsize = 8
         ax.tick_params (axis = 'y', rotation = 'auto')
-        plt.show ()
-        #fig.savefig ('zoppel.png')
+        if self.outfile:
+            fig.savefig (self.outfile)
+        else:
+            plt.show ()
     # end def polarplot
 
     def plot3d (self, scaler):
@@ -253,11 +256,14 @@ class Gain_Plot:
         #import pdb; pdb.set_trace()
         #surf.set_facecolor ((0, 0, 0, 0))
         #surf.set_edgecolor ((.5, .5, .5, 1))
-        plt.show ()
+        if self.outfile:
+            fig.savefig (self.outfile)
+        else:
+            plt.show ()
     # end def plot3d
 # end class Gain_Plot
 
-def main ():
+def main (argv = sys.argv [1:]):
     cmd = ArgumentParser ()
     scaling = ['arrl', 'linear', 'linear_db', 'linear_voltage']
     cmd.add_argument \
@@ -273,6 +279,10 @@ def main ():
         ( '--elevation'
         , help    = 'Do an elevation plot'
         , action  = 'store_true'
+        )
+    cmd.add_argument \
+        ( '--output-file'
+        , help    = 'Output file, default is interactive'
         )
     cmd.add_argument \
         ( '--plot3d'
@@ -291,12 +301,18 @@ def main ():
         , type    = float
         , default = -50
         )
-    args = cmd.parse_args ()
-    gp   = Gain_Plot (args.filename)
+    args = cmd.parse_args (argv)
+    d    = dict (filename = args.filename)
+    if args.output_file:
+        d ['outfile'] = args.output_file
+    gp   = Gain_Plot (**d)
 
     scale_linear_db = Linear_dB_Scaler (args.scaling_mindb)
 
-    scaler = globals () ['scale_' + args.scaling_method]
+    try:
+        scaler = globals () ['scale_' + args.scaling_method]
+    except KeyError:
+        scaler = locals () ['scale_' + args.scaling_method]
     if not args.azimuth and not args.elevation and not args.plot3d:
         args.plot3d = True
     if args.azimuth:
@@ -306,6 +322,3 @@ def main ():
     if args.plot3d:
         gp.plot3d (scaler = scaler)
 # end def main
-
-if __name__ == '__main__':
-    main ()

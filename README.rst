@@ -160,7 +160,7 @@ I detected the pattern.
 
 So the *de-spaghettification* was not successful in some parts of the
 code yet :-) My notes from the reverse-engineering can be found in the
-file ``mininec-done`` which has explanations of some of the variables
+file ``basic-notes.txt`` which has explanations of some of the variables
 used in mininec and some sub routines with descriptions (mostly taken
 from ``REM`` statements) of the Basic code.
 
