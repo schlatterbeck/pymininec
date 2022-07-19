@@ -16,6 +16,9 @@
 *.out
 README.html
 __pycache__
+pymininec.egg-info
+build
+dist
 .coverage
 *.hacked
 old

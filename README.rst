@@ -15,6 +15,70 @@ Python. Standard use-case like computation of feed impedance and far
 field are implemented and are quite well tested. There is only a command
 line interface.
 
+An example of using the command-line interface uses the following
+12-element Yagi/Uda antenna originally presented by Cebik [6]_ without
+the resistive element loading and with slight corrections to the element
+lengths to make the antenna symmetric (the errors in the display in
+Cebik's article may be due to a display issue of the program used that
+displays negative numbers with less accuracy than positive numbers).
+You can get further help by calling ``pymininec`` with the ``--help``
+option.  The command-line options for the 12-element antenna example
+(also available in the file ``test/12-el.pym``) are::
+
+    pymininec -f 148 \
+    -w 22,-.51943,0.00000,0,.51943,0.00000,0,.00238 \
+    -w 22,-.50165,0.22331,0,.50165,0.22331,0,.00238 \
+    -w 22,-.46991,0.34215,0,.46991,0.34215,0,.00238 \
+    -w 22,-.46136,0.64461,0,.46136,0.64461,0,.00238 \
+    -w 22,-.46224,1.03434,0,.46224,1.03434,0,.00238 \
+    -w 22,-.45989,1.55909,0,.45989,1.55909,0,.00238 \
+    -w 22,-.44704,2.19682,0,.44704,2.19682,0,.00238 \
+    -w 22,-.43561,2.94640,0,.43561,2.94640,0,.00238 \
+    -w 22,-.42672,3.72364,0,.42672,3.72364,0,.00238 \
+    -w 22,-.41783,4.53136,0,.41783,4.53136,0,.00238 \
+    -w 22,-.40894,5.33400,0,.40894,5.33400,0,.00238 \
+    -w 22,-.39624,6.0452,0,.39624,6.0452,0,.00238 \
+    --theta=0,5,37 --phi=0,5,73 \
+    --excitation-segment=33 > 12-el.pout
+
+Users on Linux can run this using (I'm sure Windows users can come up
+with a similar command-line on Windows)::
+
+    pymininec $(cat test/12-el.pym) > 12-el.pout
+
+The resulting output file contains currents, impedance at the feedpoint
+and antenna far field in dBi as tables. The output tries to reproduce
+the format of the original Basic implementation of Mininec. Now these
+tables are not very useful to get an idea of the far field behaviour of
+an antenna. Therefore there is a small companion program ``plot-antenna``
+that can plot the antenna pattern. The default is an interactive 3d
+view. In addition with the ``--azimuth`` or ``--elevation`` options you
+can get an Azimuth diagram::
+
+    plot-antenna --azimuth test/12-el-1deg.pout
+
+.. figure:: test/12-el-azimuth.png
+    :align: center
+
+or an elevation diagram::
+
+    plot-antenna --elevation test/12-el-1deg.pout
+
+.. figure:: test/12-el-elevation.png
+    :align: center
+
+respectively. Note that I used an output file with 1-degree resolution
+in elevation and azimuth angles not with 5 degrees as in the example
+above. The pattern look smoother but a 3D-view will be very slow due to
+the large number of points. The plot program also has a ``--help``
+option for further information. In particular the scaling of the antenna
+plot can be ``linear``, ``linear_db``, and ``linear_voltage`` in
+addition to the default of ``arrl`` scaling. You may consult Cebik's [6]_
+article for explanation of the different diagrams.
+
+Test coverage: Making sure it is consistent with original Mininec
+-----------------------------------------------------------------
+
 There are several tests against the `original Basic source code`_, for
 the test cases see the subdirectory ``test``. One of the test cases is
 a simple 7MHz wire dipole with half the wavelength and 10 segments.
@@ -22,20 +86,20 @@ In one case the wire is 0.01m (1cm) thick, we use such a thick wire to
 make the mininec code work harder because it cannot use the thin wire
 assumptions. Another test is for the thin wire case. Also added are the
 inverted-L and the T antenna from the original Mininec reports. All
-these may also serve as examples.  Tests currently cover all except for
-the line after::
+these may also serve as examples.  Tests statement coverage is currently
+at 100%.
 
- if __name__ == '__main__':
-
-There was a second line that was flagged as not covered by the
+There was a line that was flagged as not covered by the
 ``pytest`` framework. This is a ``continue`` statement in
-``compute_impedance_matrix`` near the end (as of this writing line 1377).
+``compute_impedance_matrix`` near the end (as of this writing line 1381).
 This looks like a bug in the test framework or in Python: When I set a
 breakpoint in the python debugger on the continue statement, the
 breakpoint is never reached. When I put an assignment statement before
 the continue statement, the continue statement is reported as covered by
-the tests *and* when I set a breakpoint it is reached. I've `reported
-this as a bug in the pytest project`_ and `as a bug in python`_.
+the tests *and* when I set a breakpoint it is reached. Note that the
+continue statement *is* executed properly, it is just not correctly
+reported to Python's introspection. I've `reported this as a bug in the
+pytest project`_ and `as a bug in python`_.
 
 For all the test examples it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
@@ -74,7 +138,7 @@ routine ``plot_z_errors`` to plot the errors (in percent) in
 ``test/ohio.py``. Compared to the values computed by NEC [5]_, the Basic
 code produces slightly higher values for near and far field while the
 Python code produces slightly lower values than NEC. I've not tried to
-simulate this in NEC yet.
+simulate this myself in NEC yet.
 
 You can find the files in
 ``test/ohio*`` (the thesis was at Ohio University). This time there is a
@@ -99,6 +163,18 @@ code yet :-) My notes from the reverse-engineering can be found in the
 file ``mininec-done`` which has explanations of some of the variables
 used in mininec and some sub routines with descriptions (mostly taken
 from ``REM`` statements) of the Basic code.
+
+The code is also still quite slow: An example of a 12 element Yagi/Uda
+antenna used in modeling examples by Cebik [6]_ takes about 50 seconds
+on my PC (this has 264 segments, more than the original Mininec ever
+supported) when I'm using 5 degree increments for theta and phi angles
+and about 11 minutes (!) for 1 degree angles. The reason is that
+everything currently is implemented (like in Basic) as nested loops.
+This could (and should) be changed to use vector and matrix operations
+in `numpy`_. In the inner loop of the matrix fill operation there are
+several integrals computed using `gaussian quadrature`_ or a numeric
+solution to an `elliptic integral`_. These could be implemented by
+scipy_ library functions.
 
 Notes on Elliptic Integral Parameters
 -------------------------------------
@@ -256,6 +332,12 @@ the two links I've given contain the same code.
 .. [5] Rafik Paul Zeineddin. Numerical electromagnetics codes: Problems,
     solutions and applications. Master’s thesis, Ohio University, March 1993.
     Available from the `OhioLINK Electronic Theses & Dissertations Center`_
+.. [6] L. B. Cebik. Radiation plots: Polar or rectangular; log or linear.
+    In Antenna Modeling Notes [7], chapter 48, pages 366–379. Available
+    in Cebik's `Antenna modelling notes episode 48`_
+.. [7] L. B. Cebik. Antenna Modeling Notes, volume 2. antenneX Online
+    Magazine, 2003. Available with antenna models from the `Cebik
+    collection`_.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
@@ -267,3 +349,10 @@ the two links I've given contain the same code.
     https://github.com/pytest-dev/pytest/issues/10152
 .. _`as a bug in python`:
     https://github.com/python/cpython/issues/94974
+.. _`Cebik collection`:
+    http://on5au.be/Books/allmodnotes.zip
+.. _`Antenna modelling notes episode 48`:
+    http://on5au.be/content/amod/amod48.html
+.. _`gaussian quadrature`: https://en.wikipedia.org/wiki/Gaussian_quadrature
+.. _`elliptic integral`: https://en.wikipedia.org/wiki/Elliptic_integral
+.. _`scipy`: https://scipy.org/
