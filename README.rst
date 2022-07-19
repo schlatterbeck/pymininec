@@ -57,14 +57,14 @@ can get an Azimuth diagram::
 
     plot-antenna --azimuth test/12-el-1deg.pout
 
-.. figure:: test/12-el-azimuth.png
+.. figure:: https://raw.githubusercontent.com/schlatterbeck/pymininec/master/test/12-el-azimuth.png
     :align: center
 
 or an elevation diagram::
 
     plot-antenna --elevation test/12-el-1deg.pout
 
-.. figure:: test/12-el-elevation.png
+.. figure:: https://raw.githubusercontent.com/schlatterbeck/pymininec/master/test/12-el-elevation.png
     :align: center
 
 respectively. Note that I used an output file with 1-degree resolution
