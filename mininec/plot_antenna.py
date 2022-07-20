@@ -129,9 +129,10 @@ class Gain_Plot:
     # end def __init__
 
     def read_file (self):
-        guard = 'not set'
+        guard     = 'not set'
         delimiter = guard
-        gdata = None
+        gdata     = None
+        flag      = False
         with open (self.filename, 'r') as f:
             for line in f:
                 line = line.strip ()
@@ -152,17 +153,34 @@ class Gain_Plot:
                     gdata.impedance = a + 1j * b
                     delimiter = guard
                     continue
+                # NEC2 file
+                if 'ANTENNA INPUT PARAMETERS' in line:
+                    flag = True
+                    continue
+                # NEC2 file
+                if flag and line [0].isnumeric ():
+                    l = line.split ()
+                    assert len (l) == 11
+                    a, b = (float (x) for x in l [6:8])
+                    gdata.impedance = a + 1j * b
+                    flag = False
+                    continue
                 # File might end with Ctrl-Z (DOS EOF)
                 if line.startswith ('\x1a'):
                     break
+                if flag:
+                    continue
                 if delimiter == guard:
+                    # Original Basic implementation gain output
                     if line.endswith (',D'):
                         delimiter = ','
+                        f = 0.0
+                        gdata = self.gdata [f] = Gain_Data (self, f)
                         continue
                     if line.startswith ('ANGLE') and line.endswith ('(DB)'):
                         delimiter = None
                         continue
-                    # Also read NEC files
+                    # NEC file
                     if  (   line.startswith ('DEGREES   DEGREES        DB')
                         and line.endswith ('VOLTS/M   DEGREES')
                         ):
@@ -174,11 +192,11 @@ class Gain_Plot:
                         gdata = None
                         continue
                     fields = line.split (delimiter)
-                    if len (fields) < 5:
+                    if len (fields) < 5 or not fields [0][0].isnumeric ():
                         delimiter = guard
                         gdata = None
                         continue
-                    zen, azi, vp, hp, tot = (float (l) for l in fields [:5])
+                    zen, azi, vp, hp, tot = (float (x) for x in fields [:5])
                     gdata.pattern [(zen, azi)] = tot
     # end def read_file
 

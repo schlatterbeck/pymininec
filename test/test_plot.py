@@ -131,6 +131,18 @@ class Test_Plot (unittest.TestCase):
         self.compare_cs (checksums)
     # end def test_3d
 
+    def test_plotall (self):
+        checksums = set \
+            (( 'feb1e0ff03d8204ac13ab28e4d888e11507a0327'
+             , 'a951418c5a0cb42f6acdd12e028e51ad91d720a8'
+             , '7b18b3fcba97fee155d05c5b2df898523553fc99'
+            ))
+        infile = "test/inverted-v.pout"
+        args = ["--out=%s" % self.outfile, infile]
+        main (args)
+        self.compare_cs (checksums)
+    # end def test_3d
+
     def test_vswr (self):
         checksums = set \
             (( 'beb1826625148d40f313d631c4631509cbb06cac'
@@ -139,6 +151,46 @@ class Test_Plot (unittest.TestCase):
             ))
         infile = "test/inverted-v.pout"
         args = ["--vswr", "--out=%s" % self.outfile, infile]
+        main (args)
+        self.compare_cs (checksums)
+    # end def test_3d
+
+    def test_basic_output (self):
+        checksums = set \
+            (( '8a303a9907121e917e0047451110b8905ab4526c'
+             , '0d490c964bc1f740d2a94e8cd777b24e30bb469a'
+             , '210f8f0ddb2ed12fe9c92e52fab03358ff9e7de9'
+            ))
+        infile = "test/vdipole-01.bout"
+        args = ["--ele", "--out=%s" % self.outfile, infile]
+        main (args)
+        self.compare_cs (checksums)
+    # end def test_3d
+
+    def test_gainfile (self):
+        """ Original basic implementation can save gains to a file
+        """
+        checksums = set \
+            (( '55c6cb4a713d0950c24529a1e0b220b1465f8047'
+             , '7ff88a12c6ea96289e9a27dc8c7ba51cd5b5f43b'
+             , 'baa9403ed2893533886799cf730a298a84fa59f1'
+            ))
+        infile = "test/DP001.GNN"
+        args = ["--ele", "--out=%s" % self.outfile, infile]
+        main (args)
+        self.compare_cs (checksums)
+    # end def test_3d
+
+    def test_necfile (self):
+        """ We also can parse nec2c output
+        """
+        checksums = set \
+            (( '1e62d599284cd08170668e3ba5ce279fa36f36bb'
+             , 'aec56687ccb700c60a558adf02d5cf81fcab7436'
+             , '2ac05564733a3b7765e84eaa1e24d515f7146e95'
+            ))
+        infile = "test/12-el.nout"
+        args = ["--azi", "--swr", "--out=%s" % self.outfile, infile]
         main (args)
         self.compare_cs (checksums)
     # end def test_3d
