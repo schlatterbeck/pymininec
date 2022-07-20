@@ -1,6 +1,8 @@
 MININEC in Python
 =================
 
+:Author: Ralf Schlatterbeck <rsc@runtux.com>
+
 .. |--| unicode:: U+2013   .. en dash
 .. |__| unicode:: U+2013   .. en dash without spaces
     :trim:
@@ -51,9 +53,10 @@ and antenna far field in dBi as tables. The output tries to reproduce
 the format of the original Basic implementation of Mininec. Now these
 tables are not very useful to get an idea of the far field behaviour of
 an antenna. Therefore there is a small companion program ``plot-antenna``
-that can plot the antenna pattern. The default is an interactive 3d
-view. In addition with the ``--azimuth`` or ``--elevation`` options you
-can get an Azimuth diagram::
+that can plot the antenna pattern. The default is to plot all available
+graphics, including an interactive 3d view. In addition with the
+``--azimuth`` or ``--elevation`` options you can get an Azimuth
+diagram::
 
     plot-antenna --azimuth test/12-el-1deg.pout
 
