@@ -2558,6 +2558,7 @@ class Mininec:
 def main (argv = sys.argv [1:], f_err = sys.stderr):
     """ The main routine called from the command-line
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--frequency-increment=.01', '--frequency-steps=2'])
     >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180,3'])
     >>> main (args)
@@ -2565,9 +2566,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
                          MINI-NUMERICAL ELECTROMAGNETICS CODE
                                        MININEC
                        ****************************************
-    <BLANKLINE>
-    FREQUENCY (MHZ): 7.15
-        WAVE LENGTH =  41.93007  METERS
     <BLANKLINE>
     ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
      NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
@@ -2594,6 +2592,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  1 , 1 , 0
     NUMBER OF LOADS 0
     <BLANKLINE>
+    FREQUENCY (MHZ): 7.15
+        WAVE LENGTH =  41.93007  METERS
     ********************    SOURCE DATA     ********************
     PULSE  1      VOLTAGE = ( 1 , 0 J)
                   CURRENT = ( 2.857798E-02 ,  1.660853E-03 J)
@@ -2629,6 +2629,45 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
      0             360          -999          -999          -999     
      45            360           1.163918     -999           1.163918
      90            360           5.119285     -999           5.119285
+    <BLANKLINE>
+    FREQUENCY (MHZ): 7.16
+        WAVE LENGTH =  41.87151  METERS
+    <BLANKLINE>
+    ********************    SOURCE DATA     ********************
+    PULSE  1      VOLTAGE = ( 1 , 0 J)
+                  CURRENT = ( 2.851291E-02 ,  1.014723E-03 J)
+                  IMPEDANCE = ( 35.02747 , -1.246564 J)
+                  POWER =  1.425646E-02  WATTS
+    <BLANKLINE>
+    ********************    CURRENT DATA    ********************
+    <BLANKLINE>
+    WIRE NO.  1 :
+    PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+     NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+     1             2.851291E-02  1.014723E-03  2.853096E-02  2.038193 
+     2             2.721271E-02  6.814281E-05  2.721279E-02  .143473  
+     3             2.341369E-02 -4.509545E-04  2.341803E-02 -1.103397 
+     4             1.740291E-02 -6.326804E-04  1.741441E-02 -2.082063 
+     5             9.581812E-03 -4.870737E-04  9.594184E-03 -2.91002  
+    E              0             0             0             0
+    <BLANKLINE>
+    ********************     FAR FIELD      ********************
+    <BLANKLINE>
+    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER: 0 , 45 , 3
+    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER: 0 , 180 , 3
+    <BLANKLINE>
+    ********************    PATTERN DATA    ********************
+    ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
+     ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
+     0             0            -999          -999          -999     
+     45            0             1.16192      -999           1.16192 
+     90            0             5.120395     -999           5.120395
+     0             180          -999          -999          -999     
+     45            180           1.16192      -999           1.16192 
+     90            180           5.120395     -999           5.120395
+     0             360          -999          -999          -999     
+     45            360           1.16192      -999           1.16192 
+     90            360           5.120395     -999           5.120395
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
