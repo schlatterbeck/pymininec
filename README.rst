@@ -76,6 +76,12 @@ plot can be ``linear``, ``linear_db``, and ``linear_voltage`` in
 addition to the default of ``arrl`` scaling. You may consult Cebik's [6]_
 article for explanation of the different diagrams.
 
+The latest version accepts several plot parameters, ``--elevation``,
+``--azimuth``, ``--plot3d``, ``--plot-vswr`` which are plotted into one
+diagram. The default is to plot all four graphs. With the ``--output``
+option pictures can directly be saved without displaying the graphics on
+the screen.
+
 Test coverage: Making sure it is consistent with original Mininec
 -----------------------------------------------------------------
 
