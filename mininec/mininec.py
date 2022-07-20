@@ -644,7 +644,7 @@ class Mininec:
         ])
     c = 299.8 # speed of light
 
-    def __init__ (self, f, geo, media = None):
+    def __init__ (self, f, geo, media = None, print_opts = None):
         """ Initialize, no interactive input is done here
             f:   Frequency in MHz, (F)
             media: sequence of Medium objects, if empty use perfect ground
@@ -686,12 +686,13 @@ class Mininec:
          [1 1]
          [1 1]]
         """
-        self.f        = f
-        self.media    = media
-        self.loads    = []
+        self.f          = f
+        self.media      = media
+        self.loads      = []
         self.check_ground ()
-        self.sources  = []
-        self.geo      = geo
+        self.sources    = []
+        self.geo        = geo
+        self.print_opts = print_opts or set (('far-field',))
         if not self.media or len (self.media) == 1:
             self.boundary = 1
         self.check_geo ()
@@ -2100,9 +2101,14 @@ class Mininec:
 
     # All the *as_mininec methods
 
-    def as_mininec (self, options = None):
+    def _options (self, options):
         if options is None:
-            options = set (('far-field',))
+            options = self.print_opts
+        return options
+    # end def _options
+
+    def as_mininec (self, options = None):
+        options = self._options (options)
         r = []
         r.append (self.header_as_mininec ())
         r.append (self.frequency_as_mininec ())
@@ -2117,12 +2123,7 @@ class Mininec:
         r.append ('')
         r.append (self.currents_as_mininec ())
         r.append ('')
-        if 'far-field' in options:
-            r.append (self.far_field_as_mininec ())
-        if 'far-field-absolute' in options:
-            r.append (self.far_field_absolute_as_mininec ())
-        if 'near-field' in options:
-            r.append (self.near_field_as_mininec ())
+        r.append (self.fields_as_mininec (options))
         return '\n'.join (r)
     # end def as_mininec
 
@@ -2278,6 +2279,18 @@ class Mininec:
         return '\n'.join (r)
     # end def far_field_header_as_mininec
 
+    def fields_as_mininec (self, options = None):
+        options = self._options (options)
+        r = []
+        if 'far-field' in options:
+            r.append (self.far_field_as_mininec ())
+        if 'far-field-absolute' in options:
+            r.append (self.far_field_absolute_as_mininec ())
+        if 'near-field' in options:
+            r.append (self.near_field_as_mininec ())
+        return '\n'.join (r)
+    # end def as_mininec
+
     def frequency_as_mininec (self):
         r = []
         r.append ('FREQUENCY (MHZ): %s' % format_float ([self.f]) [0].strip ())
@@ -2288,6 +2301,31 @@ class Mininec:
         r.append ('')
         return '\n'.join (r)
     # end def frequency_as_mininec
+
+    def frq_independent_as_mininec (self):
+        r = []
+        r.append (self.header_as_mininec ())
+        r.append (self.environment_as_mininec ())
+        r.append ('')
+        r.append (self.wires_as_mininec ())
+        r.append ('')
+        r.append (self.sources_as_mininec ())
+        r.append (self.loads_as_mininec ())
+        return '\n'.join (r)
+    # end def frq_independent_as_mininec
+
+    def frq_dependent_as_mininec (self, options = None):
+        options = self._options (options)
+        r = []
+        r.append ('')
+        r.append (self.frequency_as_mininec ())
+        r.append (self.source_data_as_mininec ())
+        r.append ('')
+        r.append (self.currents_as_mininec ())
+        r.append ('')
+        r.append (self.fields_as_mininec (options))
+        return '\n'.join (r)
+    # end def frq_dependent_as_mininec
 
     def header_as_mininec (self):
         """ The original mininec header
@@ -3284,9 +3322,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
             far_field = True
     if not args.frequency_steps or not args.frequency_increment:
         args.frequency_steps = 1
+        args.frequency_increment = 0.0
     for k in range (args.frequency_steps):
         m.f = args.frequency + k * args.frequency_increment
         m.compute ()
+        if args.frequency_steps != 1 and k == 0:
+            print (m.frq_independent_as_mininec ())
         if 'near-field' in options:
             d = {}
             if args.nf_power:
@@ -3299,7 +3340,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
             if args.ff_distance:
                 d ['dist'] = args.ff_distance
             m.compute_far_field (zenith, azimuth, **d)
-        print (m.as_mininec (options))
+        if args.frequency_steps == 1:
+            print (m.as_mininec (options))
+        else:
+            print (m.frq_dependent_as_mininec (options))
 # end def main
 
 __all__ = \

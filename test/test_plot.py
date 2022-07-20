@@ -55,8 +55,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_azimuth (self):
         checksums = set \
-            (( '510744aa65305c05b5ff5dc0463ba9aa701c4a41'
-             , '6385000c17613ea4c8e887f6a684bf2da1fcceb7'
+            (( '87e13e39a92e12e79eab915c8954d5100f90b5fd'
+             , '968bd23b42eaf39dd1a512e282ebcc50cc7aaaea'
+             , '70a43a76cb5ac3b4c65c18e73d4b370652667e0c'
             ))
         infile = "test/12-el-1deg.pout"
         args = ["--azi", "--out=%s" % self.outfile, infile]
@@ -66,8 +67,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_azimuth_linear (self):
         checksums = set \
-            (( '62cd94a5f62a982c13d8fec5db5b50fd954816f8'
-             , '9025a68762d052dcdf78dc6ef6fedc08b4d4c9df'
+            (( '3793e726c2dc1ad0bf1b6cd5c138182578ca0936'
+             , 'bf9c5804cbc546a54921745d1746a696bf40a0e9'
+             , '6c12919897a6dddf0b7ac5c42e5682d586deb44a'
             ))
         infile = "test/12-el-5deg.pout"
         args = [ "--azi", "--scaling-method=linear"
@@ -79,8 +81,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_azimuth_linear_voltage (self):
         checksums = set \
-            (( 'e94f8b26985b49b9abdf1c7a11ce0ce06d365cde'
-             , 'eb90775ff13dd8c789023399b328c0fd7fb550dc'
+            (( '4a9044274f104f74cab5c484625d2090230385f5'
+             , 'aec07c0157118d7cf194d5f1a805be3286b80b5d'
+             , 'f79c1ff393bc8ef1e95f44cb012f5de4f238e95b'
             ))
         infile = "test/12-el-5deg.pout"
         args = [ "--azi", "--scaling-method=linear_voltage"
@@ -92,8 +95,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_azimuth_db (self):
         checksums = set \
-            (( '1c1223ee1d36afee510bbc96ca4e530ea4068580'
-             , '3e6865c0bcb570851284461fbb2b93c502efea22'
+            (( '78de072c12ea607ed8dfd0932dc4d8318710bdb5'
+             , 'cf1098a0b9454498b893567d34c8f6fb610ccfb8'
+             , '7e51e4b9709dd695feb7ccace5c2eccae3d9dee1'
             ))
         infile = "test/12-el-5deg.pout"
         args = [ "--azi", "--scaling-method=linear_db"
@@ -105,8 +109,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_elevation (self):
         checksums = set \
-            (( 'ef0800ab1923e1a28919388b02b94cdc7d89ae95'
-             , 'c6e9eb508cac2e1a50f4dd5251c2a1b20aa961b7'
+            (( '111bb4f7a5d99be148e67fd3a5c0976cab58e225'
+             , 'ee17b416807e7e86cc609b0ec04197547766a475'
+             , '03fba22dd91c16a193a4a62beed621a7a3c0001d'
             ))
         infile = "test/12-el-1deg.pout"
         args = ["--ele", "--out=%s" % self.outfile, infile]
@@ -116,11 +121,24 @@ class Test_Plot (unittest.TestCase):
 
     def test_3d (self):
         checksums = set \
-            (( 'b9af4211ac0a2b77703e3c0f4de02686d8cacf20'
-             , 'f53738e86eac0720001b66a7d7777c0276ca7ca9'
+            (( 'bf0053e8fafbf5b7a28fc1dd3f40a66a500fb797'
+             , 'f106dccd3ccff1938d47664cba5f659b2560d27b'
+             , '67d5f8a4cd30154754ececc0e8d22c6eba92a7c5'
             ))
         infile = "test/12-el-5deg.pout"
-        args = ["--out=%s" % self.outfile, infile]
+        args = ["--plot3d", "--out=%s" % self.outfile, infile]
+        main (args)
+        self.compare_cs (checksums)
+    # end def test_3d
+
+    def test_vswr (self):
+        checksums = set \
+            (( 'beb1826625148d40f313d631c4631509cbb06cac'
+             , 'da37992d6480f05cd51f023c8d7776c15cc7a2cb'
+             , 'e0abdef36874e61b525221b135f866542e5c4c14'
+            ))
+        infile = "test/inverted-v.pout"
+        args = ["--vswr", "--out=%s" % self.outfile, infile]
         main (args)
         self.compare_cs (checksums)
     # end def test_3d

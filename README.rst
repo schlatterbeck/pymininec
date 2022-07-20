@@ -92,7 +92,7 @@ at 100%.
 There is a line that is flagged as not covered by the ``pytest``
 framework if the Python version is below 3.10. This is a ``continue``
 statement in ``compute_impedance_matrix`` near the end (as of this
-writing line 1375). This is a bug in Python in versions below 3.10:
+writing line 1388). This is a bug in Python in versions below 3.10:
 When setting a breakpoint in the python debugger on the continue
 statement, the breakpoint is never reached although the continue
 statement is correctly executed. A workaround would be to put a dummy

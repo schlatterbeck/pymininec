@@ -137,11 +137,21 @@ class Gain_Plot:
                 line = line.strip ()
                 if line.startswith ('FREQUENCY'):
                     f = float (line.split (':') [1].split () [0])
+                    if f in self.gdata:
+                        print \
+                            ( "Warning: Frequency %2.2f already present, "
+                              "using last occurrence"
+                            , file = sys.stderr
+                            )
                     gdata = self.gdata [f] = Gain_Data (self, f)
+                    delimiter = guard
+                    continue
                 if line.startswith ('IMPEDANCE ='):
                     m = line.split ('(', 1)[1].split (')')[0].rstrip ('J')
                     a, b = (float (x) for x in m.split (','))
                     gdata.impedance = a + 1j * b
+                    delimiter = guard
+                    continue
                 # File might end with Ctrl-Z (DOS EOF)
                 if line.startswith ('\x1a'):
                     break
@@ -163,8 +173,7 @@ class Gain_Plot:
                         delimiter = guard
                         gdata = None
                         continue
-                    d = delimiter
-                    fields = line.split (d)
+                    fields = line.split (delimiter)
                     if len (fields) < 5:
                         delimiter = guard
                         gdata = None
@@ -280,9 +289,7 @@ class Gain_Plot:
             plt.text (1.1, 0.5, self.labels [0], va = 'center', **d)
             plt.text (0.5, 1.1, self.labels [1], ha = 'center', **d)
         off = self.offset + np.array ([0.005, 0.01])
-        off = [-.35, -.14]
-        #plt.figtext (*off, '\n'.join (self.desc))
-        #plt.text (*off, '\n'.join (self.desc), transform = ax.transAxes)
+        off = [-.35, -.13]
         plt.text (*off, '\n'.join (self.desc), transform = ax.transAxes)
         args = dict (linestyle = 'solid', linewidth = 1.5)
         ax.plot (self.angles, self.polargains, **args)
@@ -328,7 +335,6 @@ class Gain_Plot:
             ( X, Y, Z, rcount=rc, ccount=cc, facecolors=colors, shade=False
             #, cmap = cm.rainbow, norm = norm
             )
-        #import pdb; pdb.set_trace()
         #surf.set_facecolor ((0, 0, 0, 0))
         #surf.set_edgecolor ((.5, .5, .5, 1))
     # end def plot3d
