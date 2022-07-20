@@ -1595,7 +1595,7 @@ class Mininec:
             srm: small radius modification condition
                  0.0001 * c / f
             a(p4): wire radius
-            t3, t4: Integrals I2 and I3 (yes, they *are* named off-by-one)
+            t3, t4: Sum of Integrals I2 and I3, t3 is real and t4 imag
 
             Temporary variables:
             d3, d, b, b1, w0, w1, v0, vec3 (originally (X3, Y3, Z3))
@@ -1658,7 +1658,7 @@ class Mininec:
         -0.03563231 -0.05976447j
         """
         wire = self.geo [p4]
-        t3 = t4 = 0.0
+        t34  = 0j
         if k < 0:
             vec3 = vecv + t * (vec2 - vecv)
         else:
@@ -1678,14 +1678,15 @@ class Mininec:
                 w0 = c0 + b * (c1 + b * (c2 + b * (c3 + b * c4)))
                 w1 = c5 + b * (c6 + b * (c7 + b * (c8 + b * c9)))
                 v0 = (w0 - w1 * np.log (b)) * np.sqrt (1 - b)
-                t3 += ( (v0 + np.log (d3 / (64 * a2)) / 2)
-                      / np.pi / wire.r - 1 / d
-                      )
+                # Note: This adds only a real part, the imag part of the
+                # elliptic integral is 0
+                t34 += ( (v0 + np.log (d3 / (64 * a2)) / 2)
+                       / np.pi / wire.r - 1 / d
+                       )
         b1 = d * self.w
         # EXP(-J*K*R)/R
-        t3 += np.cos (b1) / d
-        t4 -= np.sin (b1) / d
-        return t3 + t4 * 1j
+        t34 += np.e ** (-1j * b1) / d
+        return t34
     #end def integral_i2_i3
 
     def near_field_iter (self):
@@ -1773,13 +1774,11 @@ class Mininec:
                 l = 1
         elif not exact:
             if wire.r <= self.srm:
-                if fvs == 1:
-                    t1 = 2 * np.log (wire.seg_len / wire.r)
-                    t2 = -self.w * wire.seg_len
-                else:
-                    t1 = np.log (wire.seg_len / wire.r)
-                    t2 = -self.w * wire.seg_len / 2
-                return t1 + t2 * 1j
+                t12 = 2 * np.log (wire.seg_len / wire.r) \
+                    - self.w * wire.seg_len * 1j
+                if fvs != 1:
+                    t12 /= 2
+                return t12
             # The following starts line 162
             f2 = 2 * (p3 - p2)
             i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
