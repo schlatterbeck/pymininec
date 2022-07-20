@@ -692,20 +692,32 @@ class Mininec:
         self.check_ground ()
         self.sources  = []
         self.geo      = geo
-        self.wavelen  = w = 299.8 / f
         if not self.media or len (self.media) == 1:
             self.boundary = 1
+        self.check_geo ()
+        self.compute_connectivity ()
+        self.output_date = False
+    # end __init__
+
+    @property
+    def f (self):
+        return self._f
+    # en def f
+
+    @f.setter
+    def f (self, frq):
+        self._f = frq
+        self.wavelen = w = 299.8 / self.f
         # 1 / (4 * PI * OMEGA * EPSILON)
         self.m       = 4.77783352 * w
         # set small radius modification condition:
         self.srm     = .0001 * w
         self.w       = 2 * np.pi / w
         self.w2      = self.w ** 2 / 2
-        self.flg     = 0
-        self.check_geo ()
-        self.compute_connectivity ()
-        self.output_date = False
-    # end __init__
+        self.currents = None
+        self.rhs      = None
+        self.Z        = None
+    # end def f
 
     def check_ground (self):
         if not self.media and self.media is not None:
@@ -2981,6 +2993,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , help    = 'Frequency in MHz, default=%(default)s'
         )
     cmd.add_argument \
+        ( '--frequency-increment', '--f-inc'
+        , type    = float
+        , help    = 'Frequency increment in MHz'
+        )
+    cmd.add_argument \
+        ( '--frequency-steps', '--n-f'
+        , type    = int
+        , help    = 'Number of frequency steps'
+        )
+    cmd.add_argument \
         ( '--ff-distance'
         , help    = "Distance used for far-field computation"
         , type    = float
@@ -3260,20 +3282,24 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         else:
             options.add ('far-field')
             far_field = True
-    m.compute ()
-    if 'near-field' in options:
-        d = {}
-        if args.nf_power:
-            d ['pwr'] = args.nf_power
-        m.compute_near_field (nf_start, nf_inc, nf_count, **d)
-    if far_field:
-        d = {}
-        if args.ff_power:
-            d ['pwr'] = args.ff_power
-        if args.ff_distance:
-            d ['dist'] = args.ff_distance
-        m.compute_far_field (zenith, azimuth, **d)
-    print (m.as_mininec (options))
+    if not args.frequency_steps or not args.frequency_increment:
+        args.frequency_steps = 1
+    for k in range (args.frequency_steps):
+        m.f = args.frequency + k * args.frequency_increment
+        m.compute ()
+        if 'near-field' in options:
+            d = {}
+            if args.nf_power:
+                d ['pwr'] = args.nf_power
+            m.compute_near_field (nf_start, nf_inc, nf_count, **d)
+        if far_field:
+            d = {}
+            if args.ff_power:
+                d ['pwr'] = args.ff_power
+            if args.ff_distance:
+                d ['dist'] = args.ff_distance
+            m.compute_far_field (zenith, azimuth, **d)
+        print (m.as_mininec (options))
 # end def main
 
 __all__ = \

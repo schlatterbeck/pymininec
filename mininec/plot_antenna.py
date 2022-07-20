@@ -73,20 +73,15 @@ class Linear_dB_Scaler (Scaler):
 
 # end class Linear_dB_Scaler
 
-class Gain_Plot:
-    dpi   =  80
-    fig_x = 512
-    fig_y = 384
+class Gain_Data:
 
-    def __init__ (self, filename, outfile = None):
-        self.filename = filename
-        self.outfile  = outfile
-        self.f        = None
-        # Default title from filename
-        self.title    = os.path.splitext (os.path.basename (filename)) [0]
+    def __init__ (self, parent, f):
+        self.parent   = parent
+        self.f        = f
         self.pattern  = {}
-        # This might override title
-        self.read_file ()
+    # end def __init__
+
+    def compute (self):
         thetas = set ()
         phis   = set ()
         gains  = []
@@ -105,59 +100,145 @@ class Gain_Plot:
         self.theta_maxidx, self.phi_maxidx = idx
         self.theta_max = self.thetas_d [self.theta_maxidx]
         self.phi_max   = self.phis_d   [self.phi_maxidx]
-        self.desc      = ['Title: %s' % self.title]
-        if self.f is not None:
-            self.desc.append ('Frequency: %.2f MHz' % self.f)
+        self.desc      = ['Title: %s' % self.parent.title]
+        self.desc.append ('Frequency: %.2f MHz' % self.f)
         self.desc.append ('Outer ring: %.2f dBi' % self.maxg)
         self.lbl_deg   = 0
         self.labels    = None
+    # end def compute
+
+# end class Gain_Data
+
+class Gain_Plot:
+    dpi   =  80
+    fig_x = 512
+    fig_y = 384
+
+    def __init__ (self, filename, outfile = None):
+        self.filename = filename
+        self.outfile  = outfile
+        self.f        = None
+        # Default title from filename
+        self.title    = os.path.splitext (os.path.basename (filename)) [0]
+        # This might override title
+        self.gdata = {}
+        self.read_file ()
+        for f in sorted (self.gdata):
+            gdata  = self.gdata [f]
+            gdata.compute ()
     # end def __init__
 
     def read_file (self):
         guard = 'not set'
         delimiter = guard
+        gdata = None
         with open (self.filename, 'r') as f:
             for line in f:
                 line = line.strip ()
-                if self.f is None and line.startswith ('FREQUENCY'):
-                    self.f = float (line.split (':') [1].split () [0])
+                if line.startswith ('FREQUENCY'):
+                    f = float (line.split (':') [1].split () [0])
+                    gdata = self.gdata [f] = Gain_Data (self, f)
+                if line.startswith ('IMPEDANCE ='):
+                    m = line.split ('(', 1)[1].split (')')[0].rstrip ('J')
+                    a, b = (float (x) for x in m.split (','))
+                    gdata.impedance = a + 1j * b
                 # File might end with Ctrl-Z (DOS EOF)
                 if line.startswith ('\x1a'):
                     break
-                if delimiter != guard:
+                if delimiter == guard:
+                    if line.endswith (',D'):
+                        delimiter = ','
+                        continue
+                    if line.startswith ('ANGLE') and line.endswith ('(DB)'):
+                        delimiter = None
+                        continue
+                    # Also read NEC files
+                    if  (   line.startswith ('DEGREES   DEGREES        DB')
+                        and line.endswith ('VOLTS/M   DEGREES')
+                        ):
+                        delimiter = None
+                        continue
+                else:
                     if not line:
-                        break
+                        delimiter = guard
+                        gdata = None
+                        continue
                     d = delimiter
                     fields = line.split (d)
+                    if len (fields) < 5:
+                        delimiter = guard
+                        gdata = None
+                        continue
                     zen, azi, vp, hp, tot = (float (l) for l in fields [:5])
-                    self.pattern [(zen, azi)] = tot
-                if line.endswith (',D'):
-                    delimiter = ','
-                    continue
-                if line.startswith ('ANGLE') and line.endswith ('(DB)'):
-                    delimiter = None
-                    continue
-                # Also read NEC files
-                if  (   line.startswith ('DEGREES   DEGREES        DB')
-                    and line.endswith ('VOLTS/M   DEGREES')
-                    ):
-                    delimiter = None
-                    continue
+                    gdata.pattern [(zen, azi)] = tot
     # end def read_file
 
-    def azimuth (self, scaler):
+    def plot (self, args, f = None):
+        if f is None:
+            f = next (iter (self.gdata))
+        self.impedance = args.system_impedance
+        dpi  = self.dpi
+        x, y = self.fig_x, self.fig_y
+
+        d = {}
+        a = {}
+        names = ('azimuth', 'elevation', 'plot_vswr', 'plot3d')
+        count = 0
+        for name in names:
+            if getattr (args, name):
+                p = dict (projection = 'polar')
+                if name == 'plot_vswr':
+                    p = {}
+                elif name == 'plot3d':
+                    p = dict (projection = '3d')
+                d [name] = p
+                a [name] = dict (arg = count + 1)
+                count += 1
+        if len (d) > 2:
+            args       = [2, 2]
+            figsize    = (x * 2 / dpi, y * 2 / dpi)
+            self.scale = np.array ([0.5, 0.5])
+        elif len (d) == 2:
+            args       = [1, 2]
+            figsize    = (x * 2 / dpi, y / dpi)
+            self.scale = np.array ([0.5, 1])
+        else:
+            args       = [1, 1]
+            figsize    = (x / dpi, y / dpi)
+            self.scale = np.array ([1, 1])
+        self.fig = fig = plt.figure (dpi = dpi, figsize = figsize)
+        self.axes = {}
+        self.data = self.gdata [f]
+        for name in names:
+            if name not in a:
+                continue
+            arg = a [name]['arg']
+            kw  = d [name]
+            self.offset = np.array \
+                ([((arg - 1) % 2), ((arg - 1) // 2)]) * .5
+            self.axes [name] = fig.add_subplot (*args, arg, **kw)
+            method = getattr (self, name)
+            method (self.axes [name])
+        if self.outfile:
+            fig.savefig (self.outfile)
+        else:
+            plt.show ()
+    # end def plot
+
+    def azimuth (self, ax):
+        self.desc = self.data.desc.copy ()
         self.desc.insert (0, 'Azimuth Pattern')
-        self.desc.append ('Scaling: %s' % scaler.title)
-        self.desc.append ('Elevation: %.2f°' % (90 - self.theta_max))
-        self.lbl_deg = (self.phi_max - 90) % 360
+        self.desc.append ('Scaling: %s' % self.scaler.title)
+        self.desc.append ('Elevation: %.2f°' % (90 - self.data.theta_max))
+        self.lbl_deg = (self.data.phi_max - 90) % 360
         self.labels  = 'XY'
-        gains = scaler.scale (self.maxg, self.gains)
-        self.polargains = gains [self.theta_maxidx]
-        self.angles = (self.phis - np.pi / 2)
-        self.polarplot (scaler)
+        gains = self.scaler.scale (self.data.maxg, self.data.gains)
+        self.polargains = gains [self.data.theta_maxidx]
+        self.angles = (self.data.phis - np.pi / 2)
+        self.polarplot (ax)
     # end def azimuth
 
-    def elevation (self, scaler):
+    def elevation (self, ax):
         """ Elevation is a little more complicated due to theta counting
             from zenith.
             OK for both 90° and 180° plots:
@@ -168,61 +249,55 @@ class Gain_Plot:
             self.polargains = gains2
             But second half must (both) be flipped to avoid crossover
         """
+        self.desc = self.data.desc.copy ()
         self.desc.insert (0, 'Elevation Pattern')
-        self.desc.append ('Scaling: %s' % scaler.title)
-        self.lbl_deg  = 90 - self.theta_max
+        self.desc.append ('Scaling: %s' % self.scaler.title)
+        self.lbl_deg  = 90 - self.data.theta_max
         self.labels   = None
-        gains = scaler.scale (self.maxg, self.gains)
-        gains1 = gains.T [self.phi_maxidx].T
+        gains = self.scaler.scale (self.data.maxg, self.data.gains)
+        gains1 = gains.T [self.data.phi_maxidx].T
         # Find index of the other side of the azimuth
-        pmx = self.phis.shape [0] - self.phis.shape [0] % 2
-        idx = (self.phi_maxidx + pmx // 2) % pmx
-        assert idx != self.phi_maxidx
+        pmx = self.data.phis.shape [0] - self.data.phis.shape [0] % 2
+        idx = (self.data.phi_maxidx + pmx // 2) % pmx
+        assert idx != self.data.phi_maxidx
         eps = 1e-9
-        assert abs (self.phis [idx] - self.phis [self.phi_maxidx]) - np.pi < eps
+        phis = self.data.phis
+        assert abs (phis [idx] - phis [self.data.phi_maxidx]) - np.pi < eps
         gains2 = gains.T [idx].T
         p2 = np.pi / 2
         self.polargains = np.append (gains1, np.flip (gains2))
-        self.angles = np.append (p2 - self.thetas, np.flip (p2 + self.thetas))
-        self.polarplot (scaler)
+        thetas = self.data.thetas
+        self.angles = np.append (p2 - thetas, np.flip (p2 + thetas))
+        self.polarplot (ax)
     # end def elevation
 
-    def polarplot (self, scaler):
-        dpi  = self.dpi
-        x, y = self.fig_x, self.fig_y
-        fig = plt.figure (dpi = dpi, figsize = (x / dpi, y / dpi))
-        ax  = fig.add_subplot (111, projection = 'polar')
+    def polarplot (self, ax):
         ax.set_rmax (1)
         ax.set_rlabel_position (self.lbl_deg  or 0)
         ax.set_thetagrids (range (0, 360, 15))
         if self.labels:
-            d = dict (fontsize = 18)
-            o  = (self.fig_x - self.fig_y) / self.fig_y / 2
-            sc = self.fig_y / self.fig_x
-            xp = sc * .92 + o
-            plt.figtext (xp,  0.5,  self.labels [0], va = 'center', **d)
-            plt.figtext (0.5, 0.95, self.labels [1], **d)
-        plt.figtext (0.005, 0.01, '\n'.join (self.desc))
+            d = dict (fontsize = 18, transform = ax.transAxes)
+            plt.text (1.1, 0.5, self.labels [0], va = 'center', **d)
+            plt.text (0.5, 1.1, self.labels [1], ha = 'center', **d)
+        off = self.offset + np.array ([0.005, 0.01])
+        off = [-.35, -.14]
+        #plt.figtext (*off, '\n'.join (self.desc))
+        #plt.text (*off, '\n'.join (self.desc), transform = ax.transAxes)
+        plt.text (*off, '\n'.join (self.desc), transform = ax.transAxes)
         args = dict (linestyle = 'solid', linewidth = 1.5)
         ax.plot (self.angles, self.polargains, **args)
         #ax.grid (True)
-        scaler.set_ticks (ax)
+        self.scaler.set_ticks (ax)
         # Might add color and size labelcolor='r' labelsize = 8
         ax.tick_params (axis = 'y', rotation = 'auto')
-        if self.outfile:
-            fig.savefig (self.outfile)
-        else:
-            plt.show ()
     # end def polarplot
 
-    def plot3d (self, scaler):
-        gains  = scaler.scale (self.maxg, self.gains)
-        P, T   = np.meshgrid (self.phis, self.thetas)
+    def plot3d (self, ax):
+        gains  = self.scaler.scale (self.data.maxg, self.data.gains)
+        P, T   = np.meshgrid (self.data.phis, self.data.thetas)
         X = np.cos (P) * np.sin (T) * gains
         Y = np.sin (P) * np.sin (T) * gains
         Z = np.cos (T) * gains
-        fig = plt.figure ()
-        ax  = fig.gca (projection='3d')
         # Create cubic bounding box to simulate equal aspect ratio
         max_range = np.array \
             ( [ X.max () - X.min ()
@@ -256,11 +331,22 @@ class Gain_Plot:
         #import pdb; pdb.set_trace()
         #surf.set_facecolor ((0, 0, 0, 0))
         #surf.set_edgecolor ((.5, .5, .5, 1))
-        if self.outfile:
-            fig.savefig (self.outfile)
-        else:
-            plt.show ()
     # end def plot3d
+
+    def plot_vswr (self, ax):
+        z0 = self.impedance
+        X  = []
+        Y  = []
+        for f in self.gdata:
+            gd  = self.gdata [f]
+            z   = gd.impedance
+            rho = np.abs ((z - z0) / (z + z0))
+            X.append (f)
+            Y.append ((1 + rho) / (1 - rho))
+        ax.set_xlabel ('Frequency')
+        ax.set_ylabel ('VSWR')
+        ax.plot (X, Y)
+    # end def plot_vswr
 # end class Gain_Plot
 
 def main (argv = sys.argv [1:]):
@@ -301,6 +387,17 @@ def main (argv = sys.argv [1:]):
         , type    = float
         , default = -50
         )
+    cmd.add_argument \
+        ( '--system-impedance'
+        , help    = 'System impedance Z0, default=%(default)s'
+        , type    = float
+        , default = 50
+        )
+    cmd.add_argument \
+        ( '--plot-vswr', '--swr', '--vswr', '--plot-swr'
+        , help    = 'Plot voltage standing wave ratio (VSWR)'
+        , action  = 'store_true'
+        )
     args = cmd.parse_args (argv)
     d    = dict (filename = args.filename)
     if args.output_file:
@@ -313,14 +410,13 @@ def main (argv = sys.argv [1:]):
         scaler = globals () ['scale_' + args.scaling_method]
     except KeyError:
         scaler = locals () ['scale_' + args.scaling_method]
-    if not args.azimuth and not args.elevation and not args.plot3d:
-        args.plot3d = True
-    if args.azimuth:
-        gp.azimuth (scaler = scaler)
-    if args.elevation:
-        gp.elevation (scaler = scaler)
-    if args.plot3d:
-        gp.plot3d (scaler = scaler)
+    # Default is all
+    if  (   not args.azimuth and not args.elevation
+        and not args.plot3d  and not args.plot_vswr
+        ):
+        args.plot3d = args.elevation = args.azimuth = args.plot_vswr = True
+    gp.scaler = scaler
+    gp.plot (args)
 # end def main
 
 if __name__ == '__main__':
