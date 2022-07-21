@@ -611,7 +611,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 283
+        num_tests = 284
         f, t  = doctest.testmod \
             (mininec.mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.mininec.__file__)

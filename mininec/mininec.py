@@ -28,6 +28,7 @@ import sys
 import copy
 import numpy as np
 from datetime import datetime
+from scipy.special import ellipk
 
 def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
@@ -638,11 +639,6 @@ class Mininec:
         ])
     # E-VECTOR FOR COEFFICIENTS OF ELLIPTIC INTEGRAL
     # In the code these are C0--C9
-    # Corrected version, see README
-    cx = np.array \
-        ([ 1.38629436112, .09666344259, .03590092383, .03742563713, .01451196212
-         ,  .5,           .12498593597, .06880248576, .03328355346, .00441787012
-        ])
     c = 299.8 # speed of light
 
     def __init__ (self, f, geo, media = None, print_opts = None):
@@ -1597,7 +1593,7 @@ class Mininec:
         return iter ([1, -1])
     # end def image_iter
 
-    def integral_i2_i3 (self, vec2, vecv, k, t, p4, exact_kernel = False) :
+    def integral_i2_i3 (self, vec2, vecv, k, t, wire, exact_kernel = False) :
         """ Starts line 28
             Uses variables:
             vec2 (originally (X2, Y2, Z2))
@@ -1623,14 +1619,15 @@ class Mininec:
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
         >>> s = Excitation (1, 0)
         >>> m = Mininec (7, w)
+        >>> wire = m.geo [0]
         >>> m.register_source (s, 4)
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
         >>> t  = 0.980144947186
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
 
@@ -1638,7 +1635,7 @@ class Mininec:
         # Original produces
         # 0.2819941 -0.1414753j
         >>> w [0].r = 0.01
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819941 -0.1414753j
 
@@ -1648,16 +1645,16 @@ class Mininec:
         >>> vv = np.array ([ 1.07071418591, 0, 0])
         >>> v2 = np.array ([-1.07071418591, 0, 0])
         >>> t  = 0.4900725
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
-        -2.2903411 -0.1467052j
+        -2.2903413 -0.1467052j
 
         # Original produces
         # -4.219833E-02 -4.820928E-02j
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
         >>> t  = 0.7886752
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.04219836 -0.04820921j
 
@@ -1667,11 +1664,10 @@ class Mininec:
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
         >>> t  = 0.2113249
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, False)
+        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.03563231 -0.05976447j
         """
-        wire = self.geo [p4]
         t34  = 0j
         if k < 0:
             vec3 = vecv + t * (vec2 - vecv)
@@ -1686,12 +1682,9 @@ class Mininec:
             d  = np.sqrt (d3 + a2)
             # CRITERIA FOR USING REDUCED KERNEL
             if exact_kernel:
-                (c0, c1, c2, c3, c4, c5, c6, c7, c8, c9) = self.cx
                 # EXACT KERNEL CALCULATION WITH ELLIPTIC INTEGRAL
                 b = d3 / (d3 + 4 * a2)
-                w0 = c0 + b * (c1 + b * (c2 + b * (c3 + b * c4)))
-                w1 = c5 + b * (c6 + b * (c7 + b * (c8 + b * c9)))
-                v0 = (w0 - w1 * np.log (b)) * np.sqrt (1 - b)
+                v0 = ellipk (1 - b) * np.sqrt (1 - b)
                 # Note: This adds only a real part, the imag part of the
                 # elliptic integral is 0
                 t34 += ( (v0 + np.log (d3 / (64 * a2)) / 2)
@@ -1803,17 +1796,18 @@ class Mininec:
         # This really *updated* t3 and t4 *in place* in the gosub for
         # computing the integral (!)
         # Note how the index l is incremented twice below.
+        wire = self.geo [p4]
         while l < i5:
             ret = self.integral_i2_i3 \
                 ( vec2, vecv, k
                 , (self.q [l - 1] + .5) / f2
-                , p4 = p4
+                , wire = wire
                 , exact_kernel = bool (i6)
                 )
             ret += self.integral_i2_i3 \
                 ( vec2, vecv, k
                 , (.5 - self.q [l - 1]) / f2
-                , p4 = p4
+                , wire = wire
                 , exact_kernel = bool (i6)
                 )
             l = l + 1
@@ -3385,6 +3379,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         else:
             print (m.frq_dependent_as_mininec (options))
 # end def main
+
+if __name__ == '__main__':
+    main ()
 
 __all__ = \
     [ 'Angle'

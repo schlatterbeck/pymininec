@@ -133,9 +133,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_plotall (self):
         checksums = set \
-            (( 'feb1e0ff03d8204ac13ab28e4d888e11507a0327'
-             , 'a951418c5a0cb42f6acdd12e028e51ad91d720a8'
-             , '7b18b3fcba97fee155d05c5b2df898523553fc99'
+            (( '8d66c8224df6f0fa526b196d72eff1f9f40b1b69'
+             , '9b37e9dde5cab03e45b6bee540703288d7ac3738'
+             , 'b49a528e1a0267b401d5f0f29716ef9930089d3f'
             ))
         infile = "test/inverted-v.pout"
         args = ["--out=%s" % self.outfile, infile]
@@ -145,9 +145,9 @@ class Test_Plot (unittest.TestCase):
 
     def test_vswr (self):
         checksums = set \
-            (( 'beb1826625148d40f313d631c4631509cbb06cac'
-             , 'da37992d6480f05cd51f023c8d7776c15cc7a2cb'
-             , 'e0abdef36874e61b525221b135f866542e5c4c14'
+            (( '0199f336fd4c485068fc5871f0fbddc38c5dcf90'
+             , '6ac6760bdbcf8252521b426ec4447df5cf9021a1'
+             , '85ae44a0a42095548289b0bcc58f3be076c985a1'
             ))
         infile = "test/inverted-v.pout"
         args = ["--vswr", "--out=%s" % self.outfile, infile]

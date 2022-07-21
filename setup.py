@@ -50,6 +50,7 @@ setup \
     , license          = license
     , author           = "Ralf Schlatterbeck"
     , author_email     = "rsc@runtux.com"
+    , install_requires = ['matplotlib', 'numpy', 'scipy']
     , packages         = ['mininec']
     , platforms        = 'Any'
     , url              = "https://github.com/schlatterbeck/pymininec"
