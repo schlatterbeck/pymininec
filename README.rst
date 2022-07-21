@@ -236,14 +236,18 @@ Also notice that in the 4th column the later Basic code has a *5* less
 than the version in the papers. The rounding in the earlier Basic code
 also suggests that the later Basic code is in error.
 
-I've not investigated yet how these errors affect the computed values of
-the later Mininec code. Now Mininec is known to find a resonance point
-of an antenna some percent too high which means that usually in practice
-the computed wire lengths are a little too long. It may well be that the
-elliptic integral parameters have an influence there.
-
-I've not investigated how to derive the elliptic integral parameters to
-correct possible errors in the elliptic integral implementation.
+The errors in the elliptic integral parameters do not have much effect
+on the computed values of the Mininec code. There are some minor
+differences but these are below the differences between Basic and Python
+implementation (single vs. double precision arithmetics). I had hoped
+that this has something to do with the well known fact that Mininec
+finds a resonance point of an antenna some percent too high which means
+that usually in practice the computed wire lengths are a little too
+long. This is apparently not the case. The resonance point is also wrong
+for very thin wires below the *small radius modification condition*
+which happens when the wire radius is below 1e-4 of the wavelength.
+Even in that case --  where the elliptic integral is not used -- the
+resonance is slightly wrong.
 
 The reference for the elliptic integral parameters [3]_ cited in both
 reports lists the following table on p. |-| 591:

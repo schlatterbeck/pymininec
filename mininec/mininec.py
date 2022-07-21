@@ -638,9 +638,10 @@ class Mininec:
         ])
     # E-VECTOR FOR COEFFICIENTS OF ELLIPTIC INTEGRAL
     # In the code these are C0--C9
+    # Corrected version, see README
     cx = np.array \
         ([ 1.38629436112, .09666344259, .03590092383, .03742563713, .01451196212
-         ,  .5,           .12498593397, .06880248576, .0332835346,  .00441787012
+         ,  .5,           .12498593597, .06880248576, .03328355346, .00441787012
         ])
     c = 299.8 # speed of light
 
@@ -1649,7 +1650,7 @@ class Mininec:
         >>> t  = 0.4900725
         >>> r = m.integral_i2_i3 (v2, vv, 1, t, 0, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
-        -2.2903412 -0.1467052j
+        -2.2903411 -0.1467052j
 
         # Original produces
         # -4.219833E-02 -4.820928E-02j
@@ -2831,8 +2832,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
              FIELD POINT: X =  1         Y =  1         Z =  1       
       VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
      COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
-       X          -.187091      -4.272377E-03  .187139      -178.6918
-       Y           .187091       4.272377E-03  .187139       1.308172
+       X          -.187091      -4.272378E-03  .187139      -178.6918
+       Y           .187091       4.272378E-03  .187139       1.308172
        Z           0             0             0             0
        MAXIMUM OR PEAK FIELD =  .264655   AMPS/M
     <BLANKLINE>
