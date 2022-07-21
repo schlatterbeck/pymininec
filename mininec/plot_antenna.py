@@ -6,7 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from argparse import ArgumentParser
-from matplotlib import cm
+from matplotlib import cm, __version__ as matplotlib_version, rcParams
+from matplotlib.widgets import Slider
+
+matplotlib_version_float = float ('.'.join (matplotlib_version.split ('.')[:2]))
 
 class Scaler:
 
@@ -107,25 +110,96 @@ class Gain_Data:
         self.labels    = None
     # end def compute
 
+    def azimuth_gains (self, scaler):
+        gains = scaler.scale (self.maxg, self.gains)
+        return gains [self.theta_maxidx]
+    # end def azimuth_gains
+
+    def azimuth_text (self, scaler):
+        desc = self.desc.copy ()
+        desc.insert (0, 'Azimuth Pattern')
+        desc.append ('Scaling: %s' % scaler.title)
+        desc.append ('Elevation: %.2f°' % (90 - self.theta_max))
+        return desc
+    # end def azimuth_text
+
+    def elevation_gains (self, scaler):
+        gains = scaler.scale (self.maxg, self.gains)
+        gains1 = gains.T [self.phi_maxidx].T
+        # Find index of the other side of the azimuth
+        pmx = self.phis.shape [0] - self.phis.shape [0] % 2
+        idx = (self.phi_maxidx + pmx // 2) % pmx
+        assert idx != self.phi_maxidx
+        eps = 1e-9
+        phis = self.phis
+        assert abs (phis [idx] - phis [self.phi_maxidx]) - np.pi < eps
+        gains2 = gains.T [idx].T
+        return np.append (gains1, np.flip (gains2))
+    # end def elevation_gains
+
+    def elevation_text (self, scaler):
+        desc = self.desc.copy ()
+        desc.insert (0, 'Elevation Pattern')
+        desc.append ('Scaling: %s' % scaler.title)
+        return desc
+    # end def elevation_text
+
+    def plot3d_gains (self, scaler):
+        gains  = scaler.scale (self.maxg, self.gains)
+        P, T   = np.meshgrid (self.phis, self.thetas)
+        X = np.cos (P) * np.sin (T) * gains
+        Y = np.sin (P) * np.sin (T) * gains
+        Z = np.cos (T) * gains
+        return [gains, X, Y, Z]
+    # end def plot3d_gains
+
 # end class Gain_Data
 
 class Gain_Plot:
     dpi   =  80
     fig_x = 512
     fig_y = 384
+    plot_names   = ('azimuth', 'elevation', 'plot_vswr', 'plot3d')
+    update_names = set (('azimuth', 'elevation', 'plot3d'))
 
-    def __init__ (self, filename, outfile = None):
-        self.filename = filename
-        self.outfile  = outfile
-        self.f        = None
+    def __init__ \
+        ( self, filename
+        , outfile     = None
+        , with_slider = True
+        , wireframe   = False
+        , scaling     = 'arrl'
+        , scale_db    = -50
+        ):
+        self.filename    = filename
+        self.outfile     = outfile
+        self.f           = None
+        self.with_slider = with_slider
+        self.wireframe   = wireframe
+        self.scalers     = dict \
+            ( linear_db      = Linear_dB_Scaler (scale_db)
+            , linear_voltage = scale_linear_voltage
+            , linear         = scale_linear
+            , arrl           = scale_arrl
+            )
+        self.scaler = self.scalers [scaling]
+        self.cur_scaler = self.scaler
+
+        # Discrete values for slider are available only in later
+        # matplotlib versions
+        if matplotlib_version_float < 3.5:
+            self.with_slider = False
         # Default title from filename
-        self.title    = os.path.splitext (os.path.basename (filename)) [0]
+        self.title       = os.path.splitext (os.path.basename (filename)) [0]
         # This might override title
         self.gdata = {}
         self.read_file ()
+        self.frequencies = []
         for f in sorted (self.gdata):
-            gdata  = self.gdata [f]
+            gdata = self.gdata [f]
             gdata.compute ()
+            self.frequencies.append (f)
+        if self.outfile or len (self.gdata) == 1 or not self.with_slider:
+            self.with_slider = False
     # end def __init__
 
     def read_file (self):
@@ -203,6 +277,8 @@ class Gain_Plot:
     def plot (self, args, f = None):
         if f is None:
             f = next (iter (self.gdata))
+        self.frequency = f
+        self.cur_freq  = f
         self.impedance = args.system_impedance
         dpi  = self.dpi
         x, y = self.fig_x, self.fig_y
@@ -211,7 +287,7 @@ class Gain_Plot:
         a = {}
         names = ('azimuth', 'elevation', 'plot_vswr', 'plot3d')
         count = 0
-        for name in names:
+        for name in self.plot_names:
             if getattr (args, name):
                 p = dict (projection = 'polar')
                 if name == 'plot_vswr':
@@ -223,20 +299,30 @@ class Gain_Plot:
                 count += 1
         if len (d) > 2:
             args       = [2, 2]
-            figsize    = (x * 2 / dpi, y * 2 / dpi)
-            self.scale = np.array ([0.5, 0.5])
+            figsize    = [x * 2 / dpi, y * 2 / dpi]
         elif len (d) == 2:
             args       = [1, 2]
-            figsize    = (x * 2 / dpi, y / dpi)
-            self.scale = np.array ([0.5, 1])
+            figsize    = [x * 2 / dpi, y / dpi]
         else:
             args       = [1, 1]
-            figsize    = (x / dpi, y / dpi)
-            self.scale = np.array ([1, 1])
+            figsize    = [x / dpi, y / dpi]
+        if self.with_slider:
+            fig_inc = .8
+            slider_perc = fig_inc / (fig_inc + figsize [1])
+            figsize [1] += fig_inc
         self.fig = fig = plt.figure (dpi = dpi, figsize = figsize)
+        if self.with_slider:
+            sc = 1 + slider_perc
+            hs = fig.subplotpars.hspace / sc
+            bt = fig.subplotpars.bottom / sc
+            sp = slider_perc            / sc
+            tp = 1 - ((1 - fig.subplotpars.top) / sc)
+            plt.subplots_adjust \
+                (hspace = hs, top = tp, bottom = sp + bt)
         self.axes = {}
         self.data = self.gdata [f]
-        for name in names:
+        self.gui_objects = {}
+        for name in self.plot_names:
             if name not in a:
                 continue
             arg = a [name]['arg']
@@ -245,27 +331,50 @@ class Gain_Plot:
                 ([((arg - 1) % 2), ((arg - 1) // 2)]) * .5
             self.axes [name] = fig.add_subplot (*args, arg, **kw)
             method = getattr (self, name)
-            method (self.axes [name])
+            method (name)
+        self.freq_slider = None
+        # Make a horizontal slider to control the frequency.
+        if not self.outfile and len (self.gdata) > 1:
+            if self.with_slider:
+                axfreq = fig.add_axes ([0.15, 0.01, 0.65, 0.03])
+                #axfreq = fig.add_axes ([0.15, 0.01, 0.65, sh])
+                minf   = min (self.gdata)
+                freq_slider = Slider \
+                    ( ax      = axfreq
+                    , label   = 'Frequency'
+                    , valinit = minf
+                    , valmin  = minf
+                    , valmax  = max (self.gdata)
+                    , valstep = np.array (list (self.gdata))
+                    , valfmt  = '%.2f MHz'
+                    )
+                self.freq_slider = freq_slider
+                freq_slider.on_changed (self.update_from_slider)
+            # Add keypress events '+' and '-' and some more
+            fig.canvas.mpl_connect ('key_press_event', self.keypress)
+            # Remove default keybindings for some keys:
+            kmap = dict (yscale = 'l', all_axes = 'a')
+            for k in kmap:
+                try:
+                    rcParams ['keymap.' + k].remove (kmap [k])
+                except KeyError:
+                    pass
         if self.outfile:
             fig.savefig (self.outfile)
         else:
             plt.show ()
     # end def plot
 
-    def azimuth (self, ax):
-        self.desc = self.data.desc.copy ()
-        self.desc.insert (0, 'Azimuth Pattern')
-        self.desc.append ('Scaling: %s' % self.scaler.title)
-        self.desc.append ('Elevation: %.2f°' % (90 - self.data.theta_max))
+    def azimuth (self, name):
+        self.desc = self.data.azimuth_text (self.scaler)
         self.lbl_deg = (self.data.phi_max - 90) % 360
         self.labels  = 'XY'
-        gains = self.scaler.scale (self.data.maxg, self.data.gains)
-        self.polargains = gains [self.data.theta_maxidx]
+        self.polargains = self.data.azimuth_gains (self.scaler)
         self.angles = (self.data.phis - np.pi / 2)
-        self.polarplot (ax)
+        self.polarplot (name)
     # end def azimuth
 
-    def elevation (self, ax):
+    def elevation (self, name):
         """ Elevation is a little more complicated due to theta counting
             from zenith.
             OK for both 90° and 180° plots:
@@ -276,29 +385,24 @@ class Gain_Plot:
             self.polargains = gains2
             But second half must (both) be flipped to avoid crossover
         """
-        self.desc = self.data.desc.copy ()
-        self.desc.insert (0, 'Elevation Pattern')
-        self.desc.append ('Scaling: %s' % self.scaler.title)
+        self.desc = self.data.elevation_text (self.scaler)
         self.lbl_deg  = 90 - self.data.theta_max
         self.labels   = None
-        gains = self.scaler.scale (self.data.maxg, self.data.gains)
-        gains1 = gains.T [self.data.phi_maxidx].T
-        # Find index of the other side of the azimuth
-        pmx = self.data.phis.shape [0] - self.data.phis.shape [0] % 2
-        idx = (self.data.phi_maxidx + pmx // 2) % pmx
-        assert idx != self.data.phi_maxidx
-        eps = 1e-9
-        phis = self.data.phis
-        assert abs (phis [idx] - phis [self.data.phi_maxidx]) - np.pi < eps
-        gains2 = gains.T [idx].T
-        p2 = np.pi / 2
-        self.polargains = np.append (gains1, np.flip (gains2))
+        self.polargains = self.data.elevation_gains (self.scaler)
         thetas = self.data.thetas
+        p2 = np.pi / 2
         self.angles = np.append (p2 - thetas, np.flip (p2 + thetas))
-        self.polarplot (ax)
+        self.polarplot (name)
     # end def elevation
 
-    def polarplot (self, ax):
+    def format_polar_coord (self, x, y):
+        return '\u03B8=%.2f°, r=%.3f' % (x / np.pi * 180, y)
+    # end def format_polar_coord
+
+    def polarplot (self, name):
+        if name not in self.gui_objects:
+            self.gui_objects [name] = {}
+        ax = self.axes [name]
         ax.set_rmax (1)
         ax.set_rlabel_position (self.lbl_deg  or 0)
         ax.set_thetagrids (range (0, 360, 15))
@@ -308,21 +412,24 @@ class Gain_Plot:
             plt.text (0.5, 1.1, self.labels [1], ha = 'center', **d)
         off = self.offset + np.array ([0.005, 0.01])
         off = [-.35, -.13]
-        plt.text (*off, '\n'.join (self.desc), transform = ax.transAxes)
+        obj = plt.text (*off, '\n'.join (self.desc), transform = ax.transAxes)
+        self.gui_objects [name]['text'] = obj
         args = dict (linestyle = 'solid', linewidth = 1.5)
-        ax.plot (self.angles, self.polargains, **args)
+        obj, = ax.plot (self.angles, self.polargains, **args)
+        self.gui_objects [name]['data'] = obj
         #ax.grid (True)
         self.scaler.set_ticks (ax)
         # Might add color and size labelcolor='r' labelsize = 8
         ax.tick_params (axis = 'y', rotation = 'auto')
+        ax.format_coord = self.format_polar_coord
     # end def polarplot
 
-    def plot3d (self, ax):
-        gains  = self.scaler.scale (self.data.maxg, self.data.gains)
-        P, T   = np.meshgrid (self.data.phis, self.data.thetas)
-        X = np.cos (P) * np.sin (T) * gains
-        Y = np.sin (P) * np.sin (T) * gains
-        Z = np.cos (T) * gains
+    def plot3d (self, name):
+        if name in self.gui_objects and self.gui_objects [name]:
+            self.gui_objects [name]['data'].remove ()
+            self.gui_objects [name] = {}
+        ax = self.axes [name]
+        gains, X, Y, Z = self.data.plot3d_gains (self.scaler)
         # Create cubic bounding box to simulate equal aspect ratio
         max_range = np.array \
             ( [ X.max () - X.min ()
@@ -336,6 +443,7 @@ class Gain_Plot:
         ax.set_xlim (mid_x - max_range, mid_x + max_range)
         ax.set_ylim (mid_y - max_range, mid_y + max_range)
         ax.set_zlim (mid_z - max_range, mid_z + max_range)
+
         ax.set_xlabel ('X')
         ax.set_ylabel ('Y')
         ax.set_zlabel ('Z')
@@ -343,21 +451,21 @@ class Gain_Plot:
         ax.set_yticklabels([])
         ax.set_zticklabels([])
 
-        #norm = plt.Normalize (vmin = 0.0, vmax = 1.0, clip = True)
-        #colors = cm.rainbow (norm (gains))
+        ax.format_coord = lambda x, y: ''
+
         colors = cm.rainbow (gains)
         rc, cc = gains.shape
 
-        #ax.plot_wireframe (X, Y, Z, color = 'r', linewidth = 0.5)
         surf = ax.plot_surface \
-            ( X, Y, Z, rcount=rc, ccount=cc, facecolors=colors, shade=False
-            #, cmap = cm.rainbow, norm = norm
-            )
-        #surf.set_facecolor ((0, 0, 0, 0))
-        #surf.set_edgecolor ((.5, .5, .5, 1))
+            (X, Y, Z, rcount=rc, ccount=cc, facecolors=colors, shade=False)
+        if self.wireframe:
+            surf.set_alpha (not self.wireframe)
+        self.gui_objects [name] = {}
+        self.gui_objects [name]['data'] = surf
     # end def plot3d
 
-    def plot_vswr (self, ax):
+    def plot_vswr (self, name):
+        ax = self.axes [name]
         z0 = self.impedance
         X  = []
         Y  = []
@@ -371,6 +479,72 @@ class Gain_Plot:
         ax.set_ylabel ('VSWR')
         ax.plot (X, Y)
     # end def plot_vswr
+
+    # For animation:
+
+    def update_display (self):
+        for name in self.gui_objects:
+            if name not in self.update_names:
+                continue
+            gui = self.gui_objects [name]
+            data_obj = gui ['data']
+            gdata = self.gdata [self.frequency]
+            if name == 'plot3d':
+                self.data = gdata
+                self.plot3d ('plot3d')
+            else:
+                gains = getattr (gdata, name + '_gains')(self.scaler)
+                data_obj.set_ydata (gains)
+                text_obj = gui ['text']
+                text = getattr (gdata, name + '_text')(self.scaler)
+                text_obj.set_text ('\n'.join (text))
+                if self.cur_scaler != self.scaler:
+                    self.scaler.set_ticks (self.axes [name])
+        self.fig.canvas.draw ()
+        self.cur_freq   = self.frequency
+        self.cur_scaler = self.scaler
+    # end def update_display
+
+    def keypress (self, event):
+        idx = self.frequencies.index (self.frequency)
+        if event.key == "+":
+            if idx < len (self.frequencies) - 1:
+                self.frequency = self.frequencies [idx + 1]
+        elif event.key == "-":
+            if idx > 0:
+                self.frequency = self.frequencies [idx - 1]
+        elif event.key == 'a':
+            self.scaler = self.scalers ['arrl']
+            self.update_display ()
+        elif event.key == 'l':
+            self.scaler = self.scalers ['linear']
+            self.update_display ()
+        elif event.key == 'd':
+            self.scaler = self.scalers ['linear_db']
+            self.update_display ()
+        elif event.key == 'v':
+            self.scaler = self.scalers ['linear_voltage']
+            self.update_display ()
+        elif event.key == 'w':
+            self.wireframe = not self.wireframe
+            if 'plot3d' in self.gui_objects:
+                gui = self.gui_objects ['plot3d']['data']
+                gui.set_alpha (not self.wireframe)
+                self.fig.canvas.draw ()
+        if self.cur_freq != self.frequency:
+            # Do not call update_display when slider has changed, this
+            # is done by slider
+            if self.freq_slider:
+                self.freq_slider.set_val (self.frequency)
+            else:
+                self.update_display ()
+    # end def keypress
+
+    def update_from_slider (self, val):
+        self.frequency = self.freq_slider.val
+        self.update_display ()
+    # end def update_from_slider
+
 # end class Gain_Plot
 
 def main (argv = sys.argv [1:]):
@@ -390,6 +564,15 @@ def main (argv = sys.argv [1:]):
         , help    = 'Do an elevation plot'
         , action  = 'store_true'
         )
+    # For versions below 3.5 slider will be always off
+    if matplotlib_version_float >= 3.5:
+        cmd.add_argument \
+            ( '--with-frequency-slider', '--with-slider'
+            , dest    = 'with_slider'
+            , help    = 'Turn on frequency slider, frequency can be stepped'
+                        ' with +/- keys and slider is very slow.'
+            , action  = 'store_true'
+            )
     cmd.add_argument \
         ( '--output-file'
         , help    = 'Output file, default is interactive'
@@ -422,24 +605,30 @@ def main (argv = sys.argv [1:]):
         , help    = 'Plot voltage standing wave ratio (VSWR)'
         , action  = 'store_true'
         )
+    cmd.add_argument \
+        ( '--wireframe'
+        , help    = 'Show 3d plot as a wireframe (not solid)'
+        , action  = 'store_true'
+        )
     args = cmd.parse_args (argv)
-    d    = dict (filename = args.filename)
+    if not hasattr (args, 'with_slider'):
+        args.with_slider = False
+    d    = dict \
+        ( filename    = args.filename
+        , with_slider = args.with_slider
+        , wireframe   = args.wireframe
+        , scaling     = args.scaling_method
+        , scale_db    = args.scaling_mindb
+        )
     if args.output_file:
         d ['outfile'] = args.output_file
     gp   = Gain_Plot (**d)
 
-    scale_linear_db = Linear_dB_Scaler (args.scaling_mindb)
-
-    try:
-        scaler = globals () ['scale_' + args.scaling_method]
-    except KeyError:
-        scaler = locals () ['scale_' + args.scaling_method]
     # Default is all
     if  (   not args.azimuth and not args.elevation
         and not args.plot3d  and not args.plot_vswr
         ):
         args.plot3d = args.elevation = args.azimuth = args.plot_vswr = True
-    gp.scaler = scaler
     gp.plot (args)
 # end def main
 
