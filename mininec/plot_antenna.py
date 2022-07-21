@@ -311,6 +311,7 @@ class Gain_Plot:
             slider_perc = fig_inc / (fig_inc + figsize [1])
             figsize [1] += fig_inc
         self.fig = fig = plt.figure (dpi = dpi, figsize = figsize)
+        fig.canvas.manager.set_window_title (self.title)
         if self.with_slider:
             sc = 1 + slider_perc
             hs = fig.subplotpars.hspace / sc
