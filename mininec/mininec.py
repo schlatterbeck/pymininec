@@ -492,6 +492,11 @@ class Wire:
         # Links to previous/next connected wire (at start/end)
         self.conn = (Connected_Wires (), Connected_Wires ())
         self.n = None
+        # This is Integral I1 in the paper(s), in the implementation
+        # used in Basic this boils down to only wire-dependent
+        # Parameters. So we can avoid re-computing this for each
+        # combination of segments.
+        self.i6 = (1 + np.log (16 * r / self.seg_len)) / np.pi / r
     # end def __init__
 
     def compute_ground (self, n, media):
@@ -1593,7 +1598,7 @@ class Mininec:
         return iter ([1, -1])
     # end def image_iter
 
-    def integral_i2_i3 (self, vec2, vecv, k, t, wire, exact_kernel = False) :
+    def integral_i2_i3 (self, t, vec2, vecv, k, wire, exact_kernel = False) :
         """ Starts line 28
             Uses variables:
             vec2 (originally (X2, Y2, Z2))
@@ -1624,10 +1629,10 @@ class Mininec:
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
         >>> t  = 0.980144947186
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
+        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, True)
+        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
 
@@ -1635,7 +1640,7 @@ class Mininec:
         # Original produces
         # 0.2819941 -0.1414753j
         >>> w [0].r = 0.01
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
+        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819941 -0.1414753j
 
@@ -1645,7 +1650,7 @@ class Mininec:
         >>> vv = np.array ([ 1.07071418591, 0, 0])
         >>> v2 = np.array ([-1.07071418591, 0, 0])
         >>> t  = 0.4900725
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, True)
+        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -2.2903413 -0.1467052j
 
@@ -1654,7 +1659,7 @@ class Mininec:
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
         >>> t  = 0.7886752
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
+        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.04219836 -0.04820921j
 
@@ -1664,7 +1669,7 @@ class Mininec:
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
         >>> t  = 0.2113249
-        >>> r = m.integral_i2_i3 (v2, vv, 1, t, wire, False)
+        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.03563231 -0.05976447j
         """
@@ -1680,9 +1685,9 @@ class Mininec:
             a2 = wire.r * wire.r
             d3 = d3 * d3
             d  = np.sqrt (d3 + a2)
-            # CRITERIA FOR USING REDUCED KERNEL
+            # criteria for using reduced kernel
             if exact_kernel:
-                # EXACT KERNEL CALCULATION WITH ELLIPTIC INTEGRAL
+                # exact kernel calculation with elliptic integral
                 b = d3 / (d3 + 4 * a2)
                 v0 = ellipk (1 - b) * np.sqrt (1 - b)
                 # Note: This adds only a real part, the imag part of the
@@ -1701,7 +1706,7 @@ class Mininec:
             yield np.array (list (reversed (a)))
     # end def near_field_iter
 
-    def psi (self, vec2, vecv, k, p2, p3, p4, exact = True, fvs = 0):
+    def psi (self, vec2, vecv, k, p2, p3, p4, exact = False, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
             The variable fvs is used to distiguish code path at the end.
@@ -1723,7 +1728,7 @@ class Mininec:
             fvs: scalar vs. vector potential
             is_near: This originally tested input C$ for "N" which is
                      the selection of near field compuation, this forces
-                     exact kernel, see exact flag
+                     non-exact kernel, see exact flag
             Note: p2 and p3 are used only as differences, so if both are
                   1-based produces same result as when both are 0-based.
 
@@ -1745,7 +1750,7 @@ class Mininec:
         # 5.330494 -0.1568644j
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> r = m.psi (vec2, vecv, 1, 1, 1.5, 0, exact = False)
+        >>> r = m.psi (vec2, vecv, 1, 1, 1.5, 0, exact = True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         5.3304831 -0.1568644j
 
@@ -1773,13 +1778,13 @@ class Mininec:
         l = 7
         t = (d0 + d3) / wire.seg_len
         # CRITERIA FOR EXACT KERNEL
-        if t > 1.1 or exact:
+        if t > 1.1 or not exact:
             # This starts line 165
             if t > 6:
                 l = 3
             if t > 10:
                 l = 1
-        elif not exact:
+        elif exact:
             if wire.r <= self.srm:
                 t12 = 2 * np.log (wire.seg_len / wire.r) \
                     - self.w * wire.seg_len * 1j
@@ -1788,7 +1793,12 @@ class Mininec:
                 return t12
             # The following starts line 162
             f2 = 2 * (p3 - p2)
-            i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+            # Hmm, dividing by f2 here removes (p3-p2) from logarithm
+            # So i6 depends only on wire/seg parameters?!
+            # Moved to wire. Original formula was:
+            # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+            # But s4 / f2 reduces to wire.seg_len / 2
+            i6 = wire.i6
         # The following starts line 167
         i5 = l + l
 
@@ -1799,14 +1809,14 @@ class Mininec:
         wire = self.geo [p4]
         while l < i5:
             ret = self.integral_i2_i3 \
-                ( vec2, vecv, k
-                , (self.q [l - 1] + .5) / f2
+                ( (self.q [l - 1] + .5) / f2
+                , vec2, vecv, k
                 , wire = wire
                 , exact_kernel = bool (i6)
                 )
             ret += self.integral_i2_i3 \
-                ( vec2, vecv, k
-                , (.5 - self.q [l - 1]) / f2
+                ( (.5 - self.q [l - 1]) / f2
+                , vec2, vecv, k
                 , wire = wire
                 , exact_kernel = bool (i6)
                 )
@@ -1875,7 +1885,7 @@ class Mininec:
         vec1 = vec0 + p1 * vect / 2
         vec2 = vec1 - kvec * self.seg [int (p2)]
         vecv = vec1 - kvec * self.seg [int (p3)]
-        return self.psi (vec2, vecv, k, p2, p3, p4, exact = True)
+        return self.psi (vec2, vecv, k, p2, p3, p4, exact = False)
     # end def psi_near_field_56
 
     def psi_near_field_66 (self, vec0, k, p2, p3, p4):
@@ -1901,7 +1911,7 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
         vecv = vec0 - kvec * self.seg [p3]
-        return self.psi (vec2, vecv, k, p2, p3, p4, exact = True)
+        return self.psi (vec2, vecv, k, p2, p3, p4, exact = False)
     # end def psi_near_field_66
 
     def psi_near_field_75 (self, vec0, k, p2, p3, p4):
@@ -1928,7 +1938,7 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * self.seg [p2]
         vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        return self.psi (vec2, vecv, k, p2, p3, p4, exact = True)
+        return self.psi (vec2, vecv, k, p2, p3, p4, exact = False)
     # end def psi_near_field_75
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -2034,7 +2044,7 @@ class Mininec:
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
             wd   = self.wires_differ (i, j)
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
-            return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 1, exact = wd)
+            return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 1, exact = not wd)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1 + t2 * 1j
@@ -2074,7 +2084,7 @@ class Mininec:
             vec1 = self.seg [p1]
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
             wd = self.wires_differ (i, j)
-            return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 0, exact = wd)
+            return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 0, exact = not wd)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1 + t2 * 1j
