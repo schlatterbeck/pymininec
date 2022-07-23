@@ -186,7 +186,7 @@ NEW POWER LEVEL (WATTS) =  100
          FIELD POINT: X =  1         Y =  0         Z =  0       
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           549.9756      876.8821      1035.082      57.90429
+   X           549.9756      876.882       1035.082      57.90429
    Y           0             0             0             0
    Z           0             0             0             0
    MAXIMUM OR PEAK FIELD =  1035.082 V/M
@@ -538,8 +538,8 @@ NEW POWER LEVEL (WATTS) =  100
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
    X          -12.96525     -8.344963      15.41869     -147.233
-   Y          -6.932553     -10.71632      12.76322     -122.8994
-   Z           6.932553      10.71632      12.76322      57.10055
+   Y          -6.932554     -10.71632      12.76322     -122.8994
+   Z           6.932554      10.71632      12.76322      57.10055
    MAXIMUM OR PEAK FIELD =  23.21948 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
@@ -556,8 +556,8 @@ NEW POWER LEVEL (WATTS) =  100
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
    X          -10.94652     -4.485343      11.82982     -157.7186
-   Y          -9.642702     -15.60719      18.34574     -121.7093
-   Z           9.642702      15.60719      18.34574      58.29069
+   Y          -9.642703     -15.60719      18.34574     -121.7093
+   Z           9.642703      15.60719      18.34574      58.29069
    MAXIMUM OR PEAK FIELD =  27.76395 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
@@ -718,8 +718,8 @@ NEW POWER LEVEL (WATTS) =  100
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
    X          -12.96525     -8.344963      15.41869     -147.233
-   Y           6.932553      10.71632      12.76322      57.10055
-   Z           6.932553      10.71632      12.76322      57.10055
+   Y           6.932554      10.71632      12.76322      57.10055
+   Z           6.932554      10.71632      12.76322      57.10055
    MAXIMUM OR PEAK FIELD =  23.21948 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
@@ -736,8 +736,8 @@ NEW POWER LEVEL (WATTS) =  100
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
    X          -10.94652     -4.485343      11.82982     -157.7186
-   Y           9.642702      15.60719      18.34574      58.29069
-   Z           9.642702      15.60719      18.34574      58.29069
+   Y           9.642703      15.60719      18.34574      58.29069
+   Z           9.642703      15.60719      18.34574      58.29069
    MAXIMUM OR PEAK FIELD =  27.76395 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
@@ -1168,7 +1168,7 @@ NEW POWER LEVEL (WATTS) =  100
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
    X          -8.88791      -2.267158      9.172511     -165.69
-   Y           2.806228      4.072663      4.945856      55.43161
+   Y           2.806228      4.072663      4.945856      55.4316
    Z           5.612556      8.145488      9.891904      55.43166
    MAXIMUM OR PEAK FIELD =  13.49035 V/M
 
@@ -1906,7 +1906,7 @@ NEW POWER LEVEL (WATTS) =  100
  COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
    X           0             0             0             0
    Y          -1.429761E-02  1.362123E-02  1.974739E-02  136.3878
-   Z          -9.531618E-03  9.080742E-03  1.316479E-02  136.3877
+   Z          -9.531618E-03  9.080743E-03  1.316479E-02  136.3877
    MAXIMUM OR PEAK FIELD =  2.373333E-02  AMPS/M
 
 ********************NEAR MAGNETIC FIELDS********************
@@ -2086,7 +2086,7 @@ NEW POWER LEVEL (WATTS) =  100
  COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
    X           0             0             0             0
    Y          -1.429761E-02  1.362123E-02  1.974739E-02  136.3878
-   Z           9.531618E-03 -9.080742E-03  1.316479E-02 -43.61231
+   Z           9.531618E-03 -9.080743E-03  1.316479E-02 -43.61231
    MAXIMUM OR PEAK FIELD =  2.373333E-02  AMPS/M
 
 ********************NEAR MAGNETIC FIELDS********************

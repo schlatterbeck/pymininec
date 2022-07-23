@@ -18,7 +18,7 @@ E              0             0             0             0
          FIELD POINT: X =  2000      Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           1.937983E-05  8.814575E-05  9.025104E-05  77.60017
+   X           1.937983E-05  8.814575E-05  9.025104E-05  77.60016
    Y           0             0             0             0
    Z          -1.160279E-04 -5.903631E-04  6.016569E-04 -101.119
    MAXIMUM OR PEAK FIELD =  6.083850E-04 V/M
@@ -27,7 +27,7 @@ E              0             0             0             0
          FIELD POINT: X =  2000.05   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           4.540091E-05  7.801079E-05  9.026032E-05  59.80134
+   X           4.540091E-05  7.801078E-05  9.026032E-05  59.80134
    Y           0             0             0             0
    Z          -2.909849E-04 -5.266989E-04  6.017341E-04 -118.9193
    MAXIMUM OR PEAK FIELD =  6.084627E-04 V/M
@@ -63,7 +63,7 @@ E              0             0             0             0
          FIELD POINT: X =  2000.25   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           8.851767E-05 -1.783871E-05  9.029727E-05 -11.39404
+   X           8.851766E-05 -1.783871E-05  9.029727E-05 -11.39404
    Y           0             0             0             0
    Z          -5.926741E-04  1.057915E-04  6.020419E-04  169.8794
    MAXIMUM OR PEAK FIELD =  6.087726E-04 V/M
@@ -207,7 +207,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000     Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -7.754048E-08 -1.872626E-08  7.976966E-08 -166.4229
+   X          -7.754047E-08 -1.872627E-08  7.976965E-08 -166.4229
    Y           0             0             0             0
    Z           3.077904E-06 -1.978846E-06  3.659142E-06 -32.73778
    MAXIMUM OR PEAK FIELD =  3.659557E-06 V/M
@@ -216,16 +216,16 @@ E              0             0             0             0
          FIELD POINT: X =  20000.05  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -7.952936E-08  6.145554E-09  7.976645E-08  175.5813
+   X          -7.952935E-08  6.145540E-09  7.976644E-08  175.5813
    Y           0             0             0             0
-   Z           2.315687E-06 -2.832819E-06  3.658862E-06 -50.73573
+   Z           2.315687E-06 -2.832819E-06  3.658861E-06 -50.73573
    MAXIMUM OR PEAK FIELD =  3.659276E-06 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  20000.1   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -7.373711E-08  3.041417E-08  7.976330E-08  157.5854
+   X          -7.373711E-08  3.041417E-08  7.976329E-08  157.5854
    Y           0             0             0             0
    Z           1.326980E-06 -3.409448E-06  3.658581E-06 -68.73369
    MAXIMUM OR PEAK FIELD =  3.658995E-06 V/M
@@ -234,16 +234,16 @@ E              0             0             0             0
          FIELD POINT: X =  20000.15  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -6.073099E-08  5.170510E-08  7.976008E-08  139.5896
+   X          -6.073099E-08  5.170511E-08  7.976009E-08  139.5896
    Y           0             0             0             0
-   Z           2.085696E-07 -3.652349E-06  3.658300E-06 -86.73164
-   MAXIMUM OR PEAK FIELD =  3.658715E-06 V/M
+   Z           2.085695E-07 -3.652349E-06  3.658300E-06 -86.73164
+   MAXIMUM OR PEAK FIELD =  3.658714E-06 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  20000.2   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -4.178410E-08  6.793564E-08  7.975690E-08  121.5938
+   X          -4.178410E-08  6.793565E-08  7.975690E-08  121.5938
    Y           0             0             0             0
    Z          -9.300788E-07 -3.537804E-06  3.658019E-06 -104.7296
    MAXIMUM OR PEAK FIELD =  3.658434E-06 V/M
@@ -252,7 +252,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.25  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -1.875066E-08  7.751816E-08  7.975370E-08  103.5979
+   X          -1.875067E-08  7.751814E-08  7.975369E-08  103.5979
    Y           0             0             0             0
    Z          -1.977537E-06 -3.077076E-06  3.657738E-06 -122.7275
    MAXIMUM OR PEAK FIELD =  3.658153E-06 V/M
@@ -261,7 +261,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.3   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           6.115424E-09  7.951566E-08  7.975047E-08  85.60213
+   X           6.115430E-09  7.951566E-08  7.975048E-08  85.60213
    Y           0             0             0             0
    Z          -2.831318E-06 -2.315303E-06  3.657457E-06 -140.7255
    MAXIMUM OR PEAK FIELD =  3.657872E-06 V/M
@@ -270,16 +270,16 @@ E              0             0             0             0
          FIELD POINT: X =  20000.35  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           3.038125E-08  7.373338E-08  7.974729E-08  67.60628
+   X           3.038126E-08  7.373338E-08  7.974731E-08  67.60627
    Y           0             0             0             0
-   Z          -3.407903E-06 -1.327079E-06  3.657176E-06 -158.7235
+   Z          -3.407902E-06 -1.327079E-06  3.657176E-06 -158.7235
    MAXIMUM OR PEAK FIELD =  3.657591E-06 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  20000.4   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           5.167269E-08  6.073761E-08  7.974412E-08  49.61043
+   X           5.167271E-08  6.073761E-08  7.974413E-08  49.61042
    Y           0             0             0             0
    Z          -3.650910E-06 -2.091416E-07  3.656895E-06 -176.7214
    MAXIMUM OR PEAK FIELD =  3.657310E-06 V/M
@@ -288,7 +288,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.45  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           6.790683E-08  4.180043E-08  7.974091E-08  31.6146
+   X           6.790681E-08  4.180043E-08  7.974090E-08  31.61461
    Y           0             0             0             0
    Z          -3.536612E-06  9.290900E-07  3.656614E-06  165.2806
    MAXIMUM OR PEAK FIELD =  3.657029E-06 V/M
@@ -297,7 +297,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.5   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           7.749581E-08  1.877508E-08  7.973772E-08  13.61877
+   X           7.749582E-08  1.877507E-08  7.973773E-08  13.61876
    Y           0             0             0             0
    Z          -3.076247E-06  1.976228E-06  3.656334E-06  147.2827
    MAXIMUM OR PEAK FIELD =  3.656748E-06 V/M
@@ -306,7 +306,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.55  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           7.950198E-08 -6.085345E-09  7.973453E-08 -4.377074
+   X           7.950197E-08 -6.085338E-09  7.973453E-08 -4.377069
    Y           0             0             0             0
    Z          -2.314920E-06  2.829817E-06  3.656053E-06  129.2847
    MAXIMUM OR PEAK FIELD =  3.656467E-06 V/M
@@ -324,7 +324,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.65  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           6.074422E-08 -5.164026E-08  7.972815E-08 -40.36874
+   X           6.074422E-08 -5.164026E-08  7.972814E-08 -40.36874
    Y           0             0             0             0
    Z          -2.097132E-07  3.649470E-06  3.655491E-06  93.28883
    MAXIMUM OR PEAK FIELD =  3.655905E-06 V/M
@@ -335,14 +335,14 @@ E              0             0             0             0
  COMPONENT     V/M           V/M           V/M           DEG
    X           4.181673E-08 -6.787802E-08  7.972493E-08 -58.36456
    Y           0             0             0             0
-   Z           9.281017E-07  3.535419E-06  3.655210E-06  75.29088
+   Z           9.281017E-07  3.535419E-06  3.655210E-06  75.29087
    MAXIMUM OR PEAK FIELD =  3.655625E-06 V/M
 
 ********************NEAR ELECTRIC FIELDS********************
          FIELD POINT: X =  20000.75  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X           1.879947E-08 -7.747348E-08  7.972177E-08 -76.36042
+   X           1.879948E-08 -7.747346E-08  7.972175E-08 -76.36041
    Y           0             0             0             0
    Z           1.974920E-06  3.075418E-06  3.654929E-06  57.29292
    MAXIMUM OR PEAK FIELD =  3.655344E-06 V/M
@@ -351,7 +351,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.8   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -6.055242E-09 -7.948827E-08  7.971858E-08 -94.35625
+   X          -6.055239E-09 -7.948827E-08  7.971858E-08 -94.35625
    Y           0             0             0             0
    Z           2.828317E-06  2.314536E-06  3.654648E-06  39.29497
    MAXIMUM OR PEAK FIELD =  3.655063E-06 V/M
@@ -360,7 +360,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.85  Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -3.031553E-08 -7.372592E-08  7.971538E-08 -112.3521
+   X          -3.031553E-08 -7.372592E-08  7.971539E-08 -112.3521
    Y           0             0             0             0
    Z           3.404811E-06  1.327276E-06  3.654368E-06  21.29702
    MAXIMUM OR PEAK FIELD =  3.654782E-06 V/M
@@ -369,7 +369,7 @@ E              0             0             0             0
          FIELD POINT: X =  20000.9   Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -5.160781E-08 -6.075082E-08  7.971216E-08 -130.3479
+   X          -5.160779E-08 -6.075082E-08  7.971215E-08 -130.3479
    Y           0             0             0             0
    Z           3.648031E-06  2.102842E-07  3.654087E-06  3.299062
    MAXIMUM OR PEAK FIELD =  3.654501E-06 V/M
@@ -387,7 +387,7 @@ E              0             0             0             0
          FIELD POINT: X =  20001     Y =  0         Z =  300     
   VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
  COMPONENT     V/M           V/M           V/M           DEG
-   X          -7.745113E-08 -1.882385E-08  7.970581E-08 -166.3396
+   X          -7.745114E-08 -1.882385E-08  7.970581E-08 -166.3396
    Y           0             0             0             0
    Z           3.074590E-06 -1.973612E-06  3.653525E-06 -32.69684
    MAXIMUM OR PEAK FIELD =  3.653939E-06 V/M

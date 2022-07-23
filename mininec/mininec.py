@@ -29,6 +29,7 @@ import copy
 import numpy as np
 from datetime import datetime
 from scipy.special import ellipk
+from scipy.integrate import fixed_quad
 
 def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
@@ -635,16 +636,7 @@ class Mininec:
     """
     # INTRINSIC IMPEDANCE OF FREE SPACE DIVIDED BY 2 PI
     g0 = 29.979221
-    # Q-VECTOR FOR GAUSSIAN QUADRATURE
-    q = np.array \
-        ([ .288675135, .5,         .430568156, .173927423
-         , .169990522, .326072577, .480144928, .050614268
-         , .398333239, .111190517, .262766205, .156853323
-         , .091717321, .181341892
-        ])
-    # E-VECTOR FOR COEFFICIENTS OF ELLIPTIC INTEGRAL
-    # In the code these are C0--C9
-    c = 299.8 # speed of light
+    c  = 299.8 # speed of light
 
     def __init__ (self, f, geo, media = None, print_opts = None):
         """ Initialize, no interactive input is done here
@@ -1628,11 +1620,11 @@ class Mininec:
         >>> m.register_source (s, 4)
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
-        >>> t  = 0.980144947186
-        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> t  = np.array ([0.980144947186])
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
-        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
 
@@ -1640,7 +1632,7 @@ class Mininec:
         # Original produces
         # 0.2819941 -0.1414753j
         >>> w [0].r = 0.01
-        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819941 -0.1414753j
 
@@ -1649,8 +1641,8 @@ class Mininec:
         # -2.290341 -0.1467051j
         >>> vv = np.array ([ 1.07071418591, 0, 0])
         >>> v2 = np.array ([-1.07071418591, 0, 0])
-        >>> t  = 0.4900725
-        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
+        >>> t  = np.array ([0.4900725])
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -2.2903413 -0.1467052j
 
@@ -1658,8 +1650,8 @@ class Mininec:
         # -4.219833E-02 -4.820928E-02j
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
-        >>> t  = 0.7886752
-        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> t  = np.array ([0.7886752])
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.04219836 -0.04820921j
 
@@ -1668,17 +1660,17 @@ class Mininec:
         # But *ADDED TO THE PREVIOUS RESULT*
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
-        >>> t  = 0.2113249
-        >>> r = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> t  = np.array ([0.2113249])
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.03563231 -0.05976447j
         """
-        t34  = 0j
+        t34  = np.zeros (t.shape, dtype = complex)
         if k < 0:
-            vec3 = vecv + t * (vec2 - vecv)
+            vec3 = vecv + (vec2 - vecv) * t[:,np.newaxis]
         else:
-            vec3 = vec2 + t * (vecv - vec2)
-        d = d3 = np.linalg.norm (vec3)
+            vec3 = vec2 + (vecv - vec2) * t[:,np.newaxis]
+        d = d3 = np.linalg.norm (vec3, axis = 1)
         # MOD FOR SMALL RADIUS TO WAVELENGTH RATIO
         if wire.r > self.srm:
             # SQUARE OF WIRE RADIUS
@@ -1752,7 +1744,7 @@ class Mininec:
         >>> vecv = np.array ([1.070714, 0, 0])
         >>> r = m.psi (vec2, vecv, 1, 1, 1.5, 0, exact = True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
-        5.3304831 -0.1568644j
+        5.3304830 -0.1568644j
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
@@ -1764,26 +1756,25 @@ class Mininec:
         -0.0833344 -0.1156090j
         """
         wire = self.geo [p4]
-        # MAGNITUDE OF S(U) - S(M)
+        # magnitude of S(U) - S(M)
         d0 = np.linalg.norm (vec2)
-        # MAGNITUDE OF S(V) - S(M)
+        # magnitude of S(V) - S(M)
         d3 = np.linalg.norm (vecv)
-        # MAGNITUDE OF S(V) - S(U)
+        # magnitude of S(V) - S(U)
         s4 = (p3 - p2) * wire.seg_len
-        # ORDER OF INTEGRATION
-        # LTH ORDER GAUSSIAN QUADRATURE
-        tret = 0+0j
+        # order of integration
+        # gauss_n order gaussian quadrature
         i6 = 0
         f2 = 1
-        l = 7
+        gauss_n = 8
         t = (d0 + d3) / wire.seg_len
         # CRITERIA FOR EXACT KERNEL
         if t > 1.1 or not exact:
             # This starts line 165
             if t > 6:
-                l = 3
+                gauss_n = 4
             if t > 10:
-                l = 1
+                gauss_n = 2
         elif exact:
             if wire.r <= self.srm:
                 t12 = 2 * np.log (wire.seg_len / wire.r) \
@@ -1799,32 +1790,14 @@ class Mininec:
             # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
             # But s4 / f2 reduces to wire.seg_len / 2
             i6 = wire.i6
-        # The following starts line 167
-        i5 = l + l
-
-        # This runs from line 168 and backjump condition is in line 178
-        # This really *updated* t3 and t4 *in place* in the gosub for
-        # computing the integral (!)
-        # Note how the index l is incremented twice below.
+        # Gauss quadrature was explicitly implemented here, we use
+        # fixed_quad from a scipy lib for now.
         wire = self.geo [p4]
-        while l < i5:
-            ret = self.integral_i2_i3 \
-                ( (self.q [l - 1] + .5) / f2
-                , vec2, vecv, k
-                , wire = wire
-                , exact_kernel = bool (i6)
-                )
-            ret += self.integral_i2_i3 \
-                ( (.5 - self.q [l - 1]) / f2
-                , vec2, vecv, k
-                , wire = wire
-                , exact_kernel = bool (i6)
-                )
-            l = l + 1
-            tret += ret * self.q [l - 1]
-            l = l + 1
-        tret = (tret + i6) * s4
-        return tret
+        args = vec2, vecv, k, wire, bool (i6)
+        # Integrate, need to multiply by f2 below.
+        r, p = fixed_quad \
+            (self.integral_i2_i3, 0, 1/f2, args = args, n = gauss_n)
+        return (r * f2 + i6) * s4
     # end def psi
 
     def psi_common_vec1_vecv (self, vec1, k, p2, p3):
@@ -2611,8 +2584,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
      1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
-     2             2.727548E-02  6.861986E-04  2.728411E-02  1.441147 
-     3             2.346944E-02  8.170779E-05  2.346959E-02  .199472  
+     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147 
+     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472  
      4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
      5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
     E              0             0             0             0
@@ -2650,9 +2623,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
      1             2.851291E-02  1.014723E-03  2.853096E-02  2.038193 
-     2             2.721271E-02  6.814281E-05  2.721279E-02  .143473  
-     3             2.341369E-02 -4.509545E-04  2.341803E-02 -1.103397 
-     4             1.740291E-02 -6.326804E-04  1.741441E-02 -2.082063 
+     2             2.721271E-02  6.814274E-05  2.721279E-02  .143473  
+     3             2.341369E-02 -4.509546E-04  2.341803E-02 -1.103397 
+     4             1.740291E-02 -6.326805E-04  1.741441E-02 -2.082063 
      5             9.581812E-03 -4.870737E-04  9.594184E-03 -2.91002  
     E              0             0             0             0
     <BLANKLINE>
@@ -2725,8 +2698,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
      1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
-     2             2.727548E-02  6.861986E-04  2.728411E-02  1.441147 
-     3             2.346944E-02  8.170779E-05  2.346959E-02  .199472  
+     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147 
+     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472  
      4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
      5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
     E              0             0             0             0
@@ -2801,8 +2774,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
      1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
-     2             2.727548E-02  6.861986E-04  2.728411E-02  1.441147 
-     3             2.346944E-02  8.170779E-05  2.346959E-02  .199472  
+     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147 
+     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472  
      4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
      5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
     E              0             0             0             0
@@ -2821,7 +2794,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
      COMPONENT     V/M           V/M           V/M           DEG
        X           4.129238     -10.56496      11.34324     -68.65233
        Y           4.129238     -10.56496      11.34324     -68.65233
-       Z          -17.05298      6.501882E-02  17.05311      179.7815
+       Z          -17.05298      6.501885E-02  17.05311      179.7815
        MAXIMUM OR PEAK FIELD =  19.391   V/M
     <BLANKLINE>
     ********************    NEAR FIELDS     ********************
@@ -2836,8 +2809,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
              FIELD POINT: X =  1         Y =  1         Z =  1       
       VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
      COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
-       X          -.187091      -4.272378E-03  .187139      -178.6918
-       Y           .187091       4.272378E-03  .187139       1.308172
+       X          -.187091      -4.272377E-03  .187139      -178.6918
+       Y           .187091       4.272377E-03  .187139       1.308172
        Z           0             0             0             0
        MAXIMUM OR PEAK FIELD =  .264655   AMPS/M
     <BLANKLINE>
