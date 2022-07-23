@@ -316,13 +316,6 @@ NEC archive`_ by PA3KJ or from a `Mininec github project`_, I'm using
 the version from the `unofficial NEC archive`_ and have not verified if
 the two links I've given contain the same code.
 
-Testing math:
-
-.. math::
-    \frac{1}{n^{2}}
-
-Block math $$ \frac{1}{n^{2}} $$ in the text
-
 .. _`original basic source code`: http://nec-archives.pa3kj.com/mininec3.zip
 .. _`unofficial NEC archive`: http://nec-archives.pa3kj.com/
 .. _`Mininec github project`: https://github.com/Kees-PA3KJ/MiniNec
