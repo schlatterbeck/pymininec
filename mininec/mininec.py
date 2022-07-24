@@ -1716,9 +1716,23 @@ class Mininec:
             speed things up here and avoid some multiplications.
             Note that this needs access to the internals of
             scipy.integral and we fall back to fixed_quad if this
-            interface changes.
+            interface changes. Also this is a special case that works
+            only for the lower bound being 0.
+            The test uses a non-cached order of integration to test the
+            else part of the if statement.
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
+        >>> vec2 = np.zeros (3)
+        >>> vecv = np.array ([1.070714, 0, 0])
+        >>> args = vec2, vecv, 1, w [0], True
+        >>> r = m.fast_quad (0, 1, args, 5)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        55.5802636 -0.1465045j
         """
-        if n in legendre_cache:
+        if n in legendre_cache and a == 0:
             x, w = legendre_cache [n]
             y = (x + .5) * b
             return np.sum (w * self.integral_i2_i3 (y, *args), axis = -1)
