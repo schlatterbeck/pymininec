@@ -31,6 +31,15 @@ from datetime import datetime
 from scipy.special import ellipk
 from scipy.integrate import fixed_quad
 
+legendre_cache = {}
+try:
+    from scipy.integrate._quadrature import _cached_roots_legendre
+    legendre_cache [2] = [x / 2 for x in _cached_roots_legendre (2)]
+    legendre_cache [4] = [x / 2 for x in _cached_roots_legendre (4)]
+    legendre_cache [8] = [x / 2 for x in _cached_roots_legendre (8)]
+except ImportError:
+    pass
+
 def format_float (floats, use_e = 0):
     """ Reproduce floating-point formatting of the Basic code
     Test special case with large number, should usually set 'use_e':
@@ -1698,6 +1707,27 @@ class Mininec:
             yield np.array (list (reversed (a)))
     # end def near_field_iter
 
+    def fast_quad (self, a, b, args, n):
+        """ This uses the idea of the original pre-scaled gauss
+            parameters. Computation of the integrals in psi is a little
+            faster that way. Note that fixed_quad is a pure python
+            implementation which does the necessary integral bounds
+            scaling. Since we're always integrating from 0 to 1/f we can
+            speed things up here and avoid some multiplications.
+            Note that this needs access to the internals of
+            scipy.integral and we fall back to fixed_quad if this
+            interface changes.
+        """
+        if n in legendre_cache:
+            x, w = legendre_cache [n]
+            y = (x + .5) * b
+            return np.sum (w * self.integral_i2_i3 (y, *args), axis = -1)
+        else:
+            r, p = fixed_quad \
+                (self.integral_i2_i3, a, b, args = args, n = n)
+            return r / b
+    # end def fast_quad
+
     def psi (self, vec2, vecv, k, p2, p3, p4, exact = False, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
@@ -1795,9 +1825,8 @@ class Mininec:
         wire = self.geo [p4]
         args = vec2, vecv, k, wire, bool (i6)
         # Integrate, need to multiply by f2 below.
-        r, p = fixed_quad \
-            (self.integral_i2_i3, 0, 1/f2, args = args, n = gauss_n)
-        return (r * f2 + i6) * s4
+        r = self.fast_quad (0, 1/f2, args, gauss_n)
+        return (r + i6) * s4
     # end def psi
 
     def psi_common_vec1_vecv (self, vec1, k, p2, p3):
