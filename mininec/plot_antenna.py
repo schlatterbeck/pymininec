@@ -335,7 +335,7 @@ class Gain_Plot:
             method (name)
         self.freq_slider = None
         # Make a horizontal slider to control the frequency.
-        if not self.outfile and len (self.gdata) > 1:
+        if not self.outfile:
             if self.with_slider:
                 axfreq = fig.add_axes ([0.15, 0.01, 0.65, 0.03])
                 #axfreq = fig.add_axes ([0.15, 0.01, 0.65, sh])
