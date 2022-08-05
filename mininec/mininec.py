@@ -311,14 +311,21 @@ class Impedance_Load (_Load):
 # end class Impedance_Load
 
 class Laplace_Load (_Load):
-    """ Laplace S-Parameter (S = j omega) load from mininec implementation
+    """ Laplace s-Parameter (s = j omega) load from mininec implementation
         We get two lists of parameters. They represent the numerator and
         denominator coefficients, respectively (sequence a is the denominator
-        and sequence b is the numerator).
+        and sequence b is the numerator). This uses s*L for inductance,
+        1/(s*C) for capacitance, and R for resistors. These are combined
+        with the usual rules for parallel and serial connection.
+        Note that since frequency is in MHz, impedances have a factor of 1e-6.
     >>> l = Laplace_Load (b = (1., 0.), a = (0., -2.193644e-3))
     >>> z = l.impedance (7.15)
     >>> print ("%g%+gj" % (z.real, z.imag))
     -0+10.1472j
+    >>> l = Laplace_Load (b = (0., 225.998e-3), a = (1,))
+    >>> z = l.impedance (7.15)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    0+10.1529j
     """
     def __init__ (self, a, b):
         m = max (len (a), len (b))
@@ -332,18 +339,16 @@ class Laplace_Load (_Load):
     # end def __init__
 
     def impedance (self, f):
-        w  = 2 * np.pi * f
-        u1 = u2 = d1 = d2 = 0.0
-        s  = 1
-        for j in range (0, len (self.a), 2):
-            u1 += self.b [j] * s * w ** j
-            d1 += self.a [j] * s * w ** j
-            l = j + 1
-            u2 += self.b [l] * s * w ** l
-            d2 += self.a [l] * s * w ** l
-            s = -s
-        u = u1 + 1j * u2
-        d = d1 + 1j * d2
+        """ We multiply by s^^k for k in 0..n-1 for all n parameters
+            Where s = 1j * omega = 2j * pi * f
+        """
+        w = 2 * np.pi * f
+        u = d = 0j
+        m = 1.0
+        for j in range (len (self.a)):
+            u += self.b [j] * m
+            d += self.a [j] * m
+            m *= (1j * w)
         return u / d
     # end def impedance
 
