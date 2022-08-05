@@ -317,12 +317,16 @@ class Laplace_Load (_Load):
         and sequence b is the numerator). This uses s*L for inductance,
         1/(s*C) for capacitance, and R for resistors. These are combined
         with the usual rules for parallel and serial connection.
-        Note that since frequency is in MHz, impedances have a factor of 1e-6.
-    >>> l = Laplace_Load (b = (1., 0.), a = (0., -2.193644e-3))
+        Contrary to the Basic implementation, inductances are in H and
+        capacitances are in F (not in µH/µF as in the Basic implementation),
+        this is more convenient if there are higher-order s-Parameters.
+        The frequency is still given in MHz, for compatibility with the
+        interface where all frequencies are in MHz.
+    >>> l = Laplace_Load (b = (1., 0.), a = (0., -2.193644e-9))
     >>> z = l.impedance (7.15)
     >>> print ("%g%+gj" % (z.real, z.imag))
     -0+10.1472j
-    >>> l = Laplace_Load (b = (0., 225.998e-3), a = (1,))
+    >>> l = Laplace_Load (b = (0., 225.998e-9), a = (1,))
     >>> z = l.impedance (7.15)
     >>> print ("%g%+gj" % (z.real, z.imag))
     0+10.1529j
@@ -341,8 +345,9 @@ class Laplace_Load (_Load):
     def impedance (self, f):
         """ We multiply by s^^k for k in 0..n-1 for all n parameters
             Where s = 1j * omega = 2j * pi * f
+            Note that the frequency is given in MHz.
         """
-        w = 2 * np.pi * f
+        w = 2 * np.pi * f * 1e6
         u = d = 0j
         m = 1.0
         for j in range (len (self.a)):

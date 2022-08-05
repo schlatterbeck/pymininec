@@ -394,7 +394,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         mat   = np.array (matrix_ideal_ground_quarter_l_from_mininec_r) \
               + 1j * np.array (matrix_ideal_ground_quarter_l_from_mininec_i)
         ideal = [ideal_ground]
-        l = Laplace_Load (b = (1., 0), a = (0., -2.193644e-3))
+        l = Laplace_Load (b = (1., 0), a = (0., -2.193644e-9))
         m = self.vertical_quarterwave \
             (filename = None, media = ideal, load = l, dia = 0.002)
         for i in range (len (m.w_per)):
@@ -576,7 +576,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_vertical_ideal_ground_near (self):
         ideal = [ideal_ground]
-        l = Laplace_Load (b = (0., 225.998e-3), a = (1., 0.))
+        l = Laplace_Load (b = (0., 225.998e-9), a = (1., 0.))
         m = self.vertical_quarterwave \
             ('vertical-ig-near.pout', ideal, dia = 0.002, load = l)
         self.compare_near_field_data (m)
