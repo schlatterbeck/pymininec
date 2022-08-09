@@ -106,7 +106,7 @@ switches to ``arrl`` scaling, ``l`` switches to linear scaling, ``d``
 switches to linear dB scaling, and ``v`` switches to linear voltage
 scaling.
 
-Finally the ``w`` option toggles display of the 3d diagram from/to
+Finally the ``w`` key toggles display of the 3d diagram from/to
 wireframe display. Note that the wireframe display may not be supported
 on all versions of ``matplotlib`` and/or graphics cards.
 
