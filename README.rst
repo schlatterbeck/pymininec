@@ -50,8 +50,13 @@ with a similar command-line on Windows)::
 
 The resulting output file contains currents, impedance at the feedpoint
 and antenna far field in dBi as tables. The output tries to reproduce
-the format of the original Basic implementation of Mininec. Now these
-tables are not very useful to get an idea of the far field behaviour of
+the format of the original Basic implementation of Mininec.
+
+Plotting
+--------
+
+The output tables produced by ``pymininec``
+are not very useful to get an idea of the far field behaviour of
 an antenna. Therefore there is a small companion program ``plot-antenna``
 that can plot the antenna pattern. The default is to plot all available
 graphics, including an interactive 3d view. In addition with the
@@ -84,6 +89,26 @@ The latest version accepts several plot parameters, ``--elevation``,
 diagram. The default is to plot all four graphs. With the ``--output``
 option pictures can directly be saved without displaying the graphics on
 the screen.
+
+The plot program can also display output files of ``nec2c``, not only
+from ``pymininec``.
+
+The latest version has key-bindings for scrolling through the
+frequencies of an antenna simulation. So if you have an output file with
+a simulation of multiple frequencies (either with ``pymininec`` or
+``nec2c``) you can display diagrams for the next frequency by typing
+``+``, and to the previous frequency by typing ``-``. For newer versions
+of ``matplotlib`` you can display a scrollbar for the frequencies with
+the ``--with-slider`` option.
+
+Other keybindings switch the scaling for the antenna plots, ``a``
+switches to ``arrl`` scaling, ``l`` switches to linear scaling, ``d``
+switches to linear dB scaling, and ``v`` switches to linear voltage
+scaling.
+
+Finally the ``w`` option toggles display of the 3d diagram from/to
+wireframe display. Note that the wireframe display may not be supported
+on all versions of ``matplotlib`` and/or graphics cards.
 
 Test coverage: Making sure it is consistent with original Mininec
 -----------------------------------------------------------------
