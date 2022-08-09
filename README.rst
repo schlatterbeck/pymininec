@@ -11,6 +11,8 @@ MININEC in Python
 .. |-| unicode:: U+202F .. Thin non-breaking space
     :trim:
 .. |numpy.linalg.solve| replace:: ``numpy.linalg.solve``
+.. |scipy.integrate| replace:: ``scipy.integrate``
+.. |scipy.special.ellipk| replace:: ``scipy.special.ellipk``
 
 This is an attempt to rewrite the original MININEC3 basic sources in
 Python. Standard use-case like computation of feed impedance and far
@@ -208,13 +210,14 @@ everything currently is implemented (like in Basic) as nested loops.
 This could (and should) be changed to use vector and matrix operations
 in `numpy`_. In the inner loop of the matrix fill operation there are
 several integrals computed using `gaussian quadrature`_ or a numeric
-solution to an `elliptic integral`_. These could be implemented by
-scipy_ library functions.
+solution to an `elliptic integral`_. These are now implemented using
+methods (or at least constants in the case of `gaussian quadrature`_)
+from |scipy.integrate|_ and |scipy.special.ellipk|_.
 
 Notes on Elliptic Integral Parameters
 -------------------------------------
 
-The Mininec code uses the implementation of an elliptic integral when
+The Mininec code uses the implementation of an `elliptic integral`_ when
 computing the impedance matrix and in several other places. The integral
 uses a set of E-vector coefficients that are cited differently in
 different places. In the latest version of the open source Basic code
@@ -261,7 +264,7 @@ Also notice that in the 4th column the later Basic code has a *5* less
 than the version in the papers. The rounding in the earlier Basic code
 also suggests that the later Basic code is in error.
 
-The errors in the elliptic integral parameters do not have much effect
+The errors in the `elliptic integral`_ parameters do not have much effect
 on the computed values of the Mininec code. There are some minor
 differences but these are below the differences between Basic and Python
 implementation (single vs. double precision arithmetics). I had hoped
@@ -271,10 +274,10 @@ that usually in practice the computed wire lengths are a little too
 long. This is apparently not the case. The resonance point is also wrong
 for very thin wires below the *small radius modification condition*
 which happens when the wire radius is below 1e-4 of the wavelength.
-Even in that case --  where the elliptic integral is not used -- the
+Even in that case --  where the `elliptic integral`_ is not used -- the
 resonance is slightly wrong.
 
-The reference for the elliptic integral parameters [3]_ cited in both
+The reference for the `elliptic integral`_ parameters [3]_ cited in both
 reports lists the following table on p. |-| 591:
 
 +---------------+--------------+--------------+--------------+--------------+
@@ -305,6 +308,12 @@ is from 1955 and lists the coefficients on p. |-| 172:
 
 So apparently the handbook [3]_ is correct. And the Basic version and
 *both* Mininec reports have at least one typo.
+
+Since this paragraph was written the implementation of the `elliptic
+integral`_ was removed and replace with a call to |scipy.special.ellipk|_.
+The resulting differences in computed outputs were smaller than the
+differences between the Basic (single precision) and the Python (double
+precision) implementation.
 
 Running examples in Basic
 -------------------------
@@ -382,6 +391,9 @@ the two links I've given contain the same code.
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
 .. _`numpy.linalg.solve`:
     https://numpy.org/doc/stable/reference/generated/numpy.linalg.solve.html
+.. _`scipy.integrate`: https://docs.scipy.org/doc/scipy/tutorial/integrate.html
+.. _`scipy.special.ellipk`:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.ellipk.html
 .. _`OhioLINK Electronic Theses & Dissertations Center`:
     https://etd.ohiolink.edu/apexprod/rws_etd/send_file/send?accession=ohiou1176315682
 .. _`reported this as a bug in the pytest project`:
