@@ -244,6 +244,49 @@ class _Test_Base_With_File:
                     self.assertLess (aff, -200)
     # end def compare_far_field_data
 
+    def compare_currents (self, exs, acs):
+        """ This is used when the CURRENT line in the feed pulse is
+            slightly off on different architectures. In addition the
+            individual CURRENT DATA lines are also compared
+            approximately
+        """
+        ex  = exs.split ('\n')
+        ac  = acs.split ('\n')
+        idx = exs.find ('CURRENT')
+        l   = len (exs [:idx].split ('\n'))
+        off = l - 1
+        self.assertEqual (ex [:off], ac [:off])
+        exc = ex [off].strip ()
+        acc = ac [off].strip ()
+        assert acc.startswith ('CURRENT = ( ')
+        assert acc.endswith (' J)')
+        exc = [float (x) for x in exc [12:-3].split (',')]
+        acc = [float (x) for x in acc [12:-3].split (',')]
+        self.assertAlmostEqual (exc [0], acc [0], 12)
+        self.assertAlmostEqual (exc [1], acc [1], 12)
+        off += 1
+        state = 0
+        for l_ex, l_ac in zip (ex [off:], ac [off:]):
+            if state == 0 or state == 2:
+                self.assertEqual (l_ex, l_ac)
+            if '(DEGREES)' in l_ex:
+                state = 1
+                continue
+            if state == 1:
+                sp_ex = l_ex.strip ().split ()
+                sp_ac = l_ac.strip ().split ()
+                if len (sp_ex) != 5 or sp_ex [0] in 'JE':
+                    state = 2
+                    self.assertEqual (l_ex, l_ac)
+                    continue
+                num_ex = [float (x) for x in sp_ex]
+                num_ac = [float (x) for x in sp_ac]
+                self.assertEqual (num_ex [0], num_ac [0])
+                for a, b in zip (num_ex [1:-1], num_ac [1:-1]):
+                    self.assertAlmostEqual (a, b, 12)
+                self.assertAlmostEqual (num_ex [-1], num_ac [-1], 10)
+    # end def compare_currents
+
     def compare_near_field_data (self, m, opts = None):
         """ Near field data below absolute values of 1e-15 may be
             different on different architectures
@@ -255,7 +298,7 @@ class _Test_Base_With_File:
         idx = self.expected_output.find ('FIELD POINT: X')
         l   = len (self.expected_output [:idx].split ('\n'))
         off = l - 2
-        self.assertEqual (ex [:off], ac [:off])
+        self.compare_currents ('\n'.join (ex [:off]), '\n'.join (ac [:off]))
         for e, a in zip (ex [off:], ac [off:]):
             el = e.strip ().split ()
             al = a.strip ().split ()
@@ -464,7 +507,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_dipole_wiredia_01 (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01.pout')
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        out = m.as_mininec ()
+        self.assertEqual (self.expected_output, out)
     # end def test_dipole_wiredia_01
 
     def test_dipole_wiredia_001 (self):
@@ -611,7 +655,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 297
+        num_tests = 303
         f, t  = doctest.testmod \
             (mininec.mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.mininec.__file__)

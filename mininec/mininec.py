@@ -112,13 +112,25 @@ class Connected_Wires:
     def pulse_iter (self):
         """ Yield pulse indeces sorted by wire index
         """
-        for wire, idx, s in sorted (self.list, key = lambda x: x [0].n):
+        for wire, idx, s in self._iter ():
             yield (idx, s)
     # end def pulse_iter
+
+    def _iter (self):
+        for wire, idx, s in sorted (self.list, key = lambda x: x [0].n):
+            yield (wire, idx, s)
+    # end def _iter
 
     def __bool__ (self):
         return bool (self.list)
     # end def __bool__
+
+    def __str__ (self):
+        r = []
+        for wire, idx, s in self._iter ():
+            r.append ('w: %d idx: %d s:%d' % (wire.n, idx, s))
+        return '\n'.join (r)
+    __repr__ = __str__
 
 # end class Connected_Wires
 
@@ -556,6 +568,17 @@ class Wire:
                     other.conn [1].add (self, self.end_segs [n], s)
     # end def compute_connections
 
+    def conn_as_str (self):
+        """ Mostly for debugging connections
+        """
+        r = []
+        r.append ('W: %d' % self.n)
+        for n, c in enumerate (self.conn):
+            r.append ('conn %s:' % 'lr' [n])
+            r.append (str (c))
+        return '\n'.join (r)
+    # end def conn_as_str
+
     def segment_iter (self, yield_ends = True):
         if self.end_segs [0] is not None or self.end_segs [1] is not None:
             if self.end_segs [1] is None:
@@ -698,6 +721,22 @@ class Mininec:
          [1 1]
          [1 1]
          [1 1]]
+        >>> w = []
+        >>> w.append (Wire (10, 0,          0, 0, 21.414285, 0, 0, 0.001))
+        >>> w.append (Wire (10, 21.4142850, 0, 0, 33.      , 0, 0, 0.001))
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> print (m.geo_as_str ())
+        W: 0
+        conn l:
+        <BLANKLINE>
+        conn r:
+        w: 1 idx: 9 s:1
+        W: 1
+        conn l:
+        w: 0 idx: 9 s:1
+        conn r:
+        <BLANKLINE>
         """
         self.f          = f
         self.media      = media
@@ -1425,6 +1464,13 @@ class Mininec:
                 # negated, the contribution to the imag part not
                 self.Z [j][j] += -f2 * l.impedance (self.f) * 1j
     # end def compute_impedance_matrix_loads
+
+    def geo_as_str (self):
+        r = []
+        for g in self.geo:
+            r.append (g.conn_as_str ())
+        return '\n'.join (r)
+    # end def geo_as_str
 
     def nf_helper (self, cp, j, k, v, j12, wj, f67, f45):
         v6  = np.array ([1, 1, f67 [0]])
