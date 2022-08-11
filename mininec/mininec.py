@@ -96,29 +96,51 @@ class Connected_Wires:
     """
 
     def __init__ (self):
-        self.pulses = set ()
-        self.wires  = set ()
-        self.list   = []
+        self.wires         = set ()
+        self.list          = []
+        self.cached_pulses = None
+        self.sgn_by_wire   = {}
     # end def __init__
 
-    def add (self, wire, pulse_idx, sign):
+    @property
+    def pulses (self):
+        if self.cached_pulses is None:
+            self.cached_pulses = set (x [0] for x in self.pulse_iter ())
+        return self.cached_pulses
+    # end def pulses
+
+    def add (self, wire, other_wire, end_idx, sign, sign2):
         assert wire not in self.wires
-        assert pulse_idx not in self.pulses
-        self.pulses.add (pulse_idx)
         self.wires.add (wire)
-        self.list.append ((wire, pulse_idx, sign))
+        self.list.append ((wire, other_wire, end_idx, sign))
+        self.sgn_by_wire [other_wire] = sign2
     # end def add
+
+    def idx (self, wire):
+        """ This computes I1 or I2 from the Basic code, respectively
+        """
+        if self.list:
+            # Forward linked segments are printed as 0
+            if wire.n < self.list [0][0].n:
+                return 0
+            return (1 + self.list [0][0].n) * self.sgn_by_wire [wire]
+        return 0
+    # end def idx
+
+    def is_connected (self, other):
+        return other in self.wires
+    # end def is_connected
 
     def pulse_iter (self):
         """ Yield pulse indeces sorted by wire index
         """
-        for wire, idx, s in self._iter ():
-            yield (idx, s)
+        for wire, ow, idx, s in self._iter ():
+            yield (ow.end_segs [idx], s)
     # end def pulse_iter
 
     def _iter (self):
-        for wire, idx, s in sorted (self.list, key = lambda x: x [0].n):
-            yield (wire, idx, s)
+        for wire, ow, idx, s in sorted (self.list, key = lambda x: x [0].n):
+            yield (wire, ow, idx, s)
     # end def _iter
 
     def __bool__ (self):
@@ -127,8 +149,8 @@ class Connected_Wires:
 
     def __str__ (self):
         r = []
-        for wire, idx, s in self._iter ():
-            r.append ('w: %d idx: %d s:%d' % (wire.n, idx, s))
+        for wire, ow, idx, s in self._iter ():
+            r.append ('w: %d idx: %d s:%d' % (wire.n, ow.end_segs [idx], s))
         return '\n'.join (r)
     __repr__ = __str__
 
@@ -519,9 +541,9 @@ class Wire:
         # Original comment: compute direction cosines
         self.dirs = diff / self.wire_len
         self.end_segs = [None, None]
-        self.j2 = [None, None]
-        self.i1 = self.i2 = 0
         # Links to previous/next connected wire (at start/end)
+        # conn [0] contains wires that link to our first end
+        # while conn [1] contains wires that link to our second end.
         self.conn = (Connected_Wires (), Connected_Wires ())
         self.n = None
         # This is Integral I1 in the paper(s), in the implementation
@@ -530,6 +552,16 @@ class Wire:
         # combination of segments.
         self.i6 = (1 + np.log (16 * r / self.seg_len)) / np.pi / r
     # end def __init__
+
+    @property
+    def idx_1 (self):
+        return self.idx (0)
+    # end def idx_1
+
+    @property
+    def idx_2 (self):
+        return self.idx (1)
+    # end def idx_2
 
     def compute_ground (self, n, media):
         self.n = n
@@ -547,26 +579,53 @@ class Wire:
             raise ValueError ("height cannot not be negative with ground")
     # end def compute_ground
 
-    def compute_connections (self, media):
-        """ Compute links to connected wires self.conn [0] contains
-            wires that link to our first end while conn [1] contains wires
-            that link to our second end.
+    def compute_connections (self, end_dicts):
+        """ Compute links to connected wires
             Also compute sets of indeces of pulses.
+            Note that we're using dictionaries for matching endpoints,
+            this reduces two nested loops over the wires which is O(N**2)
+            to a single loop O(N).
         """
-        for n, j in enumerate (self.j2):
-            if j <= 0:
-                continue
-            if not self.is_ground [n] and j != self.n + 1:
-                other = media [j - 1]
-                self.conn [n].add (other, self.end_segs [n], 1)
-                if (other.p1 == self.endpoints [n]).all ():
-                    s = 1 if n == 1 else -1
-                    other.conn [0].add (self, self.end_segs [n], s)
-                else:
-                    assert (other.p2 == self.endpoints [n]).all ()
-                    s = 1 if n == 0 else -1
-                    other.conn [1].add (self, self.end_segs [n], s)
+
+        # These are two loops of two elements each. This rolls the
+        # end-matching computation of 4 explicitly-programmed cases in
+        # the Basic program lines 1325-1356 into a few statements.
+        # The idea is to use two dictionaries of end-point coordinates.
+        for n1, current_end in enumerate (self.endpoints):
+            ep_tuple = tuple (current_end)
+            for n2, other_end_dict in enumerate (end_dicts):
+                if not self.is_ground [n1] and ep_tuple in other_end_dict:
+                    other = other_end_dict [ep_tuple]
+                    s = -1 if (n2 == n1) else 1
+                    other.conn [n2].add (self,  self, n1, s, s)
+                    self.conn  [n1].add (other, self, n1, 1, s)
+            if ep_tuple not in end_dicts [n1]:
+                end_dicts [n1][ep_tuple] = self
     # end def compute_connections
+
+    def connections (self):
+        return self.conn [0].wires.union (self.conn [1].wires)
+    # end def connections
+
+    def idx (self, end_idx):
+        """ The indeces I1, I2 from the Basic code, this is -self.n when
+            the end is grounded, the index of a connected wire (negative
+            if the direction of the wire is reversed) if connected and 0
+            otherwise. Used mainly when printing wires in mininec format.
+        """
+        if self.is_ground [end_idx]:
+            return -(self.n + 1)
+        return self.conn [end_idx].idx (self)
+    # end def idx
+
+    def is_connected (self, other):
+        if other is self:
+            return True
+        for c in self.conn:
+            if c.is_connected (other):
+                return True
+        return bool (self.connections ().intersection (other.connections ()))
+    # end def is_connected
 
     def conn_as_str (self):
         """ Mostly for debugging connections
@@ -847,71 +906,30 @@ class Mininec:
             code, it has consequently dimension 3.
             Looks like index n1 is the index of the next start segment.
             And n is the index of the next end segment.
+
+            Note that we do not use a second loop but instead put each
+            wire end into a dictionary linking to the wire. That way the
+            algorithm is O(N) not O(N^2). The dictionaries for the wire
+            ends is end_dicts, this is a list of two dictionaries, one
+            for each end.
         """
         n = 0
         self.c_per = c_per = {}
         self.w_per = w_per = {}
         self.seg   = seg   = {}
+        end_dicts  = [{}, {}]
         for i, w in enumerate (self.geo):
             # This part starts at 1298 comment "connections"
             # We do not use the E, L, M array with the X, Y, Z
             # coordinates of the start of the wires and the second half
             # with the end of the wires, we use the Wire objects
             # instead.
-            gflag = False
-            i1 = i2 = 0
-            w.j2 [:] = (-(i + 1), -(i + 1))
-            # check for ground connection
-            if self.media:
-                if w.is_ground [0]:
-                    i1   = -(i + 1)
-                if w.is_ground [1]:
-                    i2   = -(i + 1)
-                    # Why is the gflag only set for the second ground case??
-                    gflag = True
-            for j in range (i):
-                # Check start -> start
-                # Original comment: check for end1 to end1
-                if (w.p1 == self.geo [j].p1).all ():
-                    #print ("p1 p1 %d %d" % (i, j))
-                    i1 = -(j + 1)
-                    w.j2 [0] = j + 1
-                    if self.geo [j].j2 [0] == -(j + 1):
-                        self.geo [j].j2 [0] = j + 1
-                    break
-                # Check start -> end
-                # Original comment: check for end1 to end2
-                if (w.p1 == self.geo [j].p2).all ():
-                    #print ("p1 p2 %d %d" % (i, j))
-                    i1 = (j + 1)
-                    w.j2 [0] = j + 1
-                    if self.geo [j].j2 [1] == -(j + 1):
-                        self.geo [j].j2 [1] = j + 1
-                    break
-            if not gflag:
-                for j in range (i):
-                    # Check end -> end
-                    # Original comment: check end2 to end2
-                    if (w.p2 == self.geo [j].p2).all ():
-                        #print ("p2 p2 %d %d" % (i, j))
-                        i2 = -(j + 1)
-                        w.j2 [1] = j + 1
-                        if self.geo [j].j2 [1] == -(j + 1):
-                            self.geo [j].j2 [1] = j + 1
-                        break
-                    # Check end -> start
-                    # Original comment: check for end2 to end1
-                    if (w.p2 == self.geo [j].p1).all ():
-                        #print ("p2 p1 %d %d" % (i, j))
-                        i2 = (j + 1)
-                        w.j2 [1] = j + 1
-                        if self.geo [j].j2 [0] == -(j + 1):
-                            self.geo [j].j2 [0] = j + 1
-                        break
-            w.i1 = i1
-            w.i2 = i2
-            # Here we used to print the geometry, we do this separately.
 
+            # Try to match existing wire endpoints
+            w.compute_connections (end_dicts)
+
+            i1 = w.idx_1
+            i2 = w.idx_2
             # This part starts at 1198
             # compute connectivity data (pulses n1 to n)
             # We make end_segs 0-based and use None instead of 0
@@ -990,8 +1008,6 @@ class Mininec:
             self.seg_idx.T [idx][cnull] = self.w_per [cnull]
         # make indeces 0-based
         self.w_per   -= 1
-        for wire in self.geo:
-            wire.compute_connections (self.geo)
     # end def compute_connectivity
 
     def compute_far_field \
@@ -2114,7 +2130,7 @@ class Mininec:
             i4 = int (p1)
             i5 = i4 + 1
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
-            wd   = self.wires_differ (i, j)
+            wd   = self.wires_unconnected (i, j)
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
             return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 1, exact = not wd)
         t1 = 2 * np.log (wire.seg_len / wire.r)
@@ -2155,26 +2171,24 @@ class Mininec:
         if k < 1 or wire.r >= self.srm or i != j or p3 != p2 + .5:
             vec1 = self.seg [p1]
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
-            wd = self.wires_differ (i, j)
+            wd = self.wires_unconnected (i, j)
             return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 0, exact = not wd)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1 + t2 * 1j
     # end def vector_potential
 
-    def wires_differ (self, i, j):
+    def wires_unconnected (self, i, j):
+        """ Check if the wires to which the given segment indeces belong
+            are *not* connected.
+        """
         assert self.w_per [i] >= 0
         assert self.w_per [j] >= 0
-        wire_i_j2 = self.geo [self.w_per [i]].j2
-        wire_j_j2 = self.geo [self.w_per [j]].j2
-        r = \
-            (   wire_i_j2 [0] != wire_j_j2 [0]
-            and wire_i_j2 [0] != wire_j_j2 [1]
-            and wire_i_j2 [1] != wire_j_j2 [0]
-            and wire_i_j2 [1] != wire_j_j2 [1]
-            )
-        return r
-    # end def wires_differ
+        w1 = self.geo [self.w_per [i]]
+        w2 = self.geo [self.w_per [j]]
+        # Well this should really be symmetric, so one should be enough :-)
+        return not w1.is_connected (w2) and not w2.is_connected (w1)
+    # end def wires_unconnected
 
     # All the *as_mininec methods
 
@@ -2225,6 +2239,7 @@ class Mininec:
                 else:
                     c = 0+0j
                     for p, s in wire.conn [0].pulse_iter ():
+                        assert p is not None
                         c = s * self.current [p]
                     a = np.angle (c) / np.pi * 180
                     r.append \
@@ -2246,6 +2261,7 @@ class Mininec:
                 else:
                     c = 0+0j
                     for p, s in wire.conn [1].pulse_iter ():
+                        assert p is not None
                         c += s * self.current [p]
                     a = np.angle (c) / np.pi * 180
                     r.append \
@@ -2599,12 +2615,12 @@ class Mininec:
                 )
             l = []
             l.append (('%-13s ' * 3) % format_float (wire.p1))
-            l.append ('%s%3d' % (' ' * 12, wire.i1))
+            l.append ('%s%3d' % (' ' * 12, wire.idx_1))
             r.append (''.join (l))
             l = []
             l.append (('%-13s ' * 3) % format_float (wire.p2))
             l.append ('%-13s' % format_float ([wire.r]))
-            l.append ('%2d%15d' % (wire.i2, wire.n_segments))
+            l.append ('%2d%15d' % (wire.idx_2, wire.n_segments))
             r.append (''.join (l))
             r.append ('')
         r.append (' ' * 18 + '**** ANTENNA GEOMETRY ****')
