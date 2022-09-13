@@ -928,6 +928,14 @@ class Mininec:
             # Try to match existing wire endpoints
             w.compute_connections (end_dicts)
 
+            # i1 and i2 are the indeces of the previous/next wire.
+            # This is 0 when there is no prev/next wire. It is -n
+            # (where n is the wire.n) if the end is grounded. The index
+            # is negative if the polarity changes, i.e. when we have a
+            # connection from end1 to end1 of the other wire or end2 to
+            # end2 of the other wire.
+
+            # n is the segment index.
             i1 = w.idx_1
             i2 = w.idx_2
             # This part starts at 1198
