@@ -58,7 +58,6 @@ setup \
     , entry_points     = dict
         ( console_scripts =
             [ 'pymininec=mininec.mininec:main'
-            , 'plot-antenna=mininec.plot_antenna:main'
             ]
         )
     , classifiers      = \
