@@ -59,58 +59,11 @@ Plotting
 
 The output tables produced by ``pymininec``
 are not very useful to get an idea of the far field behaviour of
-an antenna. Therefore there is a small companion program ``plot-antenna``
-that can plot the antenna pattern. The default is to plot all available
-graphics, including an interactive 3d view. In addition with the
-``--azimuth`` or ``--elevation`` options you can get an Azimuth
-diagram::
-
-    plot-antenna --azimuth test/12-el-1deg.pout
-
-.. figure:: https://raw.githubusercontent.com/schlatterbeck/pymininec/master/test/12-el-azimuth.png
-    :align: center
-
-or an elevation diagram::
-
-    plot-antenna --elevation test/12-el-1deg.pout
-
-.. figure:: https://raw.githubusercontent.com/schlatterbeck/pymininec/master/test/12-el-elevation.png
-    :align: center
-
-respectively. Note that I used an output file with 1-degree resolution
-in elevation and azimuth angles not with 5 degrees as in the example
-above. The pattern look smoother but a 3D-view will be very slow due to
-the large number of points. The plot program also has a ``--help``
-option for further information. In particular the scaling of the antenna
-plot can be ``linear``, ``linear_db``, and ``linear_voltage`` in
-addition to the default of ``arrl`` scaling. You may consult Cebik's [6]_
-article for explanation of the different diagrams.
-
-The latest version accepts several plot parameters, ``--elevation``,
-``--azimuth``, ``--plot3d``, ``--plot-vswr`` which are plotted into one
-diagram. The default is to plot all four graphs. With the ``--output``
-option pictures can directly be saved without displaying the graphics on
-the screen.
-
-The plot program can also display output files of ``nec2c``, not only
-from ``pymininec``.
-
-The latest version has key-bindings for scrolling through the
-frequencies of an antenna simulation. So if you have an output file with
-a simulation of multiple frequencies (either with ``pymininec`` or
-``nec2c``) you can display diagrams for the next frequency by typing
-``+``, and to the previous frequency by typing ``-``. For newer versions
-of ``matplotlib`` you can display a scrollbar for the frequencies with
-the ``--with-slider`` option.
-
-Other keybindings switch the scaling for the antenna plots, ``a``
-switches to ``arrl`` scaling, ``l`` switches to linear scaling, ``d``
-switches to linear dB scaling, and ``v`` switches to linear voltage
-scaling.
-
-Finally the ``w`` key toggles display of the 3d diagram from/to
-wireframe display. Note that the wireframe display may not be supported
-on all versions of ``matplotlib`` and/or graphics cards.
+an antenna. The companion program `plot-antenna`_ used to be bundled
+with ``pymininec`` but was moved to its own project. You can currently
+plot elevation and azimuth diagram of an antenna, a 3D-plot, the
+geometry and VSWR. All either as a standalone program (using matplotlib)
+or exported as HTML to the browser (using plotly).
 
 Test coverage: Making sure it is consistent with original Mininec
 -----------------------------------------------------------------
@@ -407,3 +360,4 @@ the two links I've given contain the same code.
 .. _`gaussian quadrature`: https://en.wikipedia.org/wiki/Gaussian_quadrature
 .. _`elliptic integral`: https://en.wikipedia.org/wiki/Elliptic_integral
 .. _`scipy`: https://scipy.org/
+.. _`plot-antenna`: https://github.com/schlatterbeck/plot-antenna
