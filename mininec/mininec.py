@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Copyright (C) 2022 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2022-23 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
@@ -395,13 +395,13 @@ class Laplace_Load (_Load):
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
-        With diel and cond zero we asume ideal ground.
+        With permittivity and conductivity zero we asume ideal ground.
         Note that it seems only the first medium can have a
-        ground screen of radials
+        ground screen of radials.
         The boundary is the type of boundary between different media (if
-        there is more than one). It is 1 for linear (X-coordinate it
-        seems) or circular. If there is more than one medium we need the
-        coordinate (distance X for linear and radius R for circular
+        there is more than one). It is either 'linear' (X-coordinate it
+        seems) or 'circular'. If there is more than one medium we need
+        the coordinate (distance X for linear and radius R for circular
         boundary) of the *next* medium, in the original code U(I).
     >>> med = Medium (3, 4)
     >>> imp = med.impedance (30)
@@ -413,12 +413,12 @@ class Medium:
     """
     def __init__ \
         ( self
-        , diel, cond, height = 0
+        , permittivity, conductivity, height = 0
         , nradials = 0, radius = 0, dist = 0
-        , boundary = 1, coord = 1e6
+        , boundary = 'linear', coord = 1e6
         ):
-        self.diel     = diel     # dielectric constant T(I)
-        self.cond     = cond     # conductivity        V(I)
+        self.permittivity = permittivity  # (dielectric constant) T(I)
+        self.conductivity = conductivity  # V(I)
         self.nradials = nradials # number of radials   NR
         self.radius   = radius   # radial wire radius  RR
         self.coord    = coord    # U(I)
@@ -427,7 +427,7 @@ class Medium:
         self.next     = None     # next medium
         self.prev     = None     # previous medium
         self.is_ideal = False
-        if diel == 0 and cond == 0:
+        if permittivity == 0 and conductivity == 0:
             self.is_ideal = True
             self.coord    = 0
             if self.nradials:
@@ -435,15 +435,15 @@ class Medium:
             if self.height != 0:
                 raise ValueError ("Ideal ground must have height 0")
         if self.nradials:
-            self.boundary = 2
+            self.boundary = 'circular'
             # Radials extend to boundary of next medium
             if self.radius <= 0:
                 raise ValueError ("Radius must be >0")
         else:
             self.radius = 0.0
         # Code from Line 628-633 in far field calculation
-        if diel:
-            if not self.cond:
+        if permittivity:
+            if not self.conductivity:
                 raise ValueError \
                     ("Non-ideal ground must have non-zero ground parameters")
     # end def __init__
@@ -452,7 +452,9 @@ class Medium:
         r = []
         if not self.is_ideal:
             p = tuple \
-                (x.strip () for x in format_float ((self.diel, self.cond)))
+                ( x.strip ()
+                  for x in format_float ((self.permittivity, self.conductivity))
+                )
             r.append \
                 ( ' RELATIVE DIELECTRIC CONSTANT, CONDUCTIVITY:'
                   '  %s , %s'
@@ -484,7 +486,7 @@ class Medium:
         if self.is_ideal:
             return 0+0j
         t = 2 * np.pi * f * 8.85e-6
-        return 1 / np.sqrt (self.diel + -1j * self.cond / t)
+        return 1 / np.sqrt (self.permittivity + -1j * self.conductivity / t)
     # end def impedance
 
     def set_next (self, next):
@@ -759,7 +761,7 @@ class Mininec:
             boundary:  Type of boundary (1: linear, 2: circular) (TB)
                  only if nm > 1
                  See class Medium above, if we have radials it's
-                 circular
+                 forced to circular
             Computed:
             w:   Wavelength in m, (W)
             s0:  virtual dipole lenght for near field calculation (S0)
@@ -805,7 +807,7 @@ class Mininec:
         self.geo        = geo
         self.print_opts = print_opts or set (('far-field',))
         if not self.media or len (self.media) == 1:
-            self.boundary = 1
+            self.boundary = 'linear'
         self.check_geo ()
         self.compute_connectivity ()
         self.output_date = False
@@ -843,7 +845,7 @@ class Mininec:
                 else:
                     self.media [n - 1].set_next (m)
         else:
-            self.boundary = 1
+            self.boundary = 'linear'
     # end def check_ground
 
     def check_geo (self):
@@ -1101,7 +1103,7 @@ class Mininec:
                                 if rt3.real != 0:
                                     t4 = -self.seg [j][2] * rt3.imag / rt3.real
                                 b9 = t4 * v21.real + self.seg [j][0]
-                                if self.boundary != 1:
+                                if self.boundary != 'linear':
                                     # Hmm this is pythagoras?
                                     b9 *= b9
                                     b9 += (self.seg [j][1] - t4 * v21.imag) ** 2
@@ -2299,10 +2301,10 @@ class Mininec:
                 % l
                 )
             if len (self.media) > 1:
-                r.append \
-                    ( ' TYPE OF BOUNDARY (1-LINEAR, 2-CIRCULAR):  %d'
-                    % self.boundary
-                    )
+                b = 1
+                if self.boundary != 'linear':
+                    b = 2
+                r.append (' TYPE OF BOUNDARY (1-LINEAR, 2-CIRCULAR):  %d' % b)
             if l:
                 for n, m in enumerate (self.media):
                     r.append (m.as_mininec ())
@@ -2944,6 +2946,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     >>> r
     23
 
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--boundary', 'unknown'])
+    >>> r = main (args, sys.stdout)
+    Invalid boundary: unknown, must be one of "linear", "circular"
+    >>> r
+    23
+
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,extra']
     >>> r = main (args, sys.stdout)
     Invalid wire 1: could not convert string to float: 'extra'
@@ -3134,6 +3143,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     >>> r
     23
     """
+    boundaries = ('linear', 'circular')
     from argparse import ArgumentParser
     cmd = ArgumentParser ()
     cmd.add_argument \
@@ -3145,6 +3155,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
                     'the pulse index (and leave the wire index blank).'
         , action  = 'append'
         , default = []
+        )
+    cmd.add_argument \
+        ( '--boundary'
+        , help    = 'Boundary between different media, one of %s'
+                  % ','.join ('"%s"' % b for b in boundaries)
+        , default = 'linear'
         )
     cmd.add_argument \
         (  '--excitation-segment'
@@ -3216,12 +3232,15 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
     cmd.add_argument \
         ( '--medium'
         , help    = "Media (ground), free space if not given, "
-                    "specify dielectricum, condition, height, if all are "
+                    "specify permittivity (dielectric constant), "
+                    "conductivity, height, if all are "
                     "zero, ideal ground is asumed, if radials are "
                     "specified they apply to the first ground (which "
                     "cannot be ideal with radials), several media can be "
                     "specified. If more than one medium is given, the "
-                    "circular or linear coordinate of medium must be given."
+                    "circular or linear coordinate of medium must be "
+                    "given as the fourth parameter, this is the distance "
+                    "to the next medium."
         , action  = 'append'
         , default = []
         )
@@ -3286,6 +3305,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         , default = []
         )
     args = cmd.parse_args (argv)
+    if args.boundary not in boundaries:
+        print \
+            ( 'Invalid boundary: %s, must be one of %s'
+            % (args.boundary, ', '.join ('"%s"' % b for b in boundaries))
+            , file = f_err
+            )
+        return 23
     if not args.wire:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     if not args.excitation_segment:
@@ -3334,8 +3360,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         d = {}
         if n == 0:
             d = dict (rad)
+        d.update (boundary = args.boundary)
         if len (p) > 3:
-            d ['coord'] = p [3]
+            d.update (coord = p [3])
         p = p [:3]
         media.append (Medium (*p, **d))
     media = media or None
