@@ -65,6 +65,25 @@ plot elevation and azimuth diagram of an antenna, a 3D-plot, the
 geometry and VSWR. All either as a standalone program (using matplotlib)
 or exported as HTML to the browser (using plotly).
 
+Ground (Media)
+--------------
+
+The latest version implements the option parsing for the mininec ground
+model for more than one medium. You also need to specify the
+``--boundary`` option to set the type of boundary between media: The
+default ``linear`` boundary appends grounds in X-direction with the
+distance in the 4th parameter of the ``--medium`` option. The
+``circular`` boundary has concentric media with the radius of each
+medium given in the 4th parameter of the ``--medium`` option. The third
+parameter of the ``--medium`` option is the height. Note that you
+typically want *negative* heights for media further out, this allows
+modelling of summits. Mininec *allows* the specification of *higher*
+grounds but the results will be questionable as no reflection at the
+higher ground is modelled. The ground implementation was not yet tested
+against the originally basic code (or any other modelling program
+implementing the mininec engine).
+
+
 Test coverage: Making sure it is consistent with original Mininec
 -----------------------------------------------------------------
 
@@ -302,6 +321,27 @@ The `original basic source code`_ can be obtained from the `unofficial
 NEC archive`_ by PA3KJ or from a `Mininec github project`_, I'm using
 the version from the `unofficial NEC archive`_ and have not verified if
 the two links I've given contain the same code.
+
+Release Notes
+-------------
+
+v0.4.0: Split `plot-antenna`_ into own project
+
+- Own project `plot-antenna`_
+- Fix parsing of several medium options, mention ground in documentation
+
+v0.3.0: Laplace loads correctly implemented
+
+- Use scipy.special.ellipk for elliptic integral
+- Use gaussian quadrature coefficients from scipy.integrate
+- Test resonance (NEC vs. mininec)
+
+v0.2.0: Add short paragraph on new plotting program
+
+- Test coverage
+- Expression simplification
+
+v0.1.0: Initial release
 
 .. _`original basic source code`: http://nec-archives.pa3kj.com/mininec3.zip
 .. _`unofficial NEC archive`: http://nec-archives.pa3kj.com/
