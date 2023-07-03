@@ -581,28 +581,29 @@ class Wire:
             raise ValueError ("height cannot not be negative with ground")
     # end def compute_ground
 
-    def compute_connections (self, end_dicts):
+    def compute_connections (self, end_dict):
         """ Compute links to connected wires
             Also compute sets of indeces of pulses.
-            Note that we're using dictionaries for matching endpoints,
+            Note that we're using a dictionary for matching endpoints,
             this reduces two nested loops over the wires which is O(N**2)
             to a single loop O(N).
         """
 
-        # These are two loops of two elements each. This rolls the
-        # end-matching computation of 4 explicitly-programmed cases in
-        # the Basic program lines 1325-1356 into a few statements.
-        # The idea is to use two dictionaries of end-point coordinates.
+        # This rolls the end-matching computation of 4
+        # explicitly-programmed cases in the Basic program lines
+        # 1325-1356 into a few statements.
+        # The idea is to use a dictionary of end-point coordinates.
         for n1, current_end in enumerate (self.endpoints):
+            if self.is_ground [n1]:
+                continue
             ep_tuple = tuple (current_end)
-            for n2, other_end_dict in enumerate (end_dicts):
-                if not self.is_ground [n1] and ep_tuple in other_end_dict:
-                    other = other_end_dict [ep_tuple]
-                    s = -1 if (n2 == n1) else 1
-                    other.conn [n2].add (self,  self, n1, s, s)
-                    self.conn  [n1].add (other, self, n1, 1, s)
-            if ep_tuple not in end_dicts [n1]:
-                end_dicts [n1][ep_tuple] = self
+            if ep_tuple in end_dict:
+                n2, other = end_dict [ep_tuple]
+                s = -1 if (n2 == n1) else 1
+                other.conn [n2].add (self,  self, n1, s, s)
+                self.conn  [n1].add (other, self, n1, 1, s)
+            else:
+                end_dict [ep_tuple] = (n1, self)
     # end def compute_connections
 
     def connections (self):
@@ -912,14 +913,14 @@ class Mininec:
             Note that we do not use a second loop but instead put each
             wire end into a dictionary linking to the wire. That way the
             algorithm is O(N) not O(N^2). The dictionaries for the wire
-            ends is end_dicts, this is a list of two dictionaries, one
-            for each end.
+            ends is end_dict, we store a tuple of end index and wire in
+            this dictionary.
         """
         n = 0
         self.c_per = c_per = {}
         self.w_per = w_per = {}
         self.seg   = seg   = {}
-        end_dicts  = [{}, {}]
+        end_dict   = {}
         for i, w in enumerate (self.geo):
             # This part starts at 1298 comment "connections"
             # We do not use the E, L, M array with the X, Y, Z
@@ -928,7 +929,7 @@ class Mininec:
             # instead.
 
             # Try to match existing wire endpoints
-            w.compute_connections (end_dicts)
+            w.compute_connections (end_dict)
 
             # i1 and i2 are the indeces of the previous/next wire.
             # This is 0 when there is no prev/next wire. It is -n
@@ -2658,7 +2659,7 @@ class Mininec:
 
 # end class Mininec
 
-def main (argv = sys.argv [1:], f_err = sys.stderr):
+def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     """ The main routine called from the command-line
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--frequency-increment=.01', '--frequency-steps=2'])
@@ -3472,6 +3473,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr):
         except ValueError as err:
             print ("Error near-field inc: %s" % err, file = f_err)
             return 23
+    if return_mininec:
+        return m
     options = set ()
     far_field = False
     for opt in args.option:

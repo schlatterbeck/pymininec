@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2022-23 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
@@ -28,16 +28,18 @@ import doctest
 import numpy as np
 import mininec
 from mininec.mininec import *
+from mininec.mininec import main
 from zmatrix import *
 from ohio import Near_Far_Comparison
 
 class _Test_Base_With_File:
 
-    def simple_setup (self, filename, mininec):
+    def simple_setup (self, filename, mininec = None):
         with open (os.path.join ('test', filename), 'r') as f:
             self.expected_output = f.read ()
         self.expected_output = self.expected_output.rstrip ('\n')
-        mininec.compute ()
+        if mininec:
+            mininec.compute ()
     # end def simple_setup
 
     def dipole_7mhz (self, wire_dia, filename):
@@ -321,6 +323,26 @@ class _Test_Base_With_File:
             else:
                 self.assertEqual (e, a)
     # end def compare_near_field_data
+
+    def setup_generic_file (self, basename):
+        path = os.path.join ('test', basename)
+        pym  = path + '.pym'
+        args = []
+        with open (pym, 'r') as f:
+            for line in f:
+                if line.startswith ('#'):
+                    continue
+                args.append (line)
+        args = ' '.join (args)
+        args = args.split ()
+        m    = main (args, return_mininec = True)
+        self.simple_setup (basename + '.pout')
+        zenith  = Angle (0, 10, 10)
+        azimuth = Angle (0, 10, 37)
+        m.compute ()
+        m.compute_far_field (zenith, azimuth)
+        return m
+    # end def setup_generic_file
 
 # end class _Test_Base_With_File
 
@@ -647,6 +669,26 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
             self.expected_output = f.read ().rstrip ()
         self.assertEqual (self.expected_output, actual_output)
     # end def test_near_far
+
+    def test_hloop40_14 (self):
+        m = self.setup_generic_file ('hloop40-14')
+        self.compare_far_field_data (m)
+    # end def test_hloop40_14
+
+    def test_hloop40_7 (self):
+        m = self.setup_generic_file ('hloop40-7')
+        self.compare_far_field_data (m)
+    # end def test_hloop40_7
+
+    def test_vloop20 (self):
+        m = self.setup_generic_file ('vloop20')
+        self.compare_far_field_data (m)
+    # end def test_vloop20
+
+    def test_lzh20 (self):
+        m = self.setup_generic_file ('lzh20')
+        self.compare_far_field_data (m)
+    # end def test_lzh20
 
 # end class Test_Case_Known_Structure
 
