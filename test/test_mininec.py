@@ -324,7 +324,7 @@ class _Test_Base_With_File:
                 self.assertEqual (e, a)
     # end def compare_near_field_data
 
-    def setup_generic_file (self, basename):
+    def setup_generic_file (self, basename, azi = None, ele = None):
         path = os.path.join ('test', basename)
         pym  = path + '.pym'
         args = []
@@ -337,10 +337,10 @@ class _Test_Base_With_File:
         args = args.split ()
         m    = main (args, return_mininec = True)
         self.simple_setup (basename + '.pout')
-        zenith  = Angle (0, 10, 10)
-        azimuth = Angle (0, 10, 37)
+        elevation = ele or Angle (0, 10, 10)
+        azimuth   = azi or Angle (0, 10, 37)
         m.compute ()
-        m.compute_far_field (zenith, azimuth)
+        m.compute_far_field (elevation, azimuth)
         return m
     # end def setup_generic_file
 
@@ -690,6 +690,20 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         self.compare_far_field_data (m)
     # end def test_lzh20
 
+    def test_inve802B (self):
+        self.maxDiff = None
+        ele = Angle (0, 11, 9)
+        m   = self.setup_generic_file ('inve802B', ele = ele)
+        opt = set (['far-field'])
+        out =  m.frq_independent_as_mininec ()  + '\n'
+        out += m.frq_dependent_as_mininec (opt) + '\n'
+        m.f = 14
+        m.compute ()
+        m.compute_far_field (ele, Angle (0, 10, 37))
+        out += m.frq_dependent_as_mininec (opt)
+        assert self.expected_output == out
+    # end def test_inve802B
+
 # end class Test_Case_Known_Structure
 
 class Test_Doctest (unittest.TestCase):
@@ -697,7 +711,7 @@ class Test_Doctest (unittest.TestCase):
     flags = doctest.NORMALIZE_WHITESPACE
 
     def test_mininec (self):
-        num_tests = 307
+        num_tests = 328
         f, t  = doctest.testmod \
             (mininec.mininec, verbose = False, optionflags = self.flags)
         fn = os.path.basename (mininec.mininec.__file__)

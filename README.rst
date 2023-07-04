@@ -186,6 +186,50 @@ solution to an `elliptic integral`_. These are now implemented using
 methods (or at least constants in the case of `gaussian quadrature`_)
 from |scipy.integrate|_ and |scipy.special.ellipk|_.
 
+Multiple Inverted-V Example
++++++++++++++++++++++++++++
+
+On an old `web-page from 1998 by Dr. Carol F. Milazzo, KP4MD`_ has examples
+of antennas simulated with Mininec. The first of these examples is three
+crossed inverted-V (one of which has loading inductors to boost the
+effective length). The simulation results of pymininec are in the
+ballpark of the Mininec-based *NEC4WIN* which was used by KP4MD. But it
+looks like *NEC4WIN* might use what it prints as "Diam." as the radius
+of the wire (see Fig. 1 in the website) as the radius (see Antenna Model
+Files in the Appendix). At least if this format is inherited from NEC
+the last column of the wire definition would hold the radius and this
+interpretation of the format also is more consistent with the simulation
+results of Pymininec. The following table shows the original data
+compared to using half of the diameter in the original model in
+Pymininec ("Pymininec r") and the diameter as the radius (Pymininec 2r).
+When using the (supposed) diameter for the radius, the output data
+matches better to the website data.
+
++---------------+----------------+--------------+--------------+--------------+
+| Frequency     |                | Original     | Pymininec r  | Pymininec 2r |
++---------------+----------------+--------------+--------------+--------------+
+| 7MHz          | Gain Azimuth   | -2.42 dBi    | -2.52 dBi    | -2.49 dBi    |
++               +----------------+--------------+--------------+--------------+
+|               | Gain Elevation |  7.21 dBi    |  7.21 dBi    |  7.21 dBi    |
++               +----------------+--------------+--------------+--------------+
+|               | Impedance      | 38.74 +6.77j | 38.82 -3.66j | 39.28 +1.49j |
++---------------+----------------+--------------+--------------+--------------+
+| 14MHz         | Gain Azimuth   |  4.33 dBi    |  4.60 dBi    |  4.37 dBi    |
++               +----------------+--------------+--------------+--------------+
+|               | Gain Elevation |  7.23 dBi    |  7.73 dBi    |  7.38 dBi    |
++               +----------------+--------------+--------------+--------------+
+|               | Impedance      | 46.16 -326j  | 31.86 -307j  | 43.00 -313j  |
++---------------+----------------+--------------+--------------+--------------+
+
+All of KP4MD's examples have been converted to Pymininec and are available as
+``inve802B.pym``, ``hloop40-14.pym``, ``hloop40-7.pym``,
+``vloop20.pym``, and ``lzh20.pym`` in the ``test`` directory. Only the
+``inve802B.pym`` (with the inverted-Vs) uses the diameter in the
+original example as the radius in Pymininec, all others use half of the
+value in the original example (which is supposed to be the diameter) as
+the radius. But most examples match better to the values computed by
+KP4MD when doubling the radius.
+
 Notes on Elliptic Integral Parameters
 -------------------------------------
 
@@ -401,3 +445,5 @@ v0.1.0: Initial release
 .. _`elliptic integral`: https://en.wikipedia.org/wiki/Elliptic_integral
 .. _`scipy`: https://scipy.org/
 .. _`plot-antenna`: https://github.com/schlatterbeck/plot-antenna
+.. _`web-page from 1998 by Dr. Carol F. Milazzo, KP4MD`:
+    https://www.qsl.net/kp4md/kp4mdnec.htm

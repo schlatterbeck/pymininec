@@ -344,6 +344,41 @@ class Impedance_Load (_Load):
 
 # end class Impedance_Load
 
+class Series_RLC_Load (_Load):
+    """ A load with R, L, C in series, an unspecified value is
+        considered to be a 0-Ohm resistor.
+        This was not in the original mininec code.
+        But it could be modelled with a Laplace load.
+        Frequency is in MHz (when calling impedance), otherwise we use
+        metric units Ohm, Henry, Farad.
+    >>> l = Series_RLC_Load (R = 0.1, L = 60e-6)
+    >>> z = l.impedance (7)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    0.1+2638.94j
+    """
+    def __init__ (self, R = None, L = None, C = None):
+        super ().__init__ ()
+        self.r = R
+        self.l = L
+        self.c = C
+    # end def __init__
+
+    def impedance (self, f):
+        """ Impedance for given frequency
+        """
+        w = 2 * np.pi * f * 1e6
+        x = 0 + 0j
+        if self.r is not None:
+            x += self.r
+        if self.l is not None:
+            x += w * self.l * 1j
+        if self.c is not None:
+            x -= 1 / (w * self.c) * 1j
+        return x
+    # end def impedance
+
+# end class Series_RLC_Load
+
 class Laplace_Load (_Load):
     """ Laplace s-Parameter (s = j omega) load from mininec implementation
         We get two lists of parameters. They represent the numerator and
@@ -364,6 +399,10 @@ class Laplace_Load (_Load):
     >>> z = l.impedance (7.15)
     >>> print ("%g%+gj" % (z.real, z.imag))
     0+10.1529j
+    >>> l = Laplace_Load (b = (0.1, 60e-6), a = (1,))
+    >>> z = l.impedance (7)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    0.1+2638.94j
     """
     def __init__ (self, a, b):
         m = max (len (a), len (b))
@@ -392,6 +431,42 @@ class Laplace_Load (_Load):
     # end def impedance
 
 # end class Laplace_Load
+
+class Trap_Load (Laplace_Load):
+    """ A trap consisting of L+R in series parallel to a C.
+           +---L----R---+
+        ---+            +---
+           +-----C------+
+        This is a convenience method as it can already be specified with
+        the Laplace_Load type.
+        Note that you should not specify R=0, otherwise you'll get a
+        division by zero at the resonance frequency.
+    >>> c = 10e-12
+    >>> l = 10e-6
+    >>> r = 1
+    >>> t = Trap_Load (r, l, c)
+    >>> z = t.impedance (15.91548635144039)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    1e+06+2.87559e-08j
+    >>> t = Trap_Load (r, l, c)
+    >>> z = t.impedance (15.915)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    996218+60882.7j
+    >>> t = Trap_Load (r, l, c)
+    >>> z = t.impedance (15.916)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    995915-64286.3j
+    >>> t = Trap_Load (1e-10, l, c)
+    >>> z = t.impedance (15.915494309189534)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    1e+16-1000j
+    """
+
+    def __init__ (self, R, L, C):
+        super ().__init__ (a = (1, R*C, L*C), b = (R, L))
+    # end def __init__
+
+# end class Trap_Load
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
@@ -803,6 +878,7 @@ class Mininec:
         self.f          = f
         self.media      = media
         self.loads      = []
+        self.loadidx    = set ()
         self.check_ground ()
         self.sources    = []
         self.geo        = geo
@@ -2050,7 +2126,10 @@ class Mininec:
             for wire in self.geo:
                 for p in wire.segment_iter ():
                     load.add_pulse (p)
-            self.loads.append (load)
+            # Avoid adding same load several times
+            if load.n not in self.loadidx:
+                self.loads.append (load)
+                self.loadidx.add (load.n)
         else:
             if pulse < 0:
                 raise ValueError ("Pulse index must be >= 0")
@@ -2067,7 +2146,10 @@ class Mininec:
             else:
                 p = pulse
             load.add_pulse (p)
-            self.loads.append (load)
+            # Avoid adding same load several times
+            if load.n not in self.loadidx:
+                self.loads.append (load)
+                self.loadidx.add (load.n)
     # end def register_load
 
     def register_source (self, source, pulse, wire_idx = None):
@@ -2493,11 +2575,11 @@ class Mininec:
                 % (format_float (coord))
                 )
             r.append \
-                ( '  VECTOR%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE' 
+                ( '  VECTOR%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE'
                 % tuple (' ' * k for k in (6, 10, 5, 5))
                 )
             r.append \
-                ( ' COMPONENT%sV/M%sV/M%sV/M%sDEG' 
+                ( ' COMPONENT%sV/M%sV/M%sV/M%sDEG'
                 % tuple (' ' * k for k in (5, 11, 11, 11))
                 )
             ax = 'XYZ'
@@ -2535,11 +2617,11 @@ class Mininec:
                 % (format_float (coord))
                 )
             r.append \
-                ( '  VECTOR%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE' 
+                ( '  VECTOR%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE'
                 % tuple (' ' * k for k in (6, 10, 5, 5))
                 )
             r.append \
-                ( ' COMPONENT%sAMPS/M%sAMPS/M%sAMPS/M%sDEG' 
+                ( ' COMPONENT%sAMPS/M%sAMPS/M%sAMPS/M%sDEG'
                 % tuple (' ' * k for k in (5, 8, 8, 8))
                 )
             ax = 'XYZ'
@@ -2659,6 +2741,13 @@ class Mininec:
 
 # end class Mininec
 
+def parse_floatlist (s, l = 3, fill = None):
+    """ Parse comma-separated list of floats with length l.
+        Missing values are filled with the value of fill.
+    """
+    return [float (x) if x else fill for x in s.split (',')]
+# end def parse_floatlist
+
 def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     """ The main routine called from the command-line
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
@@ -2698,6 +2787,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     <BLANKLINE>
     FREQUENCY (MHZ): 7.15
         WAVE LENGTH =  41.93007  METERS
+    <BLANKLINE>
     ********************    SOURCE DATA     ********************
     PULSE  1      VOLTAGE = ( 1 , 0 J)
                   CURRENT = ( 2.857798E-02 ,  1.660853E-03 J)
@@ -2718,8 +2808,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     <BLANKLINE>
     ********************     FAR FIELD      ********************
     <BLANKLINE>
-    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:  0 , 45 , 3
-    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:  0 , 180 , 3
+    ZENITH ANGLE : INITIAL,INCREMENT,NUMBER: 0 , 45 , 3
+    AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER: 0 , 180 , 3
     <BLANKLINE>
     ********************    PATTERN DATA    ********************
     ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
@@ -3170,7 +3260,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , type    = int
         , action  = 'append'
         , default = []
-        , 
         )
     cmd.add_argument \
         ( '--excitation-voltage'
@@ -3226,7 +3315,23 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     cmd.add_argument \
         ( '-l', '--load'
         , type    = complex
-        , help    = 'Complex load'
+        , help    = 'Complex load, specify complex impedance, e.g.  50+3j,'
+                    ' complex loads are numbered first'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--rlc-load'
+        , help    = 'RLC (series) load, specify R,L,C in Ohm, Henry, Farad,'
+                    ' RLC loads are numbered second'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--trap-load'
+        , help    = 'Trap load, R+L in series parallel to C, '
+                    'specify R,L,C in Ohm, Henry, Farad,'
+                    ' Trap loads are numbered third'
         , action  = 'append'
         , default = []
         )
@@ -3374,6 +3479,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     loads = []
     for l in args.load:
         loads.append (Impedance_Load (l))
+    for l in args.rlc_load:
+        try:
+            loads.append (Series_RLC_Load (*parse_floatlist (l)))
+        except ValueError as err:
+            print ("Error in series RLC load: %s" % err, file = f_err)
+    for l in args.trap_load:
+        try:
+            loads.append (Trap_Load (*parse_floatlist (l, fill=0)))
+        except ValueError as err:
+            print ("Error in trap load: %s" % err, file = f_err)
     laplace = []
     for a in args.laplace_load_a:
         try:
