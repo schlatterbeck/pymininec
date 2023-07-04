@@ -355,6 +355,10 @@ class Series_RLC_Load (_Load):
     >>> z = l.impedance (7)
     >>> print ("%g%+gj" % (z.real, z.imag))
     0.1+2638.94j
+    >>> l = Series_RLC_Load (R = 1000, C = 60e-12)
+    >>> z = l.impedance (7)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    1000-378.94j
     """
     def __init__ (self, R = None, L = None, C = None):
         super ().__init__ ()
@@ -403,6 +407,10 @@ class Laplace_Load (_Load):
     >>> z = l.impedance (7)
     >>> print ("%g%+gj" % (z.real, z.imag))
     0.1+2638.94j
+    >>> l = Laplace_Load (b = (1, 1000 * 60e-12), a = (0, 60e-12))
+    >>> z = l.impedance (7)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    1000-378.94j
     """
     def __init__ (self, a, b):
         m = max (len (a), len (b))
@@ -662,6 +670,19 @@ class Wire:
             Note that we're using a dictionary for matching endpoints,
             this reduces two nested loops over the wires which is O(N**2)
             to a single loop O(N).
+
+            We do not use a second loop but instead put each wire end
+            into a dictionary linking to the wire. That way the
+            algorithm is O(N) not O(N^2). The dictionaries for the wire
+            ends is end_dict, we store a tuple of end index and wire in
+            this dictionary.
+
+            In the future we may want to introduce fuzzy matching of
+            endpoints (similar to how NEC does it). This means that we
+            would probably first try to match via dictionary and only if
+            that doesn't return a match we might use a binary search via
+            one of the coordinates (and then determine the euclidian
+            distance).
         """
 
         # This rolls the end-matching computation of 4
@@ -882,6 +903,8 @@ class Mininec:
         self.check_ground ()
         self.sources    = []
         self.geo        = geo
+        # Dictionary of ends to compute matches
+        self.end_dict   = {}
         self.print_opts = print_opts or set (('far-field',))
         if not self.media or len (self.media) == 1:
             self.boundary = 'linear'
@@ -985,18 +1008,11 @@ class Mininec:
             code, it has consequently dimension 3.
             Looks like index n1 is the index of the next start segment.
             And n is the index of the next end segment.
-
-            Note that we do not use a second loop but instead put each
-            wire end into a dictionary linking to the wire. That way the
-            algorithm is O(N) not O(N^2). The dictionaries for the wire
-            ends is end_dict, we store a tuple of end index and wire in
-            this dictionary.
         """
         n = 0
         self.c_per = c_per = {}
         self.w_per = w_per = {}
         self.seg   = seg   = {}
-        end_dict   = {}
         for i, w in enumerate (self.geo):
             # This part starts at 1298 comment "connections"
             # We do not use the E, L, M array with the X, Y, Z
@@ -1005,7 +1021,7 @@ class Mininec:
             # instead.
 
             # Try to match existing wire endpoints
-            w.compute_connections (end_dict)
+            w.compute_connections (self.end_dict)
 
             # i1 and i2 are the indeces of the previous/next wire.
             # This is 0 when there is no prev/next wire. It is -n
@@ -3233,6 +3249,18 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Invalid theta angle, need float, float, int
     >>> r
     23
+
+    >>> args = ['--rlc-load=a,b,c']
+    >>> r = main (args, sys.stdout)
+    Error in series RLC load: could not convert string to float: 'a'
+    >>> r
+    23
+
+    >>> args = ['--trap-load=a,b,c']
+    >>> r = main (args, sys.stdout)
+    Error in trap load: could not convert string to float: 'a'
+    >>> r
+    23
     """
     boundaries = ('linear', 'circular')
     from argparse import ArgumentParser
@@ -3484,11 +3512,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             loads.append (Series_RLC_Load (*parse_floatlist (l)))
         except ValueError as err:
             print ("Error in series RLC load: %s" % err, file = f_err)
+            return 23
     for l in args.trap_load:
         try:
             loads.append (Trap_Load (*parse_floatlist (l, fill=0)))
         except ValueError as err:
             print ("Error in trap load: %s" % err, file = f_err)
+            return 23
     laplace = []
     for a in args.laplace_load_a:
         try:

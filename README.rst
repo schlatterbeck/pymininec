@@ -189,7 +189,7 @@ from |scipy.integrate|_ and |scipy.special.ellipk|_.
 Multiple Inverted-V Example
 +++++++++++++++++++++++++++
 
-On an old `web-page from 1998 by Dr. Carol F. Milazzo, KP4MD`_ has examples
+An old `web-page from 1998 by Dr. Carol F. Milazzo, KP4MD`_ has examples
 of antennas simulated with Mininec. The first of these examples is three
 crossed inverted-V (one of which has loading inductors to boost the
 effective length). The simulation results of pymininec are in the
@@ -229,6 +229,24 @@ original example as the radius in Pymininec, all others use half of the
 value in the original example (which is supposed to be the diameter) as
 the radius. But most examples match better to the values computed by
 KP4MD when doubling the radius.
+
+Running the Tests
++++++++++++++++++
+
+You can run the tests with::
+
+  python3 -m pytest test
+
+If coverage should be reported this becomes::
+
+  python3 -m pytest --cov mininec test
+
+For a more detailed coverage report use::
+
+  python3 -m pytest --cov-report term-missing --cov mininec test
+
+This will show a detailed report of the lines that are not covered by
+tests.
 
 Notes on Elliptic Integral Parameters
 -------------------------------------
