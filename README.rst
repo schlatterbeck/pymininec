@@ -387,6 +387,18 @@ the two links I've given contain the same code.
 Release Notes
 -------------
 
+v0.5.0: Bug fixes and new load types
+
+- New load types RLC load and Trap load: The first uses a series R-L-C
+  (with each being optional), the second serial R-L parallel to a C (for
+  a good emulation of traps in antennas)
+- Bug-Fix in wire-end matching: If there are multiple wires connected
+  to a single point the previous implementation would not build the data
+  structures correctly
+- Add more regression tests
+- Get rid of unittest to avoid a mixture of the unittest and pytest
+  testing frameworks
+
 v0.4.0: Split `plot-antenna`_ into own project
 
 - Own project `plot-antenna`_
