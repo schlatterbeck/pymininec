@@ -22,7 +22,6 @@
 # ****************************************************************************
 
 import os
-import unittest
 import pytest
 import doctest
 import numpy as np
@@ -219,31 +218,35 @@ class _Test_Base_With_File:
     def compare_far_field_data (self, m, may_fail_last_digit = False):
         """ dB values below -200 contain large rounding errors.
             This makes tests fail on different architectures, notably on
-            Intel vs. AMD CPUs. Seems the trigonometric functions are
-            slightly different on these architectures. We compare values
-            above -200dB exactly and assert that the value is below -200
-            for the others.
+            Intel vs. AMD CPUs. But also on different python versions
+            (self-compiled python10 vs debian bullseye python9).
+            Seems the trigonometric functions are slightly different on
+            these architectures. We compare values above -200dB exactly,
+            and assert that the value is below -200 for the others.
+            In addition if may_fail_last_digit is True the last digit of
+            a dB value may differ.
         """
         ex  = self.expected_output.split ('\n')
         ac  = m.as_mininec ().split ('\n')
         idx = self.expected_output.find ('PATTERN DATA')
         l   = len (self.expected_output [:idx].split ('\n'))
         off = l + 2
-        self.assertEqual (ex [:off], ac [:off])
+        assert ex [:off] == ac [:off]
         for e, a in zip (ex [off:], ac [off:]):
             el = e.strip ().split ()
             al = a.strip ().split ()
-            self.assertEqual (el [:2], al [:2])
+            assert el [:2] == al [:2]
             for ef, af in zip (el, al):
                 eff = float (ef)
                 aff = float (af)
                 if eff > -200:
                     if may_fail_last_digit:
-                        self.assertEqual (ef [:-1], af [:-1])
+                        m = min (len (ef), len (af))
+                        assert ef [:m-1] == af [:m-1]
                     else:
-                        self.assertEqual (ef, af)
+                        assert ef == af
                 else:
-                    self.assertLess (aff, -200)
+                    assert aff < -200
     # end def compare_far_field_data
 
     def compare_currents (self, exs, acs):
@@ -257,20 +260,20 @@ class _Test_Base_With_File:
         idx = exs.find ('CURRENT')
         l   = len (exs [:idx].split ('\n'))
         off = l - 1
-        self.assertEqual (ex [:off], ac [:off])
+        assert ex [:off] == ac [:off]
         exc = ex [off].strip ()
         acc = ac [off].strip ()
         assert acc.startswith ('CURRENT = ( ')
         assert acc.endswith (' J)')
         exc = [float (x) for x in exc [12:-3].split (',')]
         acc = [float (x) for x in acc [12:-3].split (',')]
-        self.assertAlmostEqual (exc [0], acc [0], 12)
-        self.assertAlmostEqual (exc [1], acc [1], 12)
+        assert round (abs (exc [0] - acc [0]), 12) == 0
+        assert round (abs (exc [1] - acc [1]), 12) == 0
         off += 1
         state = 0
         for l_ex, l_ac in zip (ex [off:], ac [off:]):
             if state == 0 or state == 2:
-                self.assertEqual (l_ex, l_ac)
+                assert l_ex == l_ac
             if '(DEGREES)' in l_ex:
                 state = 1
                 continue
@@ -279,14 +282,14 @@ class _Test_Base_With_File:
                 sp_ac = l_ac.strip ().split ()
                 if len (sp_ex) != 5 or sp_ex [0] in 'JE':
                     state = 2
-                    self.assertEqual (l_ex, l_ac)
+                    assert l_ex == l_ac
                     continue
                 num_ex = [float (x) for x in sp_ex]
                 num_ac = [float (x) for x in sp_ac]
-                self.assertEqual (num_ex [0], num_ac [0])
+                assert num_ex [0] == num_ac [0]
                 for a, b in zip (num_ex [1:-1], num_ac [1:-1]):
-                    self.assertAlmostEqual (a, b, 12)
-                self.assertAlmostEqual (num_ex [-1], num_ac [-1], 10)
+                    assert round (abs (a - b), 12) == 0
+                assert round (abs (num_ex [-1] - num_ac [-1]), 10) == 0
     # end def compare_currents
 
     def compare_near_field_data (self, m, opts = None):
@@ -305,7 +308,7 @@ class _Test_Base_With_File:
             el = e.strip ().split ()
             al = a.strip ().split ()
             if not el:
-                self.assertEqual (e, a)
+                assert e == a
                 continue
             if el [0] in 'XYZ':
                 fe = [float (x) for x in el [1:]]
@@ -316,12 +319,12 @@ class _Test_Base_With_File:
                     if found and n == 3:
                         continue
                     if ffe != 0 and abs (ffe) < 1e-15:
-                        self.assertLess (abs (ffa), 1e-15)
+                        assert abs (ffa) < 1e-15
                         found = True
                     else:
-                        self.assertEqual (ffe, ffa)
+                        assert ffe == ffa
             else:
-                self.assertEqual (e, a)
+                assert e == a
     # end def compare_near_field_data
 
     def setup_generic_file (self, basename, azi = None, ele = None):
@@ -346,69 +349,87 @@ class _Test_Base_With_File:
 
 # end class _Test_Base_With_File
 
-class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
+class Test_Case_Known_Structure (_Test_Base_With_File):
 
     def test_excitation (self):
         """ Test error cases
         """
-        self.assertRaises (ValueError, Excitation, 1+1j, 1)
+        with pytest.raises (ValueError):
+            Excitation (1+1j, 1)
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         m = Mininec (7, w)
         x = Excitation (cvolt = 5)
         # Pulse index must be > 0
-        self.assertRaises (ValueError, m.register_source, x, -1)
+        with pytest.raises (ValueError):
+            m.register_source (x, -1)
         # Invalid pulse
-        self.assertRaises (ValueError, m.register_source, x, 55)
+        with pytest.raises (ValueError):
+            m.register_source (x, 55)
         # Invalid pulse for wire
-        self.assertRaises (ValueError, m.register_source, x, 11, 0)
+        with pytest.raises (ValueError):
+            m.register_source (x, 11, 0)
         # Invalid *first* pulse:
         # We create two 1-seg wires, the first will have no pulse
         w = []
         w.append (Wire (1, 0, 0, 0, 1, 0, 0, 0.01))
         w.append (Wire (1, 1, 0, 0, 2, 0, 0, 0.01))
         m = Mininec (7, w)
-        self.assertRaises (ValueError, m.register_source, x, 0, 0)
+        with pytest.raises (ValueError):
+            m.register_source (x, 0, 0)
     # end def test_excitation
 
     def test_load (self):
         """ Test error case
         """
-        self.assertRaises (ValueError, Laplace_Load, [], [])
+        with pytest.raises (ValueError):
+            Laplace_Load ([], [])
     # end def test_load
 
     def test_medium (self):
         """ Test error cases
         """
-        self.assertRaises (ValueError, Medium, 0, 0, nradials = 1)
-        self.assertRaises (ValueError, Medium, 0, 0, height = 1)
-        self.assertRaises (ValueError, Medium, 1, 1, nradials = 1)
-        self.assertRaises (ValueError, Medium, 1, 0)
-        self.assertRaises \
-            (ValueError, Medium, 1, 1, nradials = 1, coord = 5, dist = 7)
+        with pytest.raises (ValueError):
+            Medium (0, 0, nradials = 1)
+        with pytest.raises (ValueError):
+            Medium (0, 0, height = 1)
+        with pytest.raises (ValueError):
+            Medium (1, 1, nradials = 1)
+        with pytest.raises (ValueError):
+            Medium (1, 0)
+        with pytest.raises (ValueError):
+            Medium (1, 1, nradials = 1, coord = 5, dist = 7)
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        self.assertRaises (ValueError, Mininec, 7, w, media = [])
+        with pytest.raises (ValueError):
+            Mininec (7, w, media = [])
         ideal = ideal_ground
         media = [ideal, ideal]
-        self.assertRaises (ValueError, Mininec, 7, w, media = media)
+        with pytest.raises (ValueError):
+            Mininec (7, w, media = media)
         rad = Medium (1, 1, nradials = 1, radius = 1, dist = 1)
         media = [rad, rad]
-        self.assertRaises (ValueError, Mininec, 7, w, media = media)
+        with pytest.raises (ValueError):
+            Mininec (7, w, media = media)
         # Radials may not be the only medium
-        self.assertRaises (ValueError, Mininec, 7, w, media = [rad])
+        with pytest.raises (ValueError):
+            Mininec (7, w, media = [rad])
     # end def test_medium
 
     def test_wire (self):
         """ Test error cases
         """
-        self.assertRaises (ValueError, Wire, 7, 1, 1, 1, 2, 2, 2, 0)
-        self.assertRaises (ValueError, Wire, 7, 1, 1, 1, 1, 1, 1, 1)
+        with pytest.raises (ValueError):
+            Wire (7, 1, 1, 1, 2, 2, 2, 0)
+        with pytest.raises (ValueError):
+            Wire (7, 1, 1, 1, 1, 1, 1, 1)
         wire = Wire (7, 0, 0, 0, 1, 1, 0, 0.01)
         ideal = ideal_ground
-        self.assertRaises (ValueError, wire.compute_ground, 0, ideal)
+        with pytest.raises (ValueError):
+            wire.compute_ground (0, ideal)
         wire = Wire (7, 0, 0, -1, 1, 1, -1, 0.01)
-        self.assertRaises (ValueError, wire.compute_ground, 0, ideal)
+        with pytest.raises (ValueError):
+            wire.compute_ground (0, ideal)
     # end def test_excitation
 
     def test_source_index (self):
@@ -417,12 +438,13 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         # Wrong index: Exceeds valid segments
         s = Excitation (1, 0)
         m = Mininec (7, w)
-        self.assertRaises (ValueError, m.register_source, s, 10)
+        with pytest.raises (ValueError):
+            m.register_source (s, 10)
     # end def test_source_index
 
     def test_matrix_fill_vdipole_ideal_ground (self):
-        """ This uses assertAlmostEqual number of decimal places to
-            compare significant digits (approximately)
+        """ This uses rounding to a number of decimal places to compare
+            significant digits (approximately)
         """
         mat   = matrix_ideal_ground_vdipole_from_mininec
         ideal = ideal_ground
@@ -431,14 +453,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+                assert round (abs (mat [i][j].imag - m.Z [i][j].imag), 3-f) == 0
     # end def test_matrix_fill_vdipole_ideal_ground
 
     def test_matrix_fill_quarter_ideal_ground (self):
-        """ This uses assertAlmostEqual number of decimal places to
-            compare significant digits (approximately)
+        """ This uses rounding to a number of decimal places to compare
+            significant digits (approximately)
         """
         mat   = np.array (matrix_ideal_ground_quarter_from_mininec_r) \
               + 1j * np.array (matrix_ideal_ground_quarter_from_mininec_i)
@@ -447,14 +469,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+                assert round (abs (mat [i][j].imag - m.Z [i][j].imag), 3-f) == 0
     # end def test_matrix_fill_quarter_ideal_ground
 
     def test_matrix_fill_quarter_ideal_ground_load (self):
-        """ This uses assertAlmostEqual number of decimal places to
-            compare significant digits (approximately)
+        """ This uses rounding to a number of decimal places to compare
+            significant digits (approximately)
         """
         mat   = np.array (matrix_ideal_ground_quarter_l_from_mininec_r) \
               + 1j * np.array (matrix_ideal_ground_quarter_l_from_mininec_i)
@@ -465,14 +487,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         for i in range (len (m.w_per)):
             for j in range (1, len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+                assert round (abs (mat [i][j].imag - m.Z [i][j].imag), 3-f) == 0
     # end def test_matrix_fill_quarter_ideal_ground_load
 
     def test_matrix_fill_inverted_l (self):
-        """ This uses assertAlmostEqual number of decimal places to
-            compare significant digits (approximately)
+        """ This uses rounding to a number of decimal places to compare
+            significant digits (approximately)
         """
         mat   = np.array (matrix_inverted_l_r) \
               + 1j * np.array (matrix_inverted_l_i)
@@ -480,14 +502,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+                assert round (abs (mat [i][j].imag - m.Z [i][j].imag), 3-f) == 0
     # end def test_matrix_fill_inverted_l
 
     def test_matrix_fill_quarter_radials (self):
-        """ This uses assertAlmostEqual number of decimal places to
-            compare significant digits (approximately)
+        """ This uses rounding to a number of decimal places to compare
+            significant digits (approximately)
             Note that the matrix is identical to the ideal ground case.
             This is because mininec computes the currents in the wires
             using ideal ground (which in turn make problems with wires
@@ -503,14 +525,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+                assert round (abs (mat [i][j].imag - m.Z [i][j].imag), 3-f) == 0
     # end def test_matrix_fill_quarter_radials
 
     def test_matrix_fill_ohio_example (self):
-        """ This uses assertAlmostEqual number of decimal places to
-            compare significant digits (approximately)
+        """ This uses rounding to a number of decimal places to compare
+            significant digits (approximately)
             Note that the matrix is identical to the ideal ground case.
             This is because mininec computes the currents in the wires
             using ideal ground (which in turn make problems with wires
@@ -522,32 +544,32 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         for i in range (len (m.w_per)):
             for j in range (len (m.w_per)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].real, m.Z [i][j].real, 3-f)
+                assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
-                self.assertAlmostEqual (mat [i][j].imag, m.Z [i][j].imag, 3-f)
+                assert round (abs (mat [i][j].imag - m.Z [i][j].imag), 3-f) == 0
     # end def test_matrix_fill_ohio_example
 
     def test_dipole_wiredia_01 (self):
         m = self.dipole_7mhz (wire_dia = 0.01, filename = 'dipole-01.pout')
         out = m.as_mininec ()
-        self.assertEqual (self.expected_output, out)
+        assert self.expected_output == out
     # end def test_dipole_wiredia_01
 
     def test_dipole_wiredia_001 (self):
         m = self.dipole_7mhz (wire_dia = 0.001, filename = 'dipole-001.pout')
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_dipole_wiredia_001
 
     def test_vdipole_wiredia_01 (self):
         m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vdipole_wiredia_01
 
     def test_vdipole_wiredia_01_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01g0.pout', media = ideal)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vdipole_wiredia_01_ground
 
     def test_vdipole_wiredia_01_ground_loaded (self):
@@ -560,14 +582,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
             , load     = load
             )
         # Attach to *all* segments
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vdipole_wiredia_01_ground_loaded
 
     def test_vdipole_wiredia_001_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_dipole \
             (wire_dia = 0.001, filename = 'vdipole-001g0.pout', media = ideal)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vdipole_wiredia_001_ground
 
     def test_vdipole_wiredia_01_avg_ground (self):
@@ -599,13 +621,13 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
     def test_vertical_ideal_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_quarterwave ('vertical-ig.pout', ideal)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vertical_ideal_ground
 
     def test_vertical_ideal_ground_upside_down (self):
         ideal = [ideal_ground]
         m = self.vertical_quarterwave ('vertical-ig-ud.pout', ideal, inv = True)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vertical_ideal_ground_upside_down
 
     def test_vertical_radials (self):
@@ -613,12 +635,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         m2 = Medium (5, 0.001, -5)
         media = [m1, m2]
         m = self.vertical_quarterwave ('vertical-rad.pout', media = media)
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_vertical_radials
 
     def test_inverted_l (self):
         m = self.inverted_l ('inv-l.pout')
-        self.assertEqual (self.expected_output, m.as_mininec ())
+        assert self.expected_output == m.as_mininec ()
     # end def test_inverted_l
 
     def test_t_ant (self):
@@ -637,7 +659,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         #with open ('z.out', 'w') as f:
         #    print (m.as_mininec (opts).rstrip (), file = f)
         actual_output = m.as_mininec (opts).rstrip ()
-        self.assertEqual (self.expected_output, actual_output)
+        assert self.expected_output == actual_output
     # end def test_dipole_wiredia_01_near
 
     def test_vertical_ideal_ground_near (self):
@@ -655,7 +677,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
             ('vertical-ig-ffabs.pout', ideal, opt = opt)
         opts = set (('far-field-absolute',))
         actual_output = m.as_mininec (opts).rstrip ()
-        self.assertEqual (self.expected_output, actual_output)
+        assert self.expected_output == actual_output
     # end def test_vertical_ideal_ground_far_abs
 
     def test_near_far (self):
@@ -667,7 +689,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
         actual_output = '\n'.join (r).rstrip ()
         with open (os.path.join ('test', 'ohio.pout'), 'r') as f:
             self.expected_output = f.read ().rstrip ()
-        self.assertEqual (self.expected_output, actual_output)
+        assert self.expected_output == actual_output
     # end def test_near_far
 
     def test_hloop40_14 (self):
@@ -682,7 +704,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
     def test_vloop20 (self):
         m = self.setup_generic_file ('vloop20')
-        self.compare_far_field_data (m)
+        self.compare_far_field_data (m, may_fail_last_digit = True)
     # end def test_vloop20
 
     def test_lzh20 (self):
@@ -706,7 +728,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File, unittest.TestCase):
 
 # end class Test_Case_Known_Structure
 
-class Test_Doctest (unittest.TestCase):
+class Test_Doctest:
 
     flags = doctest.NORMALIZE_WHITESPACE
 
@@ -722,7 +744,7 @@ class Test_Doctest (unittest.TestCase):
         else:
             msg = format_ok % locals ()
         exp = 'mininec.py passes all of %d doc-tests' % num_tests
-        self.assertEqual (exp, msg)
+        assert exp == msg
     # end def test_mininec
 
 # end class Test_Doctest
