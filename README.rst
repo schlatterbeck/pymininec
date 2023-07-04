@@ -48,8 +48,10 @@ option.  The command-line options for the 12-element antenna example
 Users on Linux can run this using (I'm sure Windows users can come up
 with a similar command-line on Windows)::
 
-    pymininec $(cat test/12-el.pym) > 12-el.pout
+    pymininec $(sed '/^#/d' test/12-el.pym) > 12-el.pout
 
+This removes comments from the ``.pym`` file and passes the result as
+command-line parameters to pymininec.
 The resulting output file contains currents, impedance at the feedpoint
 and antenna far field in dBi as tables. The output tries to reproduce
 the format of the original Basic implementation of Mininec.
