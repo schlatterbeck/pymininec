@@ -713,7 +713,6 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
     # end def test_lzh20
 
     def test_inve802B (self):
-        self.maxDiff = None
         ele = Angle (0, 11, 9)
         m   = self.setup_generic_file ('inve802B', ele = ele)
         opt = set (['far-field'])
