@@ -389,6 +389,8 @@ the two links I've given contain the same code.
 Release Notes
 -------------
 
+v0.6.1: Fix entry point for script
+
 v0.6.0: Add pyproject.toml
 
 - Add pyproject.toml
