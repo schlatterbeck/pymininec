@@ -301,7 +301,7 @@ class Far_Field_Pattern:
             )
     # end def abs_gain_as_mininec
 
-# end def Far_Field_Pattern
+# end class Far_Field_Pattern
 
 class _Load:
     """ Base class of impedance loading.
@@ -926,6 +926,7 @@ class Mininec:
         self.m       = 4.77783352 * w
         # set small radius modification condition:
         self.srm     = .0001 * w
+        # The wave number 2 * pi / lambda
         self.w       = 2 * np.pi / w
         self.w2      = self.w ** 2 / 2
         self.currents = None
