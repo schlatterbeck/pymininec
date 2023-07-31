@@ -389,6 +389,12 @@ the two links I've given contain the same code.
 Release Notes
 -------------
 
+v0.6.0: Add pyproject.toml
+
+- Add pyproject.toml
+- Add LICENSE file
+- Minor fixes
+
 v0.5.0: Bug fixes and new load types
 
 - New load types RLC load and Trap load: The first uses a series R-L-C
