@@ -29,7 +29,8 @@ basic_input: $(CR)
 
 clean:
 	rm -f $(CR) README.html MININEC.INP mininec/Version.py announce_pypi
-	rm -rf dist build upload upload_homepage ReleaseNotes.txt zoppel.png
+	rm -rf dist build upload upload_homepage ReleaseNotes.txt zoppel.png \
+            pymininec.egg-info
 
 .PHONY: clean test coverage basic_input
 
