@@ -58,4 +58,4 @@ test = [
     ]
 
 [tool.setuptools.dynamic]
-version = {attr = "mininec.Version.VERSION"}
+version = {attr = "mininec.__version__"}

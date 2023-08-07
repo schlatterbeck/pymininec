@@ -23,26 +23,19 @@
 # SOFTWARE.
 # ****************************************************************************
 
-from warnings import filterwarnings
+import sys
 from setuptools import setup
-try :
-    from mininec.Version import VERSION
-except :
-    VERSION = None
+sys.path.insert (1, '.')
+from mininec import __version__
 
 with open ('README.rst') as f:
     description = f.read ()
-
-filterwarnings \
-    ( "ignore"
-    , "Unknown distribution option: 'python_requires'"
-    )
 
 license     = 'MIT License'
 rq          = '>=3.7'
 setup \
     ( name             = "pymininec"
-    , version          = VERSION
+    , version          = __version__
     , description      =
         "Python version of the original MININEC Antenna Optimization code"
     , long_description = ''.join (description)
