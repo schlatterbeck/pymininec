@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Copyright (C) 2022-23 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2022-24 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
@@ -1154,7 +1154,7 @@ class Mininec:
                 for k in self.image_iter ():
                     kvec  = np.array ([1, 1, k])
                     kvec2 = np.array ([k, k, 1])
-                    for i in range (len (self.w_per)):
+                    for i in range (len (self.seg_idx)):
                         s_x = self.seg_idx [i]
                         # Code at 716, 717
                         if k <= 0 and s_x [0] == -s_x [1]:
@@ -1276,7 +1276,6 @@ class Mininec:
     def compute_impedance_matrix (self):
         """ This starts at line 195 (with entry-point for gosub at 196)
             in the original basic code.
-            Note that we're using seg_idx instead of c_per
         >>> s  = Excitation (1, 0)
         >>> s2 = Excitation (1, 30)
         >>> w = []
@@ -1558,8 +1557,7 @@ class Mininec:
                             )
                         ):
                         continue
-                    p2 = i + 1
-                    self.Z [p2][p1] = self.Z [i][j]
+                    self.Z [i + 1][p1] = self.Z [i][j]
             # Here follows a GOSUB 1599 which calculates the remaining time,
             # not implemented
         # end matrix fill time calculation
@@ -1575,7 +1573,7 @@ class Mininec:
                 # Looks like K in the original code line 371 is set by
                 # the preceeding loop iterating over the images. So we
                 # replace this with self.media is not None
-                if  (   self.c_per [j][0] == -self.c_per [j][1]
+                if  (   self.seg_idx [j][0] == -self.seg_idx [j][1]
                     and self.media is not None
                     ):
                     f2 *= 2
@@ -1756,7 +1754,7 @@ class Mininec:
     # end def compute_near_field
 
     def compute_rhs (self):
-        rhs = np.zeros (len (self.c_per), dtype=complex)
+        rhs = np.zeros (len (self.seg_idx), dtype=complex)
         for src in self.sources:
             f2 = -1j/self.m
             if self.seg_idx [src.idx][0] == -self.seg_idx [src.idx][1]:
@@ -2158,7 +2156,7 @@ class Mininec:
                 if p > w.end_segs [1]:
                     raise ValueError \
                         ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
-            elif pulse >= len (self.c_per):
+            elif pulse >= len (self.seg_idx):
                 raise ValueError ('Invalid pulse %d' % pulse)
             else:
                 p = pulse
@@ -2188,7 +2186,7 @@ class Mininec:
             self.sources.append (source)
             source.register (self, p)
         else:
-            if pulse >= len (self.c_per):
+            if pulse >= len (self.seg_idx):
                 raise ValueError ('Invalid pulse %d' % pulse)
             self.sources.append (source)
             source.register (self, pulse)
