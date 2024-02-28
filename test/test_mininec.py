@@ -1,4 +1,4 @@
-# Copyright (C) 2022-23 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2022-24 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
@@ -215,7 +215,8 @@ class _Test_Base_With_File:
         return m
     # end def t_antenna
 
-    def compare_far_field_data (self, m, may_fail_last_digit = False):
+    def compare_far_field_data \
+        (self, m, may_fail_last_digit = False, do_currents = False):
         """ dB values below -200 contain large rounding errors.
             This makes tests fail on different architectures, notably on
             Intel vs. AMD CPUs. But also on different python versions
@@ -225,13 +226,20 @@ class _Test_Base_With_File:
             and assert that the value is below -200 for the others.
             In addition if may_fail_last_digit is True the last digit of
             a dB value may differ.
+            If do_currents is True, we compare currents using
+            compare_currents instead of line by line, this takes care of
+            cases where currents differ slightly for different
+            architectures.
         """
         ex  = self.expected_output.split ('\n')
         ac  = m.as_mininec ().split ('\n')
         idx = self.expected_output.find ('PATTERN DATA')
         l   = len (self.expected_output [:idx].split ('\n'))
         off = l + 2
-        assert ex [:off] == ac [:off]
+        if do_currents:
+            self.compare_currents (ex [:off], ac [:off])
+        else:
+            assert ex [:off] == ac [:off]
         for e, a in zip (ex [off:], ac [off:]):
             el = e.strip ().split ()
             al = a.strip ().split ()
@@ -249,17 +257,13 @@ class _Test_Base_With_File:
                     assert aff < -200
     # end def compare_far_field_data
 
-    def compare_currents (self, exs, acs):
+    def compare_currents (self, ex, ac):
         """ This is used when the CURRENT line in the feed pulse is
             slightly off on different architectures. In addition the
             individual CURRENT DATA lines are also compared
-            approximately
+            approximately. We get lists of lines already split.
         """
-        ex  = exs.split ('\n')
-        ac  = acs.split ('\n')
-        idx = exs.find ('CURRENT')
-        l   = len (exs [:idx].split ('\n'))
-        off = l - 1
+        off = ex.index (self.source_data) + 2
         assert ex [:off] == ac [:off]
         exc = ex [off].strip ()
         acc = ac [off].strip ()
@@ -280,16 +284,19 @@ class _Test_Base_With_File:
             if state == 1:
                 sp_ex = l_ex.strip ().split ()
                 sp_ac = l_ac.strip ().split ()
-                if len (sp_ex) != 5 or sp_ex [0] in 'JE':
+                if len (sp_ex) != 5:
                     state = 2
                     assert l_ex == l_ac
                     continue
-                num_ex = [float (x) for x in sp_ex]
-                num_ac = [float (x) for x in sp_ac]
-                assert num_ex [0] == num_ac [0]
-                for a, b in zip (num_ex [1:-1], num_ac [1:-1]):
-                    assert round (abs (a - b), 12) == 0
+                assert sp_ex [0] == sp_ac [0]
+                num_ex = [float (x) for x in sp_ex [1:]]
+                num_ac = [float (x) for x in sp_ac [1:]]
+                for a, b in zip (num_ex [:-1], num_ac [:-1]):
+                    assert round (abs (a - b), 11) == 0
                 assert round (abs (num_ex [-1] - num_ac [-1]), 10) == 0
+                if sp_ex [0] == 'E':
+                    state = 2
+                    continue
     # end def compare_currents
 
     def compare_near_field_data (self, m, opts = None):
@@ -303,7 +310,7 @@ class _Test_Base_With_File:
         idx = self.expected_output.find ('FIELD POINT: X')
         l   = len (self.expected_output [:idx].split ('\n'))
         off = l - 2
-        self.compare_currents ('\n'.join (ex [:off]), '\n'.join (ac [:off]))
+        self.compare_currents (ex [:off], ac [:off])
         for e, a in zip (ex [off:], ac [off:]):
             el = e.strip ().split ()
             al = a.strip ().split ()
@@ -350,6 +357,12 @@ class _Test_Base_With_File:
 # end class _Test_Base_With_File
 
 class Test_Case_Known_Structure (_Test_Base_With_File):
+    # Constant delimiter lines in text output
+    st = '*' * 20
+    sp = ' ' *  4
+    current_data = st + sp + 'CURRENT DATA' + sp + st
+    far_field    = st + sp + ' FAR FIELD  ' + sp + st
+    source_data  = st + sp + 'SOURCE DATA ' + sp + st
 
     def test_excitation (self):
         """ Test error cases
@@ -615,7 +628,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
 
     def test_folded_dipole (self):
         m = self.folded_dipole ('folded-18.pout')
-        self.compare_far_field_data (m, may_fail_last_digit = True)
+        self.compare_far_field_data \
+            (m, may_fail_last_digit = True, do_currents = True)
     # end def test_folded_dipole
 
     def test_vertical_ideal_ground (self):
