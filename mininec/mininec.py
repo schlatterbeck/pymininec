@@ -1157,6 +1157,7 @@ class Mininec:
                     for i in range (len (self.seg_idx)):
                         s_x = self.seg_idx [i]
                         # Code at 716, 717
+                        # For mirror image do nothing if one end is grounded
                         if k <= 0 and s_x [0] == -s_x [1]:
                             continue
                         j = 2 * self.w_per [i] + i + 1
@@ -1168,6 +1169,7 @@ class Mininec:
                             wire = self.geo [l]
                             f3 = np.sign (s_x [f5]) * self.w * wire.seg_len / 2
                             # Line 723, 724
+                            # No contribution by grounded end
                             if s_x [0] == -s_x [1] and f3 < 0:
                                 continue
                             # Standard case (condition Line 725, 726)
@@ -1226,9 +1228,8 @@ class Mininec:
                                 t89 = w67 + rt3.real * z45
                                 h89 = s89 / t89 - v89
                                 # compute contribution to sum
-                                h   = 0
-                                if self.media and j2 < len (self.media):
-                                    h = self.media [j2].height
+                                assert self.media and j2 < len (self.media)
+                                h = self.media [j2].height
                                 seg = self.seg [j]
                                 hv  = np.array ([0, 0, 2 * h])
                                 sv  = np.array ([1, 1, -1])
@@ -1237,9 +1238,6 @@ class Mininec:
                                 b   = f3 * s * self.current [i]
                                 w67 = b * v89
                                 w   = self.geo [l]
-                                # FIXME: This is only triggered with
-                                # real ground and different x/y directions
-                                # and is currently untested.
                                 d   = v21.imag * w.dirs [0] \
                                     + v21.real * w.dirs [1]
                                 z67 = d * b * h89
@@ -1250,8 +1248,7 @@ class Mininec:
                                        + 1j * (v21.real * z67.imag)
                                      , 0
                                     ])
-                                tm2 = np.array ([-1, -1, 1])
-                                vec += (w.dirs * w67 + tm1) * tm2
+                                vec += (w.dirs * w67 + tm1) * kvec2
                 h12 = sum (vec * rvec.imag) * self.g0 * -1j
                 vv  = np.array ([v21.imag, v21.real])
                 x34 = sum (vec [:2] * vv) * self.g0 * -1j

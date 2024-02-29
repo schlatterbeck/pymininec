@@ -721,6 +721,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_far_field_data (m, may_fail_last_digit = True)
     # end def test_vloop20
 
+    def test_vloop20_t45 (self):
+        m = self.setup_generic_file ('vloop20-t45')
+        self.compare_far_field_data (m, may_fail_last_digit = True)
+    # end def test_vloop20_t45
+
     def test_lzh20 (self):
         m = self.setup_generic_file ('lzh20')
         self.compare_far_field_data (m)
