@@ -1231,9 +1231,8 @@ class Mininec:
                                 assert self.media and j2 < len (self.media)
                                 h = self.media [j2].height
                                 seg = self.seg [j]
-                                hv  = np.array ([0, 0, 2 * h])
-                                sv  = np.array ([1, 1, -1])
-                                s2  = self.w * sum (sv * (seg - hv) * rvec.real)
+                                sh  = seg - np.array ([0, 0, 2 * h])
+                                s2  = self.w * sum (kvec * sh * rvec.real)
                                 s   = np.e ** (1j * s2)
                                 b   = f3 * s * self.current [i]
                                 w67 = b * v89
