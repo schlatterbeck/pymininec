@@ -310,7 +310,7 @@ class _Load:
         on every pulse, e.g. for copper loading of all elements. Note
         that the original mininec code allowed *either* S-Parameter
         loads *or* impedance loads. We support both concurrently. If a
-        segment is loaded twice, loads appear to be in series.
+        pulse is loaded twice, loads appear to be in series.
     """
 
     def __init__ (self, *args, **kw):
@@ -624,6 +624,7 @@ class Wire:
         self.wire_len = np.linalg.norm (diff)
         self.seg_len  = self.wire_len / self.n_segments
         # Original comment: compute direction cosines
+        # Unit vector in wire direction
         self.dirs = diff / self.wire_len
         self.end_segs = [None, None]
         # Links to previous/next connected wire (at start/end)
@@ -664,7 +665,7 @@ class Wire:
             raise ValueError ("height cannot not be negative with ground")
     # end def compute_ground
 
-    def compute_connections (self, end_dict):
+    def compute_connections (self, parent):
         """ Compute links to connected wires
             Also compute sets of indeces of pulses.
             Note that we're using a dictionary for matching endpoints,
@@ -693,13 +694,13 @@ class Wire:
             if self.is_ground [n1]:
                 continue
             ep_tuple = tuple (current_end)
-            if ep_tuple in end_dict:
-                n2, other = end_dict [ep_tuple]
+            if ep_tuple in parent.end_dict:
+                n2, other = parent.end_dict [ep_tuple]
                 s = -1 if (n2 == n1) else 1
                 other.conn [n2].add (self,  self, n1, s, s)
                 self.conn  [n1].add (other, self, n1, 1, s)
             else:
-                end_dict [ep_tuple] = (n1, self)
+                parent.end_dict [ep_tuple] = (n1, self)
     # end def compute_connections
 
     def connections (self):
@@ -737,7 +738,7 @@ class Wire:
         return '\n'.join (r)
     # end def conn_as_str
 
-    def segment_iter (self, yield_ends = True):
+    def pulse_iter (self, yield_ends = True):
         if self.end_segs [0] is not None or self.end_segs [1] is not None:
             if self.end_segs [1] is None:
                 if yield_ends or self.end_segs [0] not in self.conn [0].pulses:
@@ -750,7 +751,7 @@ class Wire:
                 for k in range (self.end_segs [0], self.end_segs [1] + 1):
                     if yield_ends or k not in u:
                         yield k
-    # end def segment_iter
+    # end def pulse_iter
 
     def __str__ (self):
         if self.n is None:
@@ -1022,7 +1023,7 @@ class Mininec:
             # instead.
 
             # Try to match existing wire endpoints
-            w.compute_connections (self.end_dict)
+            w.compute_connections (self)
 
             # i1 and i2 are the indeces of the previous/next wire.
             # This is 0 when there is no prev/next wire. It is -n
@@ -1030,6 +1031,8 @@ class Mininec:
             # is negative if the polarity changes, i.e. when we have a
             # connection from end1 to end1 of the other wire or end2 to
             # end2 of the other wire.
+            # Note that i1 is later re-used as an index into self.seg
+            # while i2 is re-used as a wire index.
 
             # n is the segment index.
             i1 = w.idx_1
@@ -1038,19 +1041,21 @@ class Mininec:
             # compute connectivity data (pulses n1 to n)
             # We make end_segs 0-based and use None instead of 0
             n1 = n + 1
-            self.geo [i].end_segs [0] = n1 - 1
+            w.end_segs [0] = n1 - 1
             if w.n_segments == 1 and i1 == 0:
-                self.geo [i].end_segs [0] = None
+                w.end_segs [0] = None
             n = n1 + w.n_segments
             if i1 == 0:
                 n -= 1
             if i2 == 0:
                 n -= 1
-            self.geo [i].end_segs [1] = n - 1
+            w.end_segs [1] = n - 1
             if w.n_segments == 1 and i2 == 0:
-                self.geo [i].end_segs [1] = None
+                w.end_segs [1] = None
             # This used to be a Goto 1247 with comment
             # single segmen 0 pulse case
+            # This happens whenever an *unconnected* 1-segment wire is seen,
+            # this has 0 pulses.
             if n < n1:
                 i1 = n1 + 2 * i
                 seg [i1] = w.p1
@@ -2135,7 +2140,7 @@ class Mininec:
         """
         if pulse is None:
             for wire in self.geo:
-                for p in wire.segment_iter ():
+                for p in wire.pulse_iter ():
                     load.add_pulse (p)
             # Avoid adding same load several times
             if load.n not in self.loadidx:
@@ -2351,7 +2356,7 @@ class Mininec:
                         % format_float
                             ((c.real, c.imag, np.abs (c), a), use_e = True)
                         )
-            for k in wire.segment_iter (yield_ends = False):
+            for k in wire.pulse_iter (yield_ends = False):
                 c = self.current [k]
                 a = np.angle (c) / np.pi * 180
                 r.append \
@@ -2743,7 +2748,7 @@ class Mininec:
                     ( ('%-13s ' * 3 + '    %-10s %-4s %-4s %-4s')
                     % (('-',) * 6 + ('0',))
                     )
-            for k in wire.segment_iter ():
+            for k in wire.pulse_iter ():
                 idx = 2 * self.w_per [k] + k + 1
                 seg = tuple (self.seg [idx])
                 r.append (self.seg_as_mininec (wire, seg, k))
