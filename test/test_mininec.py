@@ -750,19 +750,28 @@ class Test_Doctest:
 
     flags = doctest.NORMALIZE_WHITESPACE
 
-    def test_mininec (self):
-        num_tests = 340
+    def run_test (self, module, n):
         f, t  = doctest.testmod \
-            (mininec.mininec, verbose = False, optionflags = self.flags)
-        fn = os.path.basename (mininec.mininec.__file__)
+            (module, verbose = False, optionflags = self.flags)
+        fn = os.path.basename (module.__file__)
         format_ok  = '%(fn)s passes all of %(t)s doc-tests'
         format_nok = '%(fn)s fails %(f)s of %(t)s doc-tests'
         if f:
             msg = format_nok % locals ()
         else:
             msg = format_ok % locals ()
-        exp = 'mininec.py passes all of %d doc-tests' % num_tests
+        exp = '%s passes all of %d doc-tests' % (fn, n)
         assert exp == msg
+    # end def run_test
+
+    def test_mininec (self):
+        num_tests = 339
+        self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
+
+    def test_util (self):
+        num_tests = 1
+        self.run_test (mininec.util, num_tests)
+    # end def test_util
 
 # end class Test_Doctest

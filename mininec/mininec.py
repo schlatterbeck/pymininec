@@ -31,6 +31,8 @@ import numpy as np
 from datetime import datetime
 from scipy.special import ellipk
 from scipy.integrate import fixed_quad
+from mininec.util  import format_float
+from mininec.pulse import Pulse_Container, Pulse
 
 legendre_cache = {}
 try:
@@ -40,40 +42,6 @@ try:
     legendre_cache [8] = [x / 2 for x in _cached_roots_legendre (8)]
 except ImportError:
     pass
-
-def format_float (floats, use_e = 0):
-    """ Reproduce floating-point formatting of the Basic code
-    Test special case with large number, should usually set 'use_e':
-    >>> print ('%s' % format_float ((3e7,)))
-     30000000
-    """
-    r = []
-    for f in floats:
-        if f == 0:
-            fmt = '% .1f'
-        else:
-            prec = 6 - int (np.log (abs (f)) / np.log (10))
-            if prec < 0:
-                prec = 0
-            fmt = '%% .%df' % prec
-        if use_e and abs (f) < 1e-1:
-            fmt = '% e'
-            if abs (f) == 0:
-                fmt = '% .0f'
-        s = fmt % f
-        if fmt != '% e':
-            if '.' in s:
-                s = s [:9]
-                s = s.rstrip ('0')
-                s = s.rstrip ('.')
-                if s.startswith (' 0.') or s.startswith ('-0.'):
-                    s = s [0] + s [2:]
-                s = '%-9s' % s
-        else:
-            s = s.upper ()
-        r.append (s)
-    return tuple (r)
-# end def format_float
 
 class Angle:
     """ Represents the stepping of Zenith and Azimuth angles
@@ -602,7 +570,7 @@ class Wire:
         n_segments (S1)
         wire_len (D)
         seg_len  (S)
-        dirs (CA, CB, CG)
+        dirvec (CA, CB, CG)
     >>> wire = Wire (1, 0, 0, 0, 0, 0, 25, 0.001)
     >>> wire
     Wire [0 0 0]-[ 0  0 25], r=0.001
@@ -616,6 +584,7 @@ class Wire:
         self.p1         = np.array ([x1, y1, z1])
         self.p2         = np.array ([x2, y2, z2])
         self.endpoints  = np.array ([self.p1, self.p2])
+        self.pulses     = []
         self.r = r
         if r <= 0:
             raise ValueError ("Radius must be >0")
@@ -626,7 +595,7 @@ class Wire:
         self.seg_len  = self.wire_len / self.n_segments
         # Original comment: compute direction cosines
         # Unit vector in wire direction
-        self.dirs = diff / self.wire_len
+        self.dirvec   = diff / self.wire_len
         self.end_segs = [None, None]
         # Links to previous/next connected wire (at start/end)
         # conn [0] contains wires that link to our first end
@@ -685,6 +654,8 @@ class Wire:
             that doesn't return a match we might use a binary search via
             one of the coordinates (and then determine the euclidian
             distance).
+
+            Also compute pulses.
         """
 
         # This rolls the end-matching computation of 4
@@ -702,6 +673,58 @@ class Wire:
                 self.conn  [n1].add (other, self, n1, 1, s)
             else:
                 parent.end_dict [ep_tuple] = (n1, self)
+        self.end_segs [0] = parent.pulses.pulse_idx
+        if self.n_segments == 1 and self.idx_1 == 0:
+            self.end_segs [0] = None
+        npulse = self.n_segments + 1 - (not self.idx_1) - (not self.idx_2)
+        self.end_segs [1] = parent.pulses.pulse_idx + npulse
+        if self.n_segments == 1 and self.idx_2 == 0:
+            self.end_segs [1] = None
+        # inversion of Z component
+        invz = np.array ([1, 1, -1])
+        # First segment start
+        seg  = np.copy (self.p1)
+        inc  = self.dirvec * self.seg_len
+        inc2 = 2 * inc
+        pu   = parent.pulses
+        # Connection to other wire(s) at end 1
+        if self.idx_1 != 0 and abs (self.idx_1) - 1 != self.n:
+            assert not self.is_ground [0]
+            other = parent.geo [abs (self.idx_1) - 1]
+            sgn   = np.sign (self.idx_1)
+            oinc  = other.dirvec * other.seg_len * sgn
+            prev  = self.p1 - oinc
+            p = Pulse (pu, self.p1, prev, seg + inc, other, self, sgn = sgn)
+            if self.n_segments == 1 and self.idx_2 == 0:
+                p.c_per [1] = 0
+            self.pulses.append (p)
+        elif self.is_ground [0]:
+            s = seg + inc
+            p = Pulse (pu, self.p1, s * invz, s, self, self, gnd = 0)
+            self.pulses.append (p)
+        for i in range (self.n_segments - 1):
+            s = seg + (i + 1) * self.dirvec * self.seg_len
+            p = Pulse (pu, s, s - inc, s + inc, self, self)
+            self.pulses.append (p)
+            if i == 0 and self.idx_1 == 0:
+                p.c_per [0] = 0
+            if i == self.n_segments - 2 and self.idx_2 == 0:
+                p.c_per [1] = 0
+        seg = seg + (self.n_segments - 1) * self.dirvec * self.seg_len
+        # Connection to other wire(s) at end 2
+        if self.idx_2 != 0 and abs (self.idx_2) - 1 != self.n:
+            assert not self.is_ground [1]
+            other = parent.geo [abs (self.idx_2) - 1]
+            sgn   = np.sign (self.idx_2)
+            oinc  = other.dirvec * other.seg_len * sgn
+            next  = self.p2 + oinc
+            p = Pulse (pu, self.p2, seg, next, self, other, sgn = sgn)
+            if self.n_segments == 1 and self.idx_1 == 0:
+                p.c_per [0] = 0
+            self.pulses.append (p)
+        elif self.is_ground [1]:
+            p = Pulse (pu, self.p2, seg, seg * invz, self, self, gnd = 1)
+            self.pulses.append (p)
     # end def compute_connections
 
     def connections (self):
@@ -739,19 +762,16 @@ class Wire:
         return '\n'.join (r)
     # end def conn_as_str
 
+    def pulse_idx_iter (self, yield_ends = True):
+        for p in self.pulse_iter (yield_ends):
+            yield p.idx
+    # end def pulse_idx_iter
+
     def pulse_iter (self, yield_ends = True):
-        if self.end_segs [0] is not None or self.end_segs [1] is not None:
-            if self.end_segs [1] is None:
-                if yield_ends or self.end_segs [0] not in self.conn [0].pulses:
-                    yield self.end_segs [0]
-            elif self.end_segs [0] is None:
-                if yield_ends or self.end_segs [1] not in self.conn [1].pulses:
-                    yield self.end_segs [1]
-            else:
-                u = self.conn [0].pulses.union (self.conn [1].pulses)
-                for k in range (self.end_segs [0], self.end_segs [1] + 1):
-                    if yield_ends or k not in u:
-                        yield k
+        for p in self.pulses:
+            if p.wires [0] != p.wires [1] and not yield_ends:
+                continue
+            yield p
     # end def pulse_iter
 
     def __str__ (self):
@@ -928,6 +948,8 @@ class Mininec:
         self.geo        = geo
         # Dictionary of ends to compute matches
         self.end_dict   = {}
+        # Pulses
+        self.pulses     = Pulse_Container ()
         self.print_opts = print_opts or set (('far-field',))
         if not self.media or len (self.media) == 1:
             self.boundary = 'linear'
@@ -1104,13 +1126,13 @@ class Mininec:
                      )
                 if c_per [(n1, 1)] == -(i + 1):
                     f3 [-1] = -f3 [-1]
-                seg [i1] = seg [i1] - f3 * self.geo [i2 - 1].dirs
+                seg [i1] = seg [i1] - f3 * self.geo [i2 - 1].dirvec
                 i3 += 1
 
             i6 = n + 2 * (i + 1)
             for i4 in range (i1 + 1, i6 + 1):
                 j = i4 - i3
-                seg [i4] = w.p1 + j * w.dirs * w.seg_len
+                seg [i4] = w.p1 + j * w.dirvec * w.seg_len
             # This used to be an inverse comparison with a goto 1245
             if c_per [(n, 2)] != 0:
                 i2 = abs (c_per [(n, 2)])
@@ -1122,7 +1144,7 @@ class Mininec:
                 i3 = i6 - 1
                 if i + 1 == -c_per [(n, 2)]:
                     f3 [-1] = -f3 [-1]
-                seg [i6] = seg [i3] + f3 * self.geo [i2 - 1].dirs
+                seg [i6] = seg [i3] + f3 * self.geo [i2 - 1].dirvec
         self.w_per = np.array ([w_per [i] for i in sorted (w_per)])
         c_iter = iter (sorted (c_per))
         self.c_per = np.array \
@@ -1221,9 +1243,9 @@ class Mininec:
                                 if s_x [0] == -s_x [1]:
                                     # grounded ends, only update last axis
                                     v = np.array ([0, 0, 1])
-                                    vec += 2 * b * wire.dirs * v
+                                    vec += 2 * b * wire.dirvec * v
                                     continue
-                                vec += kvec2 * b * wire.dirs
+                                vec += kvec2 * b * wire.dirvec
                                 continue
                             else: # real ground case (Line 747)
                                 assert self.media
@@ -1273,8 +1295,8 @@ class Mininec:
                                 b   = f3 * s * self.current [i]
                                 w67 = b * v89
                                 w   = self.geo [l]
-                                d   = v21.imag * w.dirs [0] \
-                                    + v21.real * w.dirs [1]
+                                d   = v21.imag * w.dirvec [0] \
+                                    + v21.real * w.dirvec [1]
                                 z67 = d * b * h89
                                 tm1 = np.array \
                                     ([         v21.imag * z67.real
@@ -1283,7 +1305,7 @@ class Mininec:
                                        + 1j * (v21.real * z67.imag)
                                      , 0
                                     ])
-                                vec += (w.dirs * w67 + tm1) * kvec2
+                                vec += (w.dirvec * w67 + tm1) * kvec2
                 h12 = sum (vec * rvec.imag) * self.g0 * -1j
                 vv  = np.array ([v21.imag, v21.real])
                 x34 = sum (vec [:2] * vv) * self.g0 * -1j
@@ -1454,7 +1476,7 @@ class Mininec:
         i2v  = np.abs (self.seg_idx.T [1]) - 1
         f4   = np.sign (self.seg_idx.T [0]) * s [i1v]
         f5   = np.sign (self.seg_idx.T [1]) * s [i2v]
-        d    = np.array  ([w.dirs for w in self.geo])
+        d    = np.array  ([w.dirvec for w in self.geo])
         # The t567 matrix replaces vectors T5, T6, T7
         t567 = \
             ( np.tile (f4, (3, 1)).T * d [i1v]
@@ -1477,8 +1499,8 @@ class Mininec:
                         f7 = np.sign (self.seg_idx [j][1])
                     f8 = 0
                     if k >= 0:
-                        di = self.geo [i1v [i]].dirs
-                        dj = self.geo [i1v [j]].dirs
+                        di = self.geo [i1v [i]].dirvec
+                        dj = self.geo [i1v [j]].dirvec
                         # set flag to avoid redundant calculations
                         if  (   i1v [i] == i2v [i]
                             and (  di [0] + di [1] == 0
@@ -1511,8 +1533,8 @@ class Mininec:
                         # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
                         f7v  = np.array ([1, 1, f7])
                         f6v  = np.array ([1, 1, f6])
-                        di1  = self.geo [i1v [j]].dirs
-                        di2  = self.geo [i2v [j]].dirs
+                        di1  = self.geo [i1v [j]].dirvec
+                        di2  = self.geo [i2v [j]].dirvec
                         kvec = np.array ([1, 1, k])
                         # We do real and imaginary part in one go:
                         vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
@@ -1577,7 +1599,7 @@ class Mininec:
                     # 324
                     if self.seg_idx [p1][0] != self.seg_idx [p1][1]:
                         continue
-                    d = self.geo [i2v [j]].dirs
+                    d = self.geo [i2v [j]].dirvec
                     # 325-327
                     # The following continue statement *is* reached by
                     # the current tests but is flagged as not reached by
@@ -1626,7 +1648,7 @@ class Mininec:
     def nf_helper (self, cp, j, k, v, j12, wj, f67, f45):
         v6  = np.array ([1, 1, f67 [0]])
         v7  = np.array ([1, 1, f67 [1]])
-        dir = [w.dirs for w in wj]
+        dir = [w.dirvec for w in wj]
         j3  = np.max (j12)
         # compute psi(0,J,J+.5)
         p2  = 2 * j3 + j + 1
@@ -2174,7 +2196,7 @@ class Mininec:
         """
         if pulse is None:
             for wire in self.geo:
-                for p in wire.pulse_iter ():
+                for p in wire.pulse_idx_iter ():
                     load.add_pulse (p)
             # Avoid adding same load several times
             if load.n not in self.loadidx:
@@ -2390,7 +2412,7 @@ class Mininec:
                         % format_float
                             ((c.real, c.imag, np.abs (c), a), use_e = True)
                         )
-            for k in wire.pulse_iter (yield_ends = False):
+            for k in wire.pulse_idx_iter (yield_ends = False):
                 c = self.current [k]
                 a = np.angle (c) / np.pi * 180
                 r.append \
@@ -2733,15 +2755,6 @@ class Mininec:
         return '\n'.join (r)
     # end def source_data_as_mininec
 
-    def seg_as_mininec (self, wire, seg, idx):
-        l = []
-        l.append (('%-13s ' * 3) % format_float (seg))
-        l.append ('%-12s' % format_float ([wire.r]))
-        l.append ('%4d %4d' % tuple (self.c_per [idx]))
-        l.append ('%4d' % (idx + 1))
-        return  ''.join (l)
-    # end def seg_as_mininec
-
     def wires_as_mininec (self):
         r = []
         r.append ('NO. OF WIRES: %d' % len (self.geo))
@@ -2782,10 +2795,8 @@ class Mininec:
                     ( ('%-13s ' * 3 + '    %-10s %-4s %-4s %-4s')
                     % (('-',) * 6 + ('0',))
                     )
-            for k in wire.pulse_iter ():
-                idx = 2 * self.w_per [k] + k + 1
-                seg = tuple (self.seg [idx])
-                r.append (self.seg_as_mininec (wire, seg, k))
+            for p in wire.pulse_iter ():
+                r.append (p.as_mininec ())
         return '\n'.join (r)
     # end def wires_as_mininec
 
