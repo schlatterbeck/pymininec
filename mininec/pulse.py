@@ -68,48 +68,43 @@ class Pulse:
         The parameter sgn applies only to end segments and specifies the
         direction of the connected wire. It is applied to the dirvec of
         the wire.
+        We compute self.sign from self.ground and self.sgn which also
+        takes the sign due to grounding into account.
     """
 
     def __init__ \
-        (self, container, point, end1, end2, wire1, wire2, gnd = None, sgn = 1):
+        ( self, container, point, end1, end2
+        , wire1, wire2, gnd = None, sgn = None
+        ):
         self.container = container
         self.container.add (self)
         self.point = point
         self.ends  = [end1, end2]
         self.wires = [wire1, wire2]
         self.sgn   = sgn
+        if sgn is None:
+            self.sgn = [1, 1]
         assert not gnd or gnd == 1
         self.ground = np.array ([False, False])
         if gnd is not None:
             self.ground [gnd] = True
+        # The main wire is the one with the larger index
+        self.wire_idx = np.argmax ([w.n for w in self.wires])
+        self.wire     = self.wires [self.wire_idx]
+        self.sign     = self.sgn
         idx = np.array ([w.n for w in self.wires]) + 1
         if idx [0] == idx [1]:
             gnd = np.ones (2)
             gnd [self.ground] = -1
-            idx = idx * gnd
-        else:
-            idx [int (not self.my_wire_idx)] *= self.sgn
+            self.sign = self.sign * gnd
+        idx = idx * self.sign
         self.c_per = idx
     # end def __init__
-
-    @property
-    def my_wire_idx (self):
-        """ My wire is always the one with the higher index
-        """
-        return np.argmax ([w.n for w in self.wires])
-    # end def my_wire_idx
-
-    @property
-    def my_wire (self):
-        """ My wire is always the one with the lower index
-        """
-        return self.wires [self.my_wire_idx]
-    # end def my_wire
 
     def as_mininec (self):
         l = []
         l.append (('%-13s ' * 3) % format_float (self.point))
-        l.append ('%-12s' % format_float ([self.my_wire.r]))
+        l.append ('%-12s' % format_float ([self.wire.r]))
         l.append ('%4d %4d' % tuple (self.c_per))
         l.append ('%4d' % (self.idx + 1))
         return  ''.join (l)

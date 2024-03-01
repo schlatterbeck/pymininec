@@ -691,8 +691,8 @@ class Wire:
         if self.idx_1 != 0 and abs (self.idx_1) - 1 != self.n:
             assert not self.is_ground [0]
             other = parent.geo [abs (self.idx_1) - 1]
-            sgn   = np.sign (self.idx_1)
-            oinc  = other.dirvec * other.seg_len * sgn
+            sgn   = [np.sign (self.idx_1), 1]
+            oinc  = other.dirvec * other.seg_len * sgn [0]
             prev  = self.p1 - oinc
             p = Pulse (pu, self.p1, prev, seg + inc, other, self, sgn = sgn)
             if self.n_segments == 1 and self.idx_2 == 0:
@@ -715,8 +715,8 @@ class Wire:
         if self.idx_2 != 0 and abs (self.idx_2) - 1 != self.n:
             assert not self.is_ground [1]
             other = parent.geo [abs (self.idx_2) - 1]
-            sgn   = np.sign (self.idx_2)
-            oinc  = other.dirvec * other.seg_len * sgn
+            sgn   = [1, np.sign (self.idx_2)]
+            oinc  = other.dirvec * other.seg_len * sgn [1]
             next  = self.p2 + oinc
             p = Pulse (pu, self.p2, seg, next, self, other, sgn = sgn)
             if self.n_segments == 1 and self.idx_1 == 0:
@@ -1212,35 +1212,31 @@ class Mininec:
                 for k in self.image_iter ():
                     kvec  = np.array ([1, 1, k])
                     kvec2 = np.array ([k, k, 1])
-                    for i in range (len (self.seg_idx)):
-                        s_x = self.seg_idx [i]
+                    for p in self.pulses:
                         # Code at 716, 717
                         # For mirror image do nothing if one end is grounded
-                        if k <= 0 and s_x [0] == -s_x [1]:
+                        if k <= 0 and p.ground.any ():
                             continue
-                        j = 2 * self.w_per [i] + i + 1
                         # for each end of pulse compute
                         # a contribution to e-field
                         # End of this loop (goto for continue) is 812
                         for f5 in range (2):
-                            l = abs (s_x [f5]) - 1
-                            wire = self.geo [l]
-                            f3 = np.sign (s_x [f5]) * self.w * wire.seg_len / 2
+                            wire = p.wires [f5]
+                            f3 = p.sign [f5] * self.w * wire.seg_len / 2
                             # Line 723, 724
                             # No contribution by grounded end
-                            if s_x [0] == -s_x [1] and f3 < 0:
+                            if p.ground.any () and p.sign [f5] < 0:
                                 continue
                             # Standard case (condition Line 725, 726)
                             if  (  k == 1
                                 or not self.media
                                 or self.media [0].is_ideal
                                 ):
-                                seg = self.seg [j]
-                                s2  = self.w * sum (seg * rvec.real * kvec)
+                                s2  = self.w * sum (p.point * rvec.real * kvec)
                                 s   = np.e ** (1j * s2)
-                                b   = f3 * s * self.current [i]
+                                b   = f3 * s * self.current [p.idx]
                                 # Line 733
-                                if s_x [0] == -s_x [1]:
+                                if p.ground.any ():
                                     # grounded ends, only update last axis
                                     v = np.array ([0, 0, 1])
                                     vec += 2 * b * wire.dirvec * v
@@ -1255,12 +1251,12 @@ class Mininec:
                                 # begin by finding specular distance
                                 t4 = 1e5
                                 if rt3.real != 0:
-                                    t4 = -self.seg [j][2] * rt3.imag / rt3.real
-                                b9 = t4 * v21.real + self.seg [j][0]
+                                    t4 = -p.point [2] * rt3.imag / rt3.real
+                                b9 = t4 * v21.real + p.point [0]
                                 if self.boundary != 'linear':
                                     # Hmm this is pythagoras?
                                     b9 *= b9
-                                    b9 += (self.seg [j][1] - t4 * v21.imag) ** 2
+                                    b9 += (p.point [1] - t4 * v21.imag) ** 2
                                     b9 = np.sqrt (b9)
                                 # search for the corresponding medium
                                 # Find minimum index where b9 > coord
@@ -1288,15 +1284,13 @@ class Mininec:
                                 # compute contribution to sum
                                 assert self.media and j2 < len (self.media)
                                 h = self.media [j2].height
-                                seg = self.seg [j]
-                                sh  = seg - np.array ([0, 0, 2 * h])
+                                sh  = p.point - np.array ([0, 0, 2 * h])
                                 s2  = self.w * sum (kvec * sh * rvec.real)
                                 s   = np.e ** (1j * s2)
-                                b   = f3 * s * self.current [i]
+                                b   = f3 * s * self.current [p.idx]
                                 w67 = b * v89
-                                w   = self.geo [l]
-                                d   = v21.imag * w.dirvec [0] \
-                                    + v21.real * w.dirvec [1]
+                                d   = v21.imag * wire.dirvec [0] \
+                                    + v21.real * wire.dirvec [1]
                                 z67 = d * b * h89
                                 tm1 = np.array \
                                     ([         v21.imag * z67.real
@@ -1305,7 +1299,7 @@ class Mininec:
                                        + 1j * (v21.real * z67.imag)
                                      , 0
                                     ])
-                                vec += (w.dirvec * w67 + tm1) * kvec2
+                                vec += (wire.dirvec * w67 + tm1) * kvec2
                 h12 = sum (vec * rvec.imag) * self.g0 * -1j
                 vv  = np.array ([v21.imag, v21.real])
                 x34 = sum (vec [:2] * vv) * self.g0 * -1j
