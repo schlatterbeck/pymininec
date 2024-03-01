@@ -1056,7 +1056,7 @@ class Mininec:
             And n is the index of the next end segment.
         """
         n = 0
-        self.c_per = c_per = {}
+        c_per = {}
         self.w_per = w_per = {}
         self.seg   = seg   = {}
         for i, w in enumerate (self.geo):
@@ -1141,17 +1141,17 @@ class Mininec:
                 seg [i6] = seg [i3] + f3 * self.geo [i2 - 1].dirvec
         self.w_per = np.array ([w_per [i] for i in sorted (w_per)])
         c_iter = iter (sorted (c_per))
-        self.c_per = np.array \
+        c_per = np.array \
             ([[c_per [k1], c_per [k2]] for k1, k2 in zip (c_iter, c_iter)])
         self.seg = np.array ([self.seg [i] for i in sorted (self.seg)])
         # This fills the 0-values in c_per with values from w_per
         # See code in lines 1282, 1283, a side-effect hidden in the
         # print routine :-(
-        # Note that we keep c_per for printing (it has 0 entries)
-        self.seg_idx = copy.deepcopy (self.c_per)
+        # Note that there is a c_per in Pulse for printing
+        self.seg_idx = c_per
         # Fill 0s with values from w_per
         for idx in range (2):
-            cnull = self.c_per.T [idx] == 0
+            cnull = self.seg_idx.T [idx] == 0
             self.seg_idx.T [idx][cnull] = self.w_per [cnull]
         # make indeces 0-based
         self.w_per   -= 1
