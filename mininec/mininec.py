@@ -676,7 +676,7 @@ class Wire:
         self.end_segs [0] = parent.pulses.pulse_idx
         if self.n_segments == 1 and self.idx_1 == 0:
             self.end_segs [0] = None
-        npulse = self.n_segments + 1 - (not self.idx_1) - (not self.idx_2)
+        npulse = self.n_segments - (not self.idx_1) - (not self.idx_2)
         self.end_segs [1] = parent.pulses.pulse_idx + npulse
         if self.n_segments == 1 and self.idx_2 == 0:
             self.end_segs [1] = None
@@ -1085,17 +1085,11 @@ class Mininec:
             # compute connectivity data (pulses n1 to n)
             # We make end_segs 0-based and use None instead of 0
             n1 = n + 1
-            w.end_segs [0] = n1 - 1
-            if w.n_segments == 1 and i1 == 0:
-                w.end_segs [0] = None
             n = n1 + w.n_segments
             if i1 == 0:
                 n -= 1
             if i2 == 0:
                 n -= 1
-            w.end_segs [1] = n - 1
-            if w.n_segments == 1 and i2 == 0:
-                w.end_segs [1] = None
             # This used to be a Goto 1247 with comment
             # single segmen 0 pulse case
             # This happens whenever an *unconnected* 1-segment wire is seen,
