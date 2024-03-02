@@ -44,6 +44,10 @@ class Pulse_Container:
             yield p
     # end def __iter__
 
+    def __len__ (self):
+        return self.pulse_idx
+    # end def __len__
+
 # end class Pulse_Container
 
 class Pulse:

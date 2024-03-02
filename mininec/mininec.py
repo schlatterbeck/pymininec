@@ -1508,15 +1508,16 @@ class Mininec:
                         p1 = 2 * self.w_per [i] + i + 1
                         p2 = 2 * self.w_per [j] + j + 1
                         p3 = p2 + 0.5
-                        p4 = i2v [j]
-                        vp = self.vector_potential (k, p1, p2, p3, p4, i, j)
+                        wire = self.geo [i2v [j]]
+                        vp = self.vector_potential (k, p1, p2, p3, wire, i, j)
                         u = vp * np.sign (self.seg_idx [j][1])
                         # compute PSI(M,N-1/2,N)
                         p3 = p2
                         p2 -= 0.5
-                        p4 = i1v [j]
+                        wire = self.geo [i1v [j]]
                         if f8 < 2:
-                            vp = self.vector_potential (k, p1, p2, p3, p4, i, j)
+                            vp = self.vector_potential \
+                                (k, p1, p2, p3, wire, i, j)
                         v = vp * np.sign (self.seg_idx [j][0])
                         # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
                         f7v  = np.array ([1, 1, f7])
@@ -1533,39 +1534,40 @@ class Mininec:
                             p1 -= 1
                         p2 = p3
                         p3 += 1
-                        p4 = i2v [j]
+                        wire = self.geo [i2v [j]]
                         if f8 < 2:
                             if f8 == 1:
                                 u56 = np.sign (self.seg_idx [j][1]) * u + vp
                             else:
                                 u56 = self.scalar_potential \
-                                    (k, p1, p2, p3, p4, i, j)
+                                    (k, p1, p2, p3, wire, i, j)
                             # compute PSI(M-1/2,N,N+1)
                             # Code at 291
                             p1 -= 1
                             sp = self.scalar_potential \
-                                (k, p1, p2, p3, p4, i, j)
+                                (k, p1, p2, p3, wire, i, j)
                             seglen = self.geo [i2v [j]].seg_len
                             u12 = (sp - u56) / seglen
                             # compute PSI(M+1/2,N-1,N)
                             p1  += 1
                             p3  = p2
                             p2  -= 1
-                            p4  = i1v [j]
+                            wire = self.geo [i1v [j]]
                             u34 = self.scalar_potential \
-                                (k, p1, p2, p3, p4, i, j)
+                                (k, p1, p2, p3, wire, i, j)
                             # compute PSI(M-1/2,N-1,N)
                             if f8 >= 1:
                                 sp = u56
                             else:
                                 p1 -= 1
                                 sp = self.scalar_potential \
-                                    (k, p1, p2, p3, p4, i, j)
+                                    (k, p1, p2, p3, wire, i, j)
                             # gradient of scalar potential contribution
                             seglen = self.geo [i1v [j]].seg_len
                             u12 += (u34 - sp) / seglen
                         else:
-                            sp = self.scalar_potential (k, p1, p2, p3, p4, i, j)
+                            sp = self.scalar_potential \
+                                (k, p1, p2, p3, wire, i, j)
                             seglen = self.geo [i1v [j]].seg_len
                             sg  = np.sign (self.seg_idx [j][1])
                             u12 = (2 * sp - 4 * u * sg) / seglen
@@ -1634,20 +1636,20 @@ class Mininec:
     # end def geo_as_str
 
     def nf_helper (self, cp, j, k, v, j12, wj, f67, f45):
-        v6  = np.array ([1, 1, f67 [0]])
-        v7  = np.array ([1, 1, f67 [1]])
-        dir = [w.dirvec for w in wj]
-        j3  = np.max (j12)
+        v6   = np.array ([1, 1, f67 [0]])
+        v7   = np.array ([1, 1, f67 [1]])
+        dir  = [w.dirvec for w in wj]
+        j3   = np.max (j12)
         # compute psi(0,J,J+.5)
-        p2  = 2 * j3 + j + 1
-        p3  = p2 + .5
-        p4  = j12 [1]
-        u   = self.psi_near_field_75 (v, k, p2, p3, p4) * f45 [1]
+        p2   = 2 * j3 + j + 1
+        p3   = p2 + .5
+        wire = self.geo [j12 [1]]
+        u    = self.psi_near_field_75 (v, k, p2, p3, wire) * f45 [1]
         # compute psi(0,J-.5,J)
-        p3 = p2
-        p2 = p2 - .5
-        p4 = j12 [0]
-        v   = self.psi_near_field_66 (v, k, p2, p3, p4) * f45 [0]
+        p3   = p2
+        p2   = p2 - .5
+        wire = self.geo [j12 [0]]
+        v    = self.psi_near_field_66 (v, k, p2, p3, wire) * f45 [0]
         # real part of vector potential contribution
         # imaginary part of vector potential contribution
         kv  = np.array ([1, 1, k])
@@ -1734,24 +1736,24 @@ class Mininec:
                         # We compute both, E and H and continue
                         d   = sum (v35_e * t567 [i]) * self.w2
                         # compute psi(.5,J,J+1)
-                        p2  = 2 * np.max (j12) + j + 1
-                        p3  = p2 + 1
-                        p4  = j12 [1]
-                        u   = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p2, p3, p4)
+                        p2   = 2 * np.max (j12) + j + 1
+                        p3   = p2 + 1
+                        wire = self.geo [j12 [1]]
+                        u    = self.psi_near_field_56 \
+                            (vec, t567 [i], k, .5, p2, p3, wire)
                         # compute psi(-.5,J,J+1)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p2, p3, p4)
+                            (vec, t567 [i], k, -.5, p2, p3, wire)
                         u   = (tmp - u) / wj [1].seg_len
                         # compute psi(.5,J-1,J)
-                        p3  = p2
-                        p2 -= 1
-                        p4  = j12 [0]
-                        u34 = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p2, p3, p4)
+                        p3   = p2
+                        p2  -= 1
+                        wire = self.geo [j12 [0]]
+                        u34  = self.psi_near_field_56 \
+                            (vec, t567 [i], k, .5, p2, p3, wire)
                         # compute psi(-.5,J-1,J)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p2, p3, p4)
+                            (vec, t567 [i], k, -.5, p2, p3, wire)
                         # gradient of scalar potential
                         u56 += (u + (u34 - tmp) / wj [0].seg_len + d) * k
                         # Here would be a GOTO 1048 (a continue of the K loop)
@@ -1961,13 +1963,14 @@ class Mininec:
             return r / b
     # end def fast_quad
 
-    def psi (self, vec2, vecv, k, p2, p3, p4, exact = False, fvs = 0):
+    def psi (self, vec2, vecv, k, p2, p3, wire, exact = False, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
             The variable fvs is used to distiguish code path at the end.
             The variable p2 is the index of the segment, seems this can
             be a float in which case the middle of two segs is used.
-            The variable p4 is the index of the wire.
+            The variable p4 was the index of the wire, we now pass wire
+            directly.
             vec2 replaces (X2, Y2, Z2)
             vecv replaces (V1, V2, V3)
             i6: Use reduced kernel if 0, this was I6! (single precision)
@@ -1979,7 +1982,7 @@ class Mininec:
             k:
             p2:  segment index 1 (0-based)
             p3:  segment index 2 (0-based)
-            p4:  wire index (0-based)
+            wire: the wire
             fvs: scalar vs. vector potential
             is_near: This originally tested input C$ for "N" which is
                      the selection of near field compuation, this forces
@@ -2005,7 +2008,7 @@ class Mininec:
         # 5.330494 -0.1568644j
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> r = m.psi (vec2, vecv, 1, 1, 1.5, 0, exact = True)
+        >>> r = m.psi (vec2, vecv, 1, 1, 1.5, m.geo [0], exact = True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         5.3304830 -0.1568644j
 
@@ -2014,11 +2017,10 @@ class Mininec:
         >>> vec2 = np.array ([13.91929, 0, 0])
         >>> vecv = np.array ([16.06072, 0, 0])
         >>> x = m.psi
-        >>> r = x (vec2, vecv, k=1, p2=8, p3=9, p4=0, fvs = 1)
+        >>> r = x (vec2, vecv, k=1, p2=8, p3=9, wire=m.geo [0], fvs = 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156090j
         """
-        wire = self.geo [p4]
         # magnitude of S(U) - S(M)
         d0 = np.linalg.norm (vec2)
         # magnitude of S(V) - S(M)
@@ -2055,7 +2057,6 @@ class Mininec:
             i6 = wire.i6
         # Gauss quadrature was explicitly implemented here, we use
         # fixed_quad from a scipy lib for now.
-        wire = self.geo [p4]
         args = vec2, vecv, k, wire, bool (i6)
         # Integrate, need to multiply by f2 below.
         r = self.fast_quad (0, 1/f2, args, gauss_n)
@@ -2094,7 +2095,7 @@ class Mininec:
         return vec2, vecv
     # end def psi_common_vec1_vecv
 
-    def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, p4):
+    def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, wire):
         """ Compute psi used several times during computation of near field
             Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
@@ -2111,7 +2112,7 @@ class Mininec:
         # 0.5496336 -0.3002106j
         >>> vec0 = np.array ([0, -1, -1])
         >>> vect = np.array ([8.565715E-02, 0, 0])
-        >>> r = m.psi_near_field_56 (vec0, vect, k=1, p1=0.5, p2=1, p3=2, p4=0)
+        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, 1, 2, m.geo [0])
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.5496335 -0.3002106j
         """
@@ -2120,10 +2121,10 @@ class Mininec:
         vec1 = vec0 + p1 * vect / 2
         vec2 = vec1 - kvec * self.seg [int (p2)]
         vecv = vec1 - kvec * self.seg [int (p3)]
-        return self.psi (vec2, vecv, k, p2, p3, p4, exact = False)
+        return self.psi (vec2, vecv, k, p2, p3, wire, exact = False)
     # end def psi_near_field_56
 
-    def psi_near_field_66 (self, vec0, k, p2, p3, p4):
+    def psi_near_field_66 (self, vec0, k, p2, p3, wire):
         """ Compute psi used during computation of near field
             Original entry point in line 66
             vec0 originally is (X0, Y0, Z0)
@@ -2136,7 +2137,7 @@ class Mininec:
         # Original produces:
         # 0.4792338 -0.1544592j
         >>> vec0 = np.array ([0, -1, -1])
-        >>> r = m.psi_near_field_66 (vec0, k=1, p2=0.5, p3=1, p4=0)
+        >>> r = m.psi_near_field_66 (vec0, k=1, p2=0.5, p3=1, wire=m.geo [0])
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.4792338 -0.1544592j
         """
@@ -2146,10 +2147,10 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
         vecv = vec0 - kvec * self.seg [p3]
-        return self.psi (vec2, vecv, k, p2, p3, p4, exact = False)
+        return self.psi (vec2, vecv, k, p2, p3, wire, exact = False)
     # end def psi_near_field_66
 
-    def psi_near_field_75 (self, vec0, k, p2, p3, p4):
+    def psi_near_field_75 (self, vec0, k, p2, p3, wire):
         """ Compute psi used during computation of near field
             Original entry point in line 75
             vec0 originally is (X0, Y0, Z0)
@@ -2163,7 +2164,7 @@ class Mininec:
         # Original produces:
         # 0.3218219 -.1519149j
         >>> vec0 = np.array ([0, -1, -1])
-        >>> r = m.psi_near_field_75 (vec0, k=1, p2=1, p3=1.5, p4=0)
+        >>> r = m.psi_near_field_75 (vec0, k=1, p2=1, p3=1.5, wire=m.geo [0])
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.3218219 -0.1519149j
         """
@@ -2173,7 +2174,7 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * self.seg [p2]
         vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        return self.psi (vec2, vecv, k, p2, p3, p4, exact = False)
+        return self.psi (vec2, vecv, k, p2, p3, wire, exact = False)
     # end def psi_near_field_75
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -2237,7 +2238,7 @@ class Mininec:
             source.register (self, pulse)
     # end def register_source
 
-    def scalar_potential (self, k, p1, p2, p3, p4, i, j):
+    def scalar_potential (self, k, p1, p2, p3, wire, i, j):
         """ Compute scalar potential
             Original entry point in line 87.
             Original comment:
@@ -2250,8 +2251,8 @@ class Mininec:
             is the segment length of the wire
 
             Inputs:
-            k, p1, p2, p3, p4, i, j
-            Note that p1, p2, p3, i, j, p4 are 0-based now.
+            k, p1, p2, p3, wire, i, j
+            Note that p1, p2, p3, i, j are 0-based now.
             accesses self.seg, originally X(I4),Y(I4),Z(I4), X(I5),Y(I5),Z(I5)
             Outputs:
             t1, t2
@@ -2266,15 +2267,14 @@ class Mininec:
         # Original produces:
         # -8.333431E-02 -0.1156091j
         >>> method = m.scalar_potential
-        >>> r = method (k=1, p1=1.5, p2=8, p3=9, p4=0, i=0, j=8)
+        >>> r = method (k=1, p1=1.5, p2=8, p3=9, wire=w [0], i=0, j=8)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
         >>> w [0].r = 0.001
-        >>> r = method (k=1, p1=0.5, p2=1, p3=2, p4=0, i=0, j=0)
+        >>> r = method (k=1, p1=0.5, p2=1, p3=2, wire=w [0], i=0, j=0)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         1.0497691 -0.3085993j
         """
-        wire = self.geo [p4]
         if  (  k < 1
             or wire.r > self.srm
             or p3 != p2 + 1
@@ -2285,13 +2285,14 @@ class Mininec:
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
             wd   = self.wires_unconnected (i, j)
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
-            return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 1, exact = not wd)
+            return self.psi \
+                (vec2, vecv, k, p2, p3, wire, fvs = 1, exact = not wd)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1 + t2 * 1j
     # end def scalar_potential
 
-    def vector_potential (self, k, p1, p2, p3, p4, i, j):
+    def vector_potential (self, k, p1, p2, p3, wire, i, j):
         """ Compute vector potential
             Original entry point in line 102.
             Original comment:
@@ -2300,8 +2301,8 @@ class Mininec:
 
             This *used* to use A(P4), S(P4), where P4 is the index into
             the wire datastructures, A(P4) is the wire radius and S(P4)
-            is the segment length of the wire, we still use p4 as the
-            wire index.
+            is the segment length of the wire, we now directly use the
+            wire, not p4 as the wire index.
             The variable p1 is the index of the segment.
             Inputs:
             k, p2, p3, x(p1),y(p1),z(p1)
@@ -2316,16 +2317,16 @@ class Mininec:
         # Original produces:
         # 0.6747199 -.1555772j
         >>> method = m.vector_potential
-        >>> r = method (k=1, p1=1, p2=1.5, p3=2, p4=0, i=0, j=1)
+        >>> r = method (k=1, p1=1, p2=1.5, p3=2, wire=m.geo [0], i=0, j=1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.6747199 -0.1555773j
         """
-        wire = self.geo [p4]
         if k < 1 or wire.r >= self.srm or i != j or p3 != p2 + .5:
             vec1 = self.seg [p1]
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
             wd = self.wires_unconnected (i, j)
-            return self.psi (vec2, vecv, k, p2, p3, p4, fvs = 0, exact = not wd)
+            return self.psi \
+                (vec2, vecv, k, p2, p3, wire, fvs = 0, exact = not wd)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1 + t2 * 1j

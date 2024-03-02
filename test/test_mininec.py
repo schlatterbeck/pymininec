@@ -267,10 +267,10 @@ class _Test_Base_With_File:
         assert ex [:off] == ac [:off]
         exc = ex [off].strip ()
         acc = ac [off].strip ()
-        assert acc.startswith ('CURRENT = ( ')
+        assert acc.startswith ('CURRENT = (')
         assert acc.endswith (' J)')
-        exc = [float (x) for x in exc [12:-3].split (',')]
-        acc = [float (x) for x in acc [12:-3].split (',')]
+        exc = [float (x) for x in exc [11:-3].split (',')]
+        acc = [float (x) for x in acc [11:-3].split (',')]
         assert round (abs (exc [0] - acc [0]), 12) == 0
         assert round (abs (exc [1] - acc [1]), 12) == 0
         off += 1
