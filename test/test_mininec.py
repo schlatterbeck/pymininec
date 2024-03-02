@@ -463,8 +463,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         ideal = ideal_ground
         m = self.vertical_dipole \
             (wire_dia = 0.01, filename = None, media = [ideal])
-        for i in range (len (m.w_per)):
-            for j in range (len (m.w_per)):
+        for i in range (len (m.pulses)):
+            for j in range (len (m.pulses)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
                 assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
@@ -479,8 +479,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
               + 1j * np.array (matrix_ideal_ground_quarter_from_mininec_i)
         ideal = [ideal_ground]
         m = self.vertical_quarterwave (filename = None, media = ideal)
-        for i in range (len (m.w_per)):
-            for j in range (len (m.w_per)):
+        for i in range (len (m.pulses)):
+            for j in range (len (m.pulses)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
                 assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
@@ -497,8 +497,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         l = Laplace_Load (b = (1., 0), a = (0., -2.193644e-9))
         m = self.vertical_quarterwave \
             (filename = None, media = ideal, load = l, dia = 0.002)
-        for i in range (len (m.w_per)):
-            for j in range (1, len (m.w_per)):
+        for i in range (len (m.pulses)):
+            for j in range (1, len (m.pulses)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
                 assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
@@ -512,8 +512,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         mat   = np.array (matrix_inverted_l_r) \
               + 1j * np.array (matrix_inverted_l_i)
         m = self.inverted_l (filename = None)
-        for i in range (len (m.w_per)):
-            for j in range (len (m.w_per)):
+        for i in range (len (m.pulses)):
+            for j in range (len (m.pulses)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
                 assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
@@ -535,8 +535,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         media = [m1, m2]
         m = self.vertical_quarterwave \
             (filename = 'vertical-rad.pout', media = media)
-        for i in range (len (m.w_per)):
-            for j in range (len (m.w_per)):
+        for i in range (len (m.pulses)):
+            for j in range (len (m.pulses)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
                 assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
@@ -554,8 +554,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         mat = np.array (matrix_ohio_r) + 1j * np.array (matrix_ohio_i)
         nfc = Near_Far_Comparison ()
         m   = nfc.m
-        for i in range (len (m.w_per)):
-            for j in range (len (m.w_per)):
+        for i in range (len (m.pulses)):
+            for j in range (len (m.pulses)):
                 f = int (np.log (abs (mat [i][j].real)) / np.log (10))
                 assert round (abs (mat [i][j].real - m.Z [i][j].real), 3-f) == 0
                 f = int (np.log (abs (mat [i][j].imag)) / np.log (10))
