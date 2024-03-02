@@ -82,12 +82,18 @@ class Pulse:
         ):
         self.container = container
         self.container.add (self)
-        self.point = point
-        self.ends  = [end1, end2]
-        self.wires = [wire1, wire2]
-        self.sgn   = sgn
+        self.point   = point
+        self.ends    = [end1, end2]
+        self.wires   = [wire1, wire2]
+        # The original implementation uses the sign of the wire index
+        # for marking a ground connection *and* for marking a direction
+        # reversal of a wire (when connected end1-end1 or end2-end2).
+        # This results in ugly tests in the code which we can avoid by
+        # keeping both signs separate.
+        self.gnd_sgn = np.ones (2)
+        self.dir_sgn = sgn
         if sgn is None:
-            self.sgn = [1, 1]
+            self.dir_sgn = [1, 1]
         assert not gnd or gnd == 1
         self.ground = np.array ([False, False])
         if gnd is not None:
@@ -95,12 +101,11 @@ class Pulse:
         # The main wire is the one with the larger index
         self.wire_idx = np.argmax ([w.n for w in self.wires])
         self.wire     = self.wires [self.wire_idx]
-        self.sign     = self.sgn
+        self.sign     = self.dir_sgn
         idx = np.array ([w.n for w in self.wires]) + 1
         if idx [0] == idx [1]:
-            gnd = np.ones (2)
-            gnd [self.ground] = -1
-            self.sign = self.sign * gnd
+            self.gnd_sgn [self.ground] = -1
+            self.sign    = self.sign * self.gnd_sgn
         idx = idx * self.sign
         self.c_per = idx
     # end def __init__

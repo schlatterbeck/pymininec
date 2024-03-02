@@ -1326,7 +1326,7 @@ class Mininec:
         >>> m = Mininec (7, w)
         >>> m.register_source (s2, 4)
         >>> m.compute_impedance_matrix ()
-        >>> n = len (m.w_per)
+        >>> n = len (m.pulses)
         >>> for i in range (n):
         ...     print ("row %d" % (i+1))
         ...     for j in range (n):
@@ -1456,14 +1456,14 @@ class Mininec:
         0.00000000+0.00000000j
         0.00000000+0.00000000j
         """
-        n    = len (self.w_per)
+        n    = len (self.pulses)
         s    = np.array ([w.seg_len for w in self.geo])
         self.Z = np.zeros ((n, n), dtype=complex)
         # Since seg_idx is 1-based, we subtract 1 to make i1v/i2v 0-based
         i1v  = np.abs (self.seg_idx.T [0]) - 1
         i2v  = np.abs (self.seg_idx.T [1]) - 1
-        f4   = np.sign (self.seg_idx.T [0]) * s [i1v]
-        f5   = np.sign (self.seg_idx.T [1]) * s [i2v]
+        f4   = [p.sign [0] * p.wires [0].seg_len for p in self.pulses]
+        f5   = [p.sign [1] * p.wires [1].seg_len for p in self.pulses]
         d    = np.array  ([w.dirvec for w in self.geo])
         # The t567 matrix replaces vectors T5, T6, T7
         t567 = \
@@ -1474,56 +1474,46 @@ class Mininec:
         ix = self.seg_idx.T [0] == -self.seg_idx.T [1]
         t567.T [-1][ix] = (s [i1v] * (d.T [-1][i1v] + d.T [-1][i2v])) [ix]
         # Instead of I1, I2 use i1v [i], i2v [i]
-        for i in range (n):
-            # Instead of J1, J2 use i1v [j], i2v [j]
-            for j in range (n):
-                f6 = f7 = 1
+        for p_i in self.pulses:
+            i = p_i.idx
+            for p_j in self.pulses:
+                j = p_j.idx
                 # 230
                 for k in self.image_iter ():
-                    if self.seg_idx [j][0] == -self.seg_idx [j][1]:
-                        if k < 0:
-                            continue
-                        f6 = np.sign (self.seg_idx [j][0])
-                        f7 = np.sign (self.seg_idx [j][1])
+                    if p_j.ground.any () and k < 0:
+                        continue
                     f8 = 0
                     if k >= 0:
-                        di = self.geo [i1v [i]].dirvec
-                        dj = self.geo [i1v [j]].dirvec
                         # set flag to avoid redundant calculations
-                        if  (   i1v [i] == i2v [i]
-                            and (  di [0] + di [1] == 0
-                                or self.seg_idx [i][0] == self.seg_idx [i][1]
-                                )
-                            and i1v [j] == i2v [j]
-                            and (  dj [0] + dj [1] == 0
-                                or self.seg_idx [j][0] == self.seg_idx [j][1]
-                                )
+                        if  (   p_i.wires [0] == p_i.wires [1]
+                            and p_j.wires [0] == p_j.wires [1]
                             ):
-                            if i1v [i] == i1v [j]:
+                            if p_i.wires [0] == p_j.wires [0]:
                                 f8 = 1
-                            if i == j:
+                            if p_i == p_j:
                                 f8 = 2
                     # This was a conditional goto 317 in line 246
                     if k < 0 or self.Z [i][j].real == 0:
                         p1 = 2 * self.w_per [i] + i + 1
                         p2 = 2 * self.w_per [j] + j + 1
                         p3 = p2 + 0.5
-                        wire = self.geo [i2v [j]]
-                        vp = self.vector_potential (k, p1, p2, p3, wire, i, j)
-                        u = vp * np.sign (self.seg_idx [j][1])
+                        vp = self.vector_potential \
+                            (k, p1, p2, p3, p_j.wires [1], i, j)
+                        u = vp * p_j.sign [1]
                         # compute PSI(M,N-1/2,N)
                         p3 = p2
                         p2 -= 0.5
-                        wire = self.geo [i1v [j]]
                         if f8 < 2:
                             vp = self.vector_potential \
-                                (k, p1, p2, p3, wire, i, j)
-                        v = vp * np.sign (self.seg_idx [j][0])
+                                (k, p1, p2, p3, p_j.wires [0], i, j)
+                        v = vp * p_j.sign [0]
                         # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
-                        f7v  = np.array ([1, 1, f7])
-                        f6v  = np.array ([1, 1, f6])
-                        di1  = self.geo [i1v [j]].dirvec
-                        di2  = self.geo [i2v [j]].dirvec
+                        # We use p_j.sgn, the sign resulting from only
+                        # the inverted wire, not from grounding
+                        f6v  = np.array ([1, 1, p_j.gnd_sgn [0]])
+                        f7v  = np.array ([1, 1, p_j.gnd_sgn [1]])
+                        di1  = p_j.wires [0].dirvec
+                        di2  = p_j.wires [1].dirvec
                         kvec = np.array ([1, 1, k])
                         # We do real and imaginary part in one go:
                         vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
@@ -1534,42 +1524,40 @@ class Mininec:
                             p1 -= 1
                         p2 = p3
                         p3 += 1
-                        wire = self.geo [i2v [j]]
                         if f8 < 2:
                             if f8 == 1:
                                 u56 = np.sign (self.seg_idx [j][1]) * u + vp
                             else:
                                 u56 = self.scalar_potential \
-                                    (k, p1, p2, p3, wire, i, j)
+                                    (k, p1, p2, p3, p_j.wires [1], i, j)
                             # compute PSI(M-1/2,N,N+1)
                             # Code at 291
                             p1 -= 1
                             sp = self.scalar_potential \
-                                (k, p1, p2, p3, wire, i, j)
-                            seglen = self.geo [i2v [j]].seg_len
+                                (k, p1, p2, p3, p_j.wires [1], i, j)
+                            seglen = p_j.wires [1].seg_len
                             u12 = (sp - u56) / seglen
                             # compute PSI(M+1/2,N-1,N)
                             p1  += 1
                             p3  = p2
                             p2  -= 1
-                            wire = self.geo [i1v [j]]
                             u34 = self.scalar_potential \
-                                (k, p1, p2, p3, wire, i, j)
+                                (k, p1, p2, p3, p_j.wires [0], i, j)
                             # compute PSI(M-1/2,N-1,N)
                             if f8 >= 1:
                                 sp = u56
                             else:
                                 p1 -= 1
                                 sp = self.scalar_potential \
-                                    (k, p1, p2, p3, wire, i, j)
+                                    (k, p1, p2, p3, p_j.wires [0], i, j)
                             # gradient of scalar potential contribution
-                            seglen = self.geo [i1v [j]].seg_len
+                            seglen = p_j.wires [0].seg_len
                             u12 += (u34 - sp) / seglen
                         else:
                             sp = self.scalar_potential \
-                                (k, p1, p2, p3, wire, i, j)
-                            seglen = self.geo [i1v [j]].seg_len
-                            sg  = np.sign (self.seg_idx [j][1])
+                                (k, p1, p2, p3, p_j.wires [1], i, j)
+                            seglen = p_j.wires [0].seg_len
+                            sg  = p_j.sign [1]
                             u12 = (2 * sp - 4 * u * sg) / seglen
                         # 314
                         # sum into impedance matrix
