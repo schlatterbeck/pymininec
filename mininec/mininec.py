@@ -1623,21 +1623,21 @@ class Mininec:
         return '\n'.join (r)
     # end def geo_as_str
 
-    def nf_helper (self, cp, j, k, v, j12, wj, f67, f45):
-        v6   = np.array ([1, 1, f67 [0]])
-        v7   = np.array ([1, 1, f67 [1]])
-        dir  = [w.dirvec for w in wj]
-        j3   = np.max (j12)
+    def nf_helper (self, j, k, v, pulse):
+        v6   = np.array ([1, 1, pulse.gnd_sgn [0]])
+        v7   = np.array ([1, 1, pulse.gnd_sgn [1]])
+        dir  = [w.dirvec for w in pulse.wires]
+        j3   = pulse.wire.n
         # compute psi(0,J,J+.5)
         p2   = 2 * j3 + j + 1
         p3   = p2 + .5
-        wire = self.geo [j12 [1]]
-        u    = self.psi_near_field_75 (v, k, p2, p3, wire) * f45 [1]
+        wire = pulse.wires [1]
+        u    = self.psi_near_field_75 (v, k, p2, p3, wire) * pulse.sign [1]
         # compute psi(0,J-.5,J)
         p3   = p2
         p2   = p2 - .5
-        wire = self.geo [j12 [0]]
-        v    = self.psi_near_field_66 (v, k, p2, p3, wire) * f45 [0]
+        wire = pulse.wires [0]
+        v    = self.psi_near_field_66 (v, k, p2, p3, wire) * pulse.sign [0]
         # real part of vector potential contribution
         # imaginary part of vector potential contribution
         kv  = np.array ([1, 1, k])
@@ -1698,52 +1698,41 @@ class Mininec:
                 # takes the value -1 and 1 in the v0m initialization
                 # (originally X0, Y0, Z0)
                 kf  = np.zeros ((2, 3), dtype = complex)
-                # Loop over segments
-                for j, cp in enumerate (self.seg_idx):
-                    j12 = np.abs  (cp) - 1
-                    f45 = np.sign (cp)
-                    f67 = np.ones  (2)
+                # Loop over pulses
+                for p in self.pulses:
+                    j   = p.idx
                     u56 = 0j
-                    wj  = [self.geo [g] for g in j12]
                     for k in self.image_iter ():
-                        if cp [0] == -cp [1]:
-                            if k < 0:
-                                continue
-                            # compute vector potential A
-                            f67 = f45
-                        v35_e = self.nf_helper \
-                            (cp, j, k, vec, j12, wj, f67, f45)
+                        if p.ground.any () and k < 0:
+                            continue
+                        # compute vector potential A
+                        v35_e = self.nf_helper (j, k, vec, p)
                         v35_h = np.array \
-                            ([self.nf_helper
-                                (cp, j, k, v [i], j12, wj, f67, f45)
-                              for v in v0m
-                            ])
+                            ([self.nf_helper (j, k, v [i], p) for v in v0m])
                         # At this point comment notes
                         # magnetic field calculation completed
                         # and jumps to 1042 if H field
                         # We compute both, E and H and continue
                         d   = sum (v35_e * t567 [i]) * self.w2
                         # compute psi(.5,J,J+1)
-                        p2   = 2 * np.max (j12) + j + 1
+                        p2   = 2 * p.wire.n + j + 1
                         p3   = p2 + 1
-                        wire = self.geo [j12 [1]]
                         u    = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p2, p3, wire)
+                            (vec, t567 [i], k, .5, p2, p3, p.wires [1])
                         # compute psi(-.5,J,J+1)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p2, p3, wire)
-                        u   = (tmp - u) / wj [1].seg_len
+                            (vec, t567 [i], k, -.5, p2, p3, p.wires [1])
+                        u   = (tmp - u) / p.wires [1].seg_len
                         # compute psi(.5,J-1,J)
                         p3   = p2
                         p2  -= 1
-                        wire = self.geo [j12 [0]]
                         u34  = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p2, p3, wire)
+                            (vec, t567 [i], k, .5, p2, p3, p.wires [0])
                         # compute psi(-.5,J-1,J)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p2, p3, wire)
+                            (vec, t567 [i], k, -.5, p2, p3, p.wires [0])
                         # gradient of scalar potential
-                        u56 += (u + (u34 - tmp) / wj [0].seg_len + d) * k
+                        u56 += (u + (u34 - tmp) / p.wires [0].seg_len + d) * k
                         # Here would be a GOTO 1048 (a continue of the K loop)
                         # that jumps over the H-field calculation
                         # we do both, E and H field
