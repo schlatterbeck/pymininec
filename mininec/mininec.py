@@ -918,16 +918,6 @@ class Mininec:
         >>> s = Excitation (1, 0)
         >>> m = Mininec (7, w)
         >>> m.register_source (s, 4)
-        >>> print (m.seg_idx)
-        [[1 1]
-         [1 1]
-         [1 1]
-         [1 1]
-         [1 1]
-         [1 1]
-         [1 1]
-         [1 1]
-         [1 1]]
         >>> w = []
         >>> w.append (Wire (10, 0,          0, 0, 21.414285, 0, 0, 0.001))
         >>> w.append (Wire (10, 21.4142850, 0, 0, 33.      , 0, 0, 0.001))
@@ -1583,7 +1573,7 @@ class Mininec:
                 # Looks like K in the original code line 371 is set by
                 # the preceeding loop iterating over the images. So we
                 # replace this with self.media is not None
-                if  (   self.seg_idx [j][0] == -self.seg_idx [j][1]
+                if  (   self.pulses [j].ground.any ()
                     and self.media is not None
                     ):
                     f2 *= 2
@@ -1755,10 +1745,10 @@ class Mininec:
 
     @measure_time
     def compute_rhs (self):
-        rhs = np.zeros (len (self.seg_idx), dtype=complex)
+        rhs = np.zeros (len (self.pulses), dtype=complex)
         for src in self.sources:
             f2 = -1j/self.m
-            if self.seg_idx [src.idx][0] == -self.seg_idx [src.idx][1]:
+            if self.pulses [src.idx].ground.any ():
                 f2 = -2j/self.m
             rhs [src.idx] = f2 * src.voltage
         self.rhs = rhs
@@ -2145,7 +2135,7 @@ class Mininec:
                 if p > w.end_segs [1]:
                     raise ValueError \
                         ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
-            elif pulse >= len (self.seg_idx):
+            elif pulse >= len (self.pulses):
                 raise ValueError ('Invalid pulse %d' % pulse)
             else:
                 p = pulse
@@ -2175,7 +2165,7 @@ class Mininec:
             self.sources.append (source)
             source.register (self, p)
         else:
-            if pulse >= len (self.seg_idx):
+            if pulse >= len (self.pulses):
                 raise ValueError ('Invalid pulse %d' % pulse)
             self.sources.append (source)
             source.register (self, pulse)
