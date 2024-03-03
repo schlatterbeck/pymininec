@@ -685,7 +685,6 @@ class Wire:
         # First segment start
         seg  = np.copy (self.p1)
         inc  = self.dirvec * self.seg_len
-        inc2 = 2 * inc
         pu   = parent.pulses
         # Connection to other wire(s) at end 1
         if self.idx_1 != 0 and abs (self.idx_1) - 1 != self.n:
@@ -702,14 +701,21 @@ class Wire:
             s = seg + inc
             p = Pulse (pu, self.p1, s * invz, s, self, self, gnd = 0)
             self.pulses.append (p)
+        s0 = seg
+        s1 = seg + self.dirvec * self.seg_len
         for i in range (self.n_segments - 1):
-            s = seg + (i + 1) * self.dirvec * self.seg_len
-            p = Pulse (pu, s, s - inc, s + inc, self, self)
+            s2 = seg + (i + 2) * self.dirvec * self.seg_len
+            p  = Pulse (pu, s1, s0, s2, self, self)
+            s0 = s1
+            s1 = s2
             self.pulses.append (p)
             if i == 0 and self.idx_1 == 0:
                 p.c_per [0] = 0
             if i == self.n_segments - 2 and self.idx_2 == 0:
                 p.c_per [1] = 0
+        # Second endpoint is slightly off in original Basic computation
+        # because it is computed from the first endpoint
+        p2  = seg + (self.n_segments) * self.dirvec * self.seg_len
         seg = seg + (self.n_segments - 1) * self.dirvec * self.seg_len
         # Connection to other wire(s) at end 2
         if self.idx_2 != 0 and abs (self.idx_2) - 1 != self.n:
@@ -717,13 +723,14 @@ class Wire:
             other = parent.geo [abs (self.idx_2) - 1]
             sgn   = [1, np.sign (self.idx_2)]
             oinc  = other.dirvec * other.seg_len * sgn [1]
-            next  = self.p2 + oinc
-            p = Pulse (pu, self.p2, seg, next, self, other, sgn = sgn)
+            next  = p2 + oinc
+            p = Pulse (pu, p2, seg, next, self, other, sgn = sgn)
             if self.n_segments == 1 and self.idx_1 == 0:
                 p.c_per [0] = 0
             self.pulses.append (p)
         elif self.is_ground [1]:
-            p = Pulse (pu, self.p2, seg, seg * invz, self, self, gnd = 1)
+            next = p2 - self.dirvec * self.seg_len * invz
+            p = Pulse (pu, self.p2, seg, next, self, self, gnd = 1)
             self.pulses.append (p)
     # end def compute_connections
 
@@ -1155,6 +1162,15 @@ class Mininec:
             self.seg_idx.T [idx][cnull] = self.w_per [cnull]
         # make indeces 0-based
         self.w_per   -= 1
+        # Assert equal to other pulse computation
+        for p in self.pulses:
+            i = p.idx + 2 * self.w_per [p.idx] + 1
+            if not (self.seg [i] == p.point).all ():
+                import pdb; pdb.set_trace ()
+            if not (self.seg [i-1] == p.ends [0]).all ():
+                import pdb; pdb.set_trace ()
+            if not (self.seg [i+1] == p.ends [1]).all ():
+                import pdb; pdb.set_trace ()
     # end def compute_connectivity
 
     @measure_time
@@ -2050,30 +2066,41 @@ class Mininec:
         """
         kvec = np.array ([1, 1, k])
         v2, vv = pulse2.dvecs (ds)
-        v2 = kvec * v2 - vec1
-        vv = kvec * vv - vec1
-        #return v2 - vec1, vv - vec1
         i4 = int (p2)
-        seg  = self.seg [i4]
         # S(U)-S(M) GOES IN (X2,Y2,Z2) (this is now vec2)
         if i4 == p2:
             vec2 = kvec * self.seg [i4] - vec1
+        #    if (self.seg [i4] != v2).any ():
+        #        import pdb; pdb.set_trace ()
         else:
             i5 = i4 + 1
             vec2 = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
+        #    if ((self.seg [i4] + self.seg [i5]) / 2 != v2).any ():
+        #        import pdb; pdb.set_trace ()
         # S(V)-S(M) GOES IN (V1,V2,V3) (this is now vecv)
         i4 = int (p3)
         if i4 == p3:
             vecv = kvec * self.seg [i4] - vec1
+        #    if (self.seg [i4] != vv).any ():
+        #        import pdb; pdb.set_trace ()
         else:
             i5 = i4 + 1
             vecv = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
+        #    if ((self.seg [i4] + self.seg [i5]) / 2 != vv).any ():
+        #        import pdb; pdb.set_trace ()
+        v2 = kvec * v2 - vec1
+        vv = kvec * vv - vec1
         if np.linalg.norm (v2 - vec2) > 1e-12:
             import pdb; pdb.set_trace ()
         assert np.linalg.norm (v2 - vec2) <= 1e-12
         if np.linalg.norm (vv - vecv) > 1e-12:
             import pdb; pdb.set_trace ()
         assert np.linalg.norm (vv - vecv) <= 1e-12
+        #if (v2 != vec2).any ():
+        #    import pdb; pdb.set_trace ()
+        #if (vv != vecv).any ():
+        #    import pdb; pdb.set_trace ()
+        return v2, vv
         return vec2, vecv
     # end def psi_common_vec1_vecv
 
