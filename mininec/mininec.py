@@ -1464,23 +1464,7 @@ class Mininec:
         0.00000000+0.00000000j
         """
         n    = len (self.pulses)
-        s    = np.array ([w.seg_len for w in self.geo])
         self.Z = np.zeros ((n, n), dtype=complex)
-        # Since seg_idx is 1-based, we subtract 1 to make i1v/i2v 0-based
-        i1v  = np.abs (self.seg_idx.T [0]) - 1
-        i2v  = np.abs (self.seg_idx.T [1]) - 1
-        f4   = [p.sign [0] * p.wires [0].seg_len for p in self.pulses]
-        f5   = [p.sign [1] * p.wires [1].seg_len for p in self.pulses]
-        d    = np.array  ([w.dirvec for w in self.geo])
-        # The t567 matrix replaces vectors T5, T6, T7
-        t567 = \
-            ( np.tile (f4, (3, 1)).T * d [i1v]
-            + np.tile (f5, (3, 1)).T * d [i2v]
-            )
-        # Compute the special case in line 220 in one go
-        ix = self.seg_idx.T [0] == -self.seg_idx.T [1]
-        t567.T [-1][ix] = (s [i1v] * (d.T [-1][i1v] + d.T [-1][i2v])) [ix]
-        # Instead of I1, I2 use i1v [i], i2v [i]
         for p_i in self.pulses:
             i = p_i.idx
             for p_j in self.pulses:
@@ -1517,7 +1501,13 @@ class Mininec:
                         kvec = np.array ([1, 1, k])
                         # We do real and imaginary part in one go:
                         vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
-                        d    = self.w2 * sum (vec3 * t567 [i])
+                        zzz = sum \
+                            ( p_i.dir_sgn [idx]
+                            * p_i.wires [idx].seg_len
+                            * p_i.wires [idx].dirvec
+                            for idx in (0, 1)
+                            )
+                        d    = self.w2 * sum (vec3 * zzz)
                         # compute PSI(M+1/2,N,N+1)
                         if f8 < 2:
                             if f8 == 1:
@@ -1564,7 +1554,7 @@ class Mininec:
                     # 324
                     if self.seg_idx [p1][0] != self.seg_idx [p1][1]:
                         continue
-                    d = self.geo [i2v [j]].dirvec
+                    d = p_j.wires [1].dirvec
                     # 325-327
                     # The following continue statement *is* reached by
                     # the current tests but is flagged as not reached by
