@@ -1162,15 +1162,6 @@ class Mininec:
             self.seg_idx.T [idx][cnull] = self.w_per [cnull]
         # make indeces 0-based
         self.w_per   -= 1
-        # Assert equal to other pulse computation
-        for p in self.pulses:
-            i = p.idx + 2 * self.w_per [p.idx] + 1
-            if not (self.seg [i] == p.point).all ():
-                import pdb; pdb.set_trace ()
-            if not (self.seg [i-1] == p.ends [0]).all ():
-                import pdb; pdb.set_trace ()
-            if not (self.seg [i+1] == p.ends [1]).all ():
-                import pdb; pdb.set_trace ()
     # end def compute_connectivity
 
     @measure_time
@@ -2045,7 +2036,7 @@ class Mininec:
         return (r + i6) * s4
     # end def psi
 
-    def psi_common_vec1_vecv (self, vec1, k, pulse2, ds, p2, p3):
+    def psi_common_vec1_vecv (self, vec1, k, pulse2, ds):
         """ Compute the two difference vectors between two vectors on
             pulse2 and vec1. The displacement ds defines the two points
             on pulse2, a negative number is the start and the
@@ -2066,42 +2057,9 @@ class Mininec:
         """
         kvec = np.array ([1, 1, k])
         v2, vv = pulse2.dvecs (ds)
-        i4 = int (p2)
-        # S(U)-S(M) GOES IN (X2,Y2,Z2) (this is now vec2)
-        if i4 == p2:
-            vec2 = kvec * self.seg [i4] - vec1
-        #    if (self.seg [i4] != v2).any ():
-        #        import pdb; pdb.set_trace ()
-        else:
-            i5 = i4 + 1
-            vec2 = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
-        #    if ((self.seg [i4] + self.seg [i5]) / 2 != v2).any ():
-        #        import pdb; pdb.set_trace ()
-        # S(V)-S(M) GOES IN (V1,V2,V3) (this is now vecv)
-        i4 = int (p3)
-        if i4 == p3:
-            vecv = kvec * self.seg [i4] - vec1
-        #    if (self.seg [i4] != vv).any ():
-        #        import pdb; pdb.set_trace ()
-        else:
-            i5 = i4 + 1
-            vecv = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
-        #    if ((self.seg [i4] + self.seg [i5]) / 2 != vv).any ():
-        #        import pdb; pdb.set_trace ()
         v2 = kvec * v2 - vec1
         vv = kvec * vv - vec1
-        if np.linalg.norm (v2 - vec2) > 1e-12:
-            import pdb; pdb.set_trace ()
-        assert np.linalg.norm (v2 - vec2) <= 1e-12
-        if np.linalg.norm (vv - vecv) > 1e-12:
-            import pdb; pdb.set_trace ()
-        assert np.linalg.norm (vv - vecv) <= 1e-12
-        #if (v2 != vec2).any ():
-        #    import pdb; pdb.set_trace ()
-        #if (vv != vecv).any ():
-        #    import pdb; pdb.set_trace ()
         return v2, vv
-        return vec2, vecv
     # end def psi_common_vec1_vecv
 
     def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, wire):
@@ -2306,7 +2264,7 @@ class Mininec:
                 import pdb; pdb.set_trace ()
             assert np.linalg.norm (v1 - vec1) <= 1e-12
             wd   = self.wires_unconnected (pulse1, pulse2)
-            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds2, p2, p3)
+            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds2)
             assert abs (ds2) == p3 - p2
             return self.psi \
                 (vec2, vecv, k, abs (ds2), wire, fvs = 1, exact = not wd)
@@ -2352,7 +2310,7 @@ class Mininec:
         assert p3 == p2 + .5
         if k < 1 or wire.r >= self.srm or pulse1 != pulse2:
             vec1 = pulse1.point
-            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds, p2, p3)
+            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds)
             wd = self.wires_unconnected (pulse1, pulse2)
             assert abs (ds) == p3 - p2
             return self.psi \
