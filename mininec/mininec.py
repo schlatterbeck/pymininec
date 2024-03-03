@@ -1511,7 +1511,7 @@ class Mininec:
                         # compute PSI(M+1/2,N,N+1)
                         if f8 < 2:
                             if f8 == 1:
-                                u56 = np.sign (self.seg_idx [j][1]) * u + vp
+                                u56 = p_j.sign [1] * u + vp
                             else:
                                 u56 = self.scalar_potential \
                                     (k, p_i, p_j, 0.5, 1)
@@ -1547,27 +1547,27 @@ class Mininec:
                     self.Z [j][i] = self.Z [i][j]
                     # segments on same wire same distance apart
                     # have same Z
-                    p1 = j + 1
-                    # 323
-                    if p1 >= n:
+                    if j + 1 >= len (self.pulses):
                         continue
-                    # 324
-                    if self.seg_idx [p1][0] != self.seg_idx [p1][1]:
+                    p1 = j + 1
+                    p_j_next = self.pulses [j + 1]
+                    if  (  p_j_next.wires [0] != p_j_next.wires [1]
+                        or p_j_next.ground.any ()
+                        ):
                         continue
                     d = p_j.wires [1].dirvec
                     # 325-327
-                    # The following continue statement *is* reached by
-                    # the current tests but is flagged as not reached by
-                    # the pytest framework if the python version is
-                    # below 3.10. The statement is reached for
-                    # the t-ant.pym example with p1 == 8 and j == 7.
-                    if  (   self.seg_idx [p1][1] != self.seg_idx [j][1]
-                        and (  self.seg_idx [p1][1] != -self.seg_idx [j][1]
-                            or d [0] + d [1] != 0
-                            )
-                        ):
-                        continue
-                    self.Z [i + 1][p1] = self.Z [i][j]
+                    # The original condition was reached for the t-ant.pym
+                    # example with j == 7.
+                    # Note: the reversed original tested for d [0] + d [1] != 0
+                    # This was probably meant to check that both are nonzero.
+                    # (Resulting in a test for a grounded vertical wire)
+                    # Since an empty matrix element is recomputed anyway
+                    # adding a large test (with questionable semantics)
+                    # here doesn't make much sense.
+                    # So we kept only the condition with equal wires.
+                    if p_j_next.wires [1] == p_j.wires [1]:
+                        self.Z [i + 1][j + 1] = self.Z [i][j]
             # Here follows a GOSUB 1599 which calculates the remaining time,
             # not implemented
         # end matrix fill time calculation
