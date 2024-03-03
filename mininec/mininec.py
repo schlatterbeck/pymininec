@@ -1503,13 +1503,13 @@ class Mininec:
                     if k < 0 or self.Z [i][j].real == 0:
                         p2 = 2 * self.w_per [j] + j + 1
                         p3 = p2 + 0.5
-                        vp = self.vector_potential (k, p2, p3, p_j.wires [1], p_i, p_j, 0.5)
+                        vp = self.vector_potential (k, p_i, p_j, 0.5)
                         u = vp * p_j.sign [1]
                         # compute PSI(M,N-1/2,N)
                         p3 = p2
                         p2 -= 0.5
                         if f8 < 2:
-                            vp = self.vector_potential (k, p2, p3, p_j.wires [0], p_i, p_j, -0.5)
+                            vp = self.vector_potential (k, p_i, p_j, -0.5)
                         v = vp * p_j.sign [0]
                         # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
                         # We use p_j.sgn, the sign resulting from only
@@ -1534,29 +1534,30 @@ class Mininec:
                                 u56 = np.sign (self.seg_idx [j][1]) * u + vp
                             else:
                                 u56 = self.scalar_potential \
-                                    (k, p1, p2, p3, p_j.wires [1], p_i, p_j, 0.5, 1)
+                                    (k, p_i, p_j, 0.5, 1)
                             # compute PSI(M-1/2,N,N+1)
                             # Code at 291
                             p1 -= 1
-                            sp = self.scalar_potential (k, p1, p2, p3, p_j.wires [1], p_i, p_j, -.5, 1)
+                            sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
                             seglen = p_j.wires [1].seg_len
                             u12 = (sp - u56) / seglen
                             # compute PSI(M+1/2,N-1,N)
                             p1  += 1
                             p3  = p2
                             p2  -= 1
-                            u34 = self.scalar_potential (k, p1, p2, p3, p_j.wires [0], p_i, p_j, .5, -1)
+                            u34 = self.scalar_potential (k, p_i, p_j, .5, -1)
                             # compute PSI(M-1/2,N-1,N)
                             if f8 >= 1:
                                 sp = u56
                             else:
                                 p1 -= 1
-                                sp = self.scalar_potential (k, p1, p2, p3, p_j.wires [0], p_i, p_j, -.5, -1)
+                                sp = self.scalar_potential \
+                                    (k, p_i, p_j, -.5, -1)
                             # gradient of scalar potential contribution
                             seglen = p_j.wires [0].seg_len
                             u12 += (u34 - sp) / seglen
                         else:
-                            sp = self.scalar_potential (k, p1, p2, p3, p_j.wires [1], p_i, p_j, -.5, 1)
+                            sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
                             seglen = p_j.wires [1].seg_len
                             sg  = p_j.sign [1]
                             u12 = (2 * sp - 4 * u * sg) / seglen
@@ -2205,7 +2206,7 @@ class Mininec:
             source.register (self, pulse)
     # end def register_source
 
-    def scalar_potential (self, k, p1, p2, p3, wire, pulse1, pulse2, ds1, ds2):
+    def scalar_potential (self, k, pulse1, pulse2, ds1, ds2):
         """ Compute scalar potential
             Inputs:
             ds1 in the displacement on pulse1, we compute the endseg
@@ -2234,38 +2235,24 @@ class Mininec:
         >>> method = m.scalar_potential
         >>> p0 = m.pulses [0]
         >>> p8 = m.pulses [8]
-        >>> r = method (1, 1.5, 8, 9, m.geo [0], p0, p8, 0.5, -1)
+        >>> r = method (1, p0, p8, 0.5, -1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
         >>> w [0].r = 0.001
-        >>> r = method (1, 0.5, 1, 2, m.geo [0], p0, p0, -0.5, 1)
+        >>> r = method (1, p0, p0, -0.5, 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         1.0497691 -0.3085993j
         """
-        assert wire == pulse2.wires [ds2 > 0]
-        #wire = pulse2.wires [ds2 > 0]
-        v1   = pulse1.endseg (ds1)
-        # This seems to always be the case.
-        assert p3 == p2 + 1
-        if  (p1 != (p2 + p3) / 2) != (pulse1.wire.n != pulse2.wire.n or pulse1.idx + ds1 != pulse2.idx + ds2 / 2):
-            import pdb;pdb.set_trace ()
-        #assert (p1 != (p2 + p3) / 2) == (np.linalg.norm (v1 - pulse2.endseg (ds2/2)) >= 1e-12)
+        wire = pulse2.wires [ds2 > 0]
+        vec1 = pulse1.endseg (ds1)
         if  (  k < 1
             or wire.r > self.srm
-            # FIXME: Find out how to compute these conditions
-            #or p1 != (p2 + p3) / 2
             or pulse1.wire.n != pulse2.wire.n
             or pulse1.idx + ds1 != pulse2.idx + ds2 / 2
             ):
-            i4 = int (p1)
-            i5 = i4 + 1
-            vec1 = (self.seg [i4] + self.seg [i5]) / 2
-            if np.linalg.norm (v1 - vec1) > 1e-12:
-                import pdb; pdb.set_trace ()
-            assert np.linalg.norm (v1 - vec1) <= 1e-12
+            v1   = pulse1.endseg (ds1)
             wd   = self.wires_unconnected (pulse1, pulse2)
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds2)
-            assert abs (ds2) == p3 - p2
             return self.psi \
                 (vec2, vecv, k, abs (ds2), wire, fvs = 1, exact = not wd)
         t1 = 2 * np.log (wire.seg_len / wire.r)
@@ -2273,7 +2260,7 @@ class Mininec:
         return t1 + t2 * 1j
     # end def scalar_potential
 
-    def vector_potential (self, k, p2, p3, wire, pulse1, pulse2, ds):
+    def vector_potential (self, k, pulse1, pulse2, ds):
         """ Compute vector potential
             Original entry point in line 102.
             Original comment:
@@ -2300,19 +2287,15 @@ class Mininec:
         >>> method = m.vector_potential
         >>> p0 = m.pulses [0]
         >>> p1 = m.pulses [1]
-        >>> r = method (1, 1.5, 2, m.geo [0], p0, p1, -0.5)
+        >>> r = method (1, p0, p1, -0.5)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.6747199 -0.1555773j
         """
-        assert wire == pulse2.wires [ds > 0]
-        #wire = pulse2.wires [ds > 0]
-        # This always seems to be the case
-        assert p3 == p2 + .5
+        wire = pulse2.wires [ds > 0]
         if k < 1 or wire.r >= self.srm or pulse1 != pulse2:
             vec1 = pulse1.point
             vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds)
             wd = self.wires_unconnected (pulse1, pulse2)
-            assert abs (ds) == p3 - p2
             return self.psi \
                 (vec2, vecv, k, abs (ds), wire, fvs = 0, exact = not wd)
         t1 = np.log (wire.seg_len / wire.r)
