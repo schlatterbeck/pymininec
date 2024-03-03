@@ -1496,15 +1496,13 @@ class Mininec:
                     if k < 0 or self.Z [i][j].real == 0:
                         p2 = 2 * self.w_per [j] + j + 1
                         p3 = p2 + 0.5
-                        vp = self.vector_potential \
-                            (k, p2, p3, p_j.wires [1], p_i, p_j)
+                        vp = self.vector_potential (k, p2, p3, p_j.wires [1], p_i, p_j, 0.5)
                         u = vp * p_j.sign [1]
                         # compute PSI(M,N-1/2,N)
                         p3 = p2
                         p2 -= 0.5
                         if f8 < 2:
-                            vp = self.vector_potential \
-                                (k, p2, p3, p_j.wires [0], p_i, p_j)
+                            vp = self.vector_potential (k, p2, p3, p_j.wires [0], p_i, p_j, -0.5)
                         v = vp * p_j.sign [0]
                         # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
                         # We use p_j.sgn, the sign resulting from only
@@ -1529,34 +1527,30 @@ class Mininec:
                                 u56 = np.sign (self.seg_idx [j][1]) * u + vp
                             else:
                                 u56 = self.scalar_potential \
-                                    (k, p1, p2, p3, p_j.wires [1], p_i, p_j)
+                                    (k, p1, p2, p3, p_j.wires [1], p_i, p_j, 0.5, 1)
                             # compute PSI(M-1/2,N,N+1)
                             # Code at 291
                             p1 -= 1
-                            sp = self.scalar_potential \
-                                (k, p1, p2, p3, p_j.wires [1], p_i, p_j)
+                            sp = self.scalar_potential (k, p1, p2, p3, p_j.wires [1], p_i, p_j, -.5, 1)
                             seglen = p_j.wires [1].seg_len
                             u12 = (sp - u56) / seglen
                             # compute PSI(M+1/2,N-1,N)
                             p1  += 1
                             p3  = p2
                             p2  -= 1
-                            u34 = self.scalar_potential \
-                                (k, p1, p2, p3, p_j.wires [0], p_i, p_j)
+                            u34 = self.scalar_potential (k, p1, p2, p3, p_j.wires [0], p_i, p_j, .5, -1)
                             # compute PSI(M-1/2,N-1,N)
                             if f8 >= 1:
                                 sp = u56
                             else:
                                 p1 -= 1
-                                sp = self.scalar_potential \
-                                    (k, p1, p2, p3, p_j.wires [0], p_i, p_j)
+                                sp = self.scalar_potential (k, p1, p2, p3, p_j.wires [0], p_i, p_j, -.5, -1)
                             # gradient of scalar potential contribution
                             seglen = p_j.wires [0].seg_len
                             u12 += (u34 - sp) / seglen
                         else:
-                            sp = self.scalar_potential \
-                                (k, p1, p2, p3, p_j.wires [1], p_i, p_j)
-                            seglen = p_j.wires [0].seg_len
+                            sp = self.scalar_potential (k, p1, p2, p3, p_j.wires [1], p_i, p_j, -.5, 1)
+                            seglen = p_j.wires [1].seg_len
                             sg  = p_j.sign [1]
                             u12 = (2 * sp - 4 * u * sg) / seglen
                         # 314
@@ -1940,12 +1934,13 @@ class Mininec:
             return r / b
     # end def fast_quad
 
-    def psi (self, vec2, vecv, k, p2, p3, wire, exact = False, fvs = 0):
+    def psi (self, vec2, vecv, k, scale, wire, exact = False, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
             The variable fvs is used to distiguish code path at the end.
-            The variable p2 is the index of the segment, seems this can
-            be a float in which case the middle of two segs is used.
+            Both p2 and p3 used to be floating-point segment indeces.
+            We now directly pass the difference, it is always positive
+            and can be 1 or 0.5.
             The variable p4 was the index of the wire, we now pass wire
             directly.
             vec2 replaces (X2, Y2, Z2)
@@ -1957,24 +1952,18 @@ class Mininec:
             Input:
             vec2, vecv
             k:
-            p2:  segment index 1 (0-based)
-            p3:  segment index 2 (0-based)
+            scale (used to be p3 - p2)
             wire: the wire
             fvs: scalar vs. vector potential
             is_near: This originally tested input C$ for "N" which is
                      the selection of near field compuation, this forces
                      non-exact kernel, see exact flag
-            Note: p2 and p3 are used only as differences, so if both are
-                  1-based produces same result as when both are 0-based.
-
             Output:
             vec2:
             vecv:
             t1:
             t2:
 
-            Temp:
-            i4, i5, s4, l, f2, t, d0, d3, i6
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         >>> s = Excitation (1, 0)
@@ -1985,7 +1974,7 @@ class Mininec:
         # 5.330494 -0.1568644j
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> r = m.psi (vec2, vecv, 1, 1, 1.5, m.geo [0], exact = True)
+        >>> r = m.psi (vec2, vecv, 1, 0.5, m.geo [0], exact = True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         5.3304830 -0.1568644j
 
@@ -1994,7 +1983,7 @@ class Mininec:
         >>> vec2 = np.array ([13.91929, 0, 0])
         >>> vecv = np.array ([16.06072, 0, 0])
         >>> x = m.psi
-        >>> r = x (vec2, vecv, k=1, p2=8, p3=9, wire=m.geo [0], fvs = 1)
+        >>> r = x (vec2, vecv, k=1, scale=1, wire=m.geo [0], fvs = 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156090j
         """
@@ -2003,7 +1992,7 @@ class Mininec:
         # magnitude of S(V) - S(M)
         d3 = np.linalg.norm (vecv)
         # magnitude of S(V) - S(U)
-        s4 = (p3 - p2) * wire.seg_len
+        s4 = scale * wire.seg_len
         # order of integration
         # gauss_n order gaussian quadrature
         i6 = 0
@@ -2025,8 +2014,8 @@ class Mininec:
                     t12 /= 2
                 return t12
             # The following starts line 162
-            f2 = 2 * (p3 - p2)
-            # Hmm, dividing by f2 here removes (p3-p2) from logarithm
+            f2 = 2 * scale
+            # Hmm, dividing by f2 here removes scale = (p3-p2) from logarithm
             # So i6 depends only on wire/seg parameters?!
             # Moved to wire. Original formula was:
             # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
@@ -2040,23 +2029,33 @@ class Mininec:
         return (r + i6) * s4
     # end def psi
 
-    def psi_common_vec1_vecv (self, vec1, k, p2, p3):
-        """ Compute vec2 (originally (X2, Y2, Z2))
-            and vecv (originally (V1, V2, V3))
+    def psi_common_vec1_vecv (self, vec1, k, pulse2, ds, p2, p3):
+        """ Compute the two difference vectors between two vectors on
+            pulse2 and vec1. The displacement ds defines the two points
+            on pulse2, a negative number is the start and the
+            middlepoint of the pulse while a positive number is the
+            middlepoint and the endpoint of the pulse. Note that
+            pulses start and end in the middle of a segment.
+            The result are two distance vectors:
+                v2 (originally (X2, Y2, Z2))
+            and vv (originally (V1, V2, V3))
             common to scalar and vector potential.
             This originally was an entry point at 113 used by scalar and
             vector potential computation.
-            The variable p2 is the index of the segment, seems this can
-            be a float in which case the middle of two segs is used.
             Note that this is tested by scalar_potential and
             vector_potential tests above.
-            Note that p2, p3 are now 0-based.
+            The original comment read:
+            S(U)-S(M) GOES IN (X2,Y2,Z2) [this is now v2]
+            S(V)-S(M) GOES IN (V1,V2,V3) [this is now vv]
         """
+        kvec = np.array ([1, 1, k])
+        v2, vv = pulse2.dvecs (ds)
+        v2 = kvec * v2 - vec1
+        vv = kvec * vv - vec1
+        #return v2 - vec1, vv - vec1
         i4 = int (p2)
         seg  = self.seg [i4]
         # S(U)-S(M) GOES IN (X2,Y2,Z2) (this is now vec2)
-        kvec = np.ones (3)
-        kvec [-1] = k
         if i4 == p2:
             vec2 = kvec * self.seg [i4] - vec1
         else:
@@ -2069,6 +2068,12 @@ class Mininec:
         else:
             i5 = i4 + 1
             vecv = kvec * (self.seg [i4] + self.seg [i5]) / 2 - vec1
+        if np.linalg.norm (v2 - vec2) > 1e-12:
+            import pdb; pdb.set_trace ()
+        assert np.linalg.norm (v2 - vec2) <= 1e-12
+        if np.linalg.norm (vv - vecv) > 1e-12:
+            import pdb; pdb.set_trace ()
+        assert np.linalg.norm (vv - vecv) <= 1e-12
         return vec2, vecv
     # end def psi_common_vec1_vecv
 
@@ -2098,7 +2103,7 @@ class Mininec:
         vec1 = vec0 + p1 * vect / 2
         vec2 = vec1 - kvec * self.seg [int (p2)]
         vecv = vec1 - kvec * self.seg [int (p3)]
-        return self.psi (vec2, vecv, k, p2, p3, wire, exact = False)
+        return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
     # end def psi_near_field_56
 
     def psi_near_field_66 (self, vec0, k, p2, p3, wire):
@@ -2124,7 +2129,7 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
         vecv = vec0 - kvec * self.seg [p3]
-        return self.psi (vec2, vecv, k, p2, p3, wire, exact = False)
+        return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
     # end def psi_near_field_66
 
     def psi_near_field_75 (self, vec0, k, p2, p3, wire):
@@ -2151,7 +2156,7 @@ class Mininec:
         i5 = i4 + 1
         vec2 = vec0 - kvec * self.seg [p2]
         vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        return self.psi (vec2, vecv, k, p2, p3, wire, exact = False)
+        return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
     # end def psi_near_field_75
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -2215,26 +2220,24 @@ class Mininec:
             source.register (self, pulse)
     # end def register_source
 
-    def scalar_potential (self, k, p1, p2, p3, wire, pulse1, pulse2):
+    def scalar_potential (self, k, p1, p2, p3, wire, pulse1, pulse2, ds1, ds2):
         """ Compute scalar potential
+            Inputs:
+            ds1 in the displacement on pulse1, we compute the endseg
+            (the endpoint in positive or negative direction).
+            ds2 is the displacement on pulse2, either negative or
+            positive, returns the pulse endpoint (in the middle of the
+            prev or next segment)
+
             Original entry point in line 87.
             Original comment:
             entries required for impedance matrix calculation
             S(M) goes in (X1,Y1,Z1) for scalar potential
             mod for small radius to wave length ratio
-
             This *used* to use A(P4), S(P4), where P4 is the index into
             the wire datastructures, A(P4) is the wire radius and S(P4)
             is the segment length of the wire
 
-            Inputs:
-            k, p1, p2, p3, wire, pulse1, pulse2
-            Note that p1, p2, p3, are 0-based now.
-            accesses self.seg, originally X(I4),Y(I4),Z(I4), X(I5),Y(I5),Z(I5)
-            Outputs:
-            t1, t2
-            Temp:
-            i4, i5
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         >>> s = Excitation (1, 0)
@@ -2246,32 +2249,46 @@ class Mininec:
         >>> method = m.scalar_potential
         >>> p0 = m.pulses [0]
         >>> p8 = m.pulses [8]
-        >>> r = method (1, 1.5, 8, 9, w [0], p0, p8)
+        >>> r = method (1, 1.5, 8, 9, m.geo [0], p0, p8, 0.5, -1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
         >>> w [0].r = 0.001
-        >>> r = method (1, 0.5, 1, 2, w [0], p0, p0)
+        >>> r = method (1, 0.5, 1, 2, m.geo [0], p0, p0, -0.5, 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         1.0497691 -0.3085993j
         """
+        assert wire == pulse2.wires [ds2 > 0]
+        #wire = pulse2.wires [ds2 > 0]
+        v1   = pulse1.endseg (ds1)
+        # This seems to always be the case.
+        assert p3 == p2 + 1
+        if  (p1 != (p2 + p3) / 2) != (pulse1.wire.n != pulse2.wire.n or pulse1.idx + ds1 != pulse2.idx + ds2 / 2):
+            import pdb;pdb.set_trace ()
+        #assert (p1 != (p2 + p3) / 2) == (np.linalg.norm (v1 - pulse2.endseg (ds2/2)) >= 1e-12)
         if  (  k < 1
             or wire.r > self.srm
-            or p3 != p2 + 1
-            or p1 != (p2 + p3) / 2
+            # FIXME: Find out how to compute these conditions
+            #or p1 != (p2 + p3) / 2
+            or pulse1.wire.n != pulse2.wire.n
+            or pulse1.idx + ds1 != pulse2.idx + ds2 / 2
             ):
             i4 = int (p1)
             i5 = i4 + 1
             vec1 = (self.seg [i4] + self.seg [i5]) / 2
+            if np.linalg.norm (v1 - vec1) > 1e-12:
+                import pdb; pdb.set_trace ()
+            assert np.linalg.norm (v1 - vec1) <= 1e-12
             wd   = self.wires_unconnected (pulse1, pulse2)
-            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
+            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds2, p2, p3)
+            assert abs (ds2) == p3 - p2
             return self.psi \
-                (vec2, vecv, k, p2, p3, wire, fvs = 1, exact = not wd)
+                (vec2, vecv, k, abs (ds2), wire, fvs = 1, exact = not wd)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1 + t2 * 1j
     # end def scalar_potential
 
-    def vector_potential (self, k, p2, p3, wire, pulse1, pulse2):
+    def vector_potential (self, k, p2, p3, wire, pulse1, pulse2, ds):
         """ Compute vector potential
             Original entry point in line 102.
             Original comment:
@@ -2298,16 +2315,21 @@ class Mininec:
         >>> method = m.vector_potential
         >>> p0 = m.pulses [0]
         >>> p1 = m.pulses [1]
-        >>> r = method (1, 1.5, 2, m.geo [0], p0, p1)
+        >>> r = method (1, 1.5, 2, m.geo [0], p0, p1, -0.5)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.6747199 -0.1555773j
         """
-        if k < 1 or wire.r >= self.srm or pulse1 != pulse2 or p3 != p2 + .5:
+        assert wire == pulse2.wires [ds > 0]
+        #wire = pulse2.wires [ds > 0]
+        # This always seems to be the case
+        assert p3 == p2 + .5
+        if k < 1 or wire.r >= self.srm or pulse1 != pulse2:
             vec1 = pulse1.point
-            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, p2, p3)
+            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds, p2, p3)
             wd = self.wires_unconnected (pulse1, pulse2)
+            assert abs (ds) == p3 - p2
             return self.psi \
-                (vec2, vecv, k, p2, p3, wire, fvs = 0, exact = not wd)
+                (vec2, vecv, k, abs (ds), wire, fvs = 0, exact = not wd)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1 + t2 * 1j

@@ -48,6 +48,10 @@ class Pulse_Container:
         return self.pulse_idx
     # end def __len__
 
+    def __getitem__ (self, idx):
+        return self.pulses [idx]
+    # end def __getitem__
+
 # end class Pulse_Container
 
 class Pulse:
@@ -118,6 +122,26 @@ class Pulse:
         l.append ('%4d' % (self.idx + 1))
         return  ''.join (l)
     # end def as_mininec
+
+    def endseg (self, ds):
+        """ Return segment to the negative direction or to the
+            positive direction depending on ds: If ds <= 0 return
+            negative, otherwise return positive. Scale with absolute
+            value of ds.
+        """
+        return (self.ends [ds > 0] - self.point) * abs (ds) + self.point
+    # end def endseg
+
+    def dvecs (self, ds):
+        """ Return two vectors, one of them always self.point, the other
+            is the halfseg below or above (in wire direction),
+            appropriately sorted, the negative direction segment is
+            always first while the positive direction segment is last.
+        """
+        if ds < 0:
+            return self.endseg (ds), self.point
+        return self.point, self.endseg (ds)
+    # end def dvecs
 
 # end class Pulse
 
