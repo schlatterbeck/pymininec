@@ -1501,13 +1501,9 @@ class Mininec:
                                 f8 = 2
                     # This was a conditional goto 317 in line 246
                     if k < 0 or self.Z [i][j].real == 0:
-                        p2 = 2 * self.w_per [j] + j + 1
-                        p3 = p2 + 0.5
                         vp = self.vector_potential (k, p_i, p_j, 0.5)
                         u = vp * p_j.sign [1]
                         # compute PSI(M,N-1/2,N)
-                        p3 = p2
-                        p2 -= 0.5
                         if f8 < 2:
                             vp = self.vector_potential (k, p_i, p_j, -0.5)
                         v = vp * p_j.sign [0]
@@ -1523,12 +1519,6 @@ class Mininec:
                         vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
                         d    = self.w2 * sum (vec3 * t567 [i])
                         # compute PSI(M+1/2,N,N+1)
-                        p1 = 2 * self.w_per [i] + i + 1
-                        p1 += 0.5
-                        if f8 == 2:
-                            p1 -= 1
-                        p2 = p3
-                        p3 += 1
                         if f8 < 2:
                             if f8 == 1:
                                 u56 = np.sign (self.seg_idx [j][1]) * u + vp
@@ -1537,20 +1527,15 @@ class Mininec:
                                     (k, p_i, p_j, 0.5, 1)
                             # compute PSI(M-1/2,N,N+1)
                             # Code at 291
-                            p1 -= 1
                             sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
                             seglen = p_j.wires [1].seg_len
                             u12 = (sp - u56) / seglen
                             # compute PSI(M+1/2,N-1,N)
-                            p1  += 1
-                            p3  = p2
-                            p2  -= 1
                             u34 = self.scalar_potential (k, p_i, p_j, .5, -1)
                             # compute PSI(M-1/2,N-1,N)
                             if f8 >= 1:
                                 sp = u56
                             else:
-                                p1 -= 1
                                 sp = self.scalar_potential \
                                     (k, p_i, p_j, -.5, -1)
                             # gradient of scalar potential contribution
