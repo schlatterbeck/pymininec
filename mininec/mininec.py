@@ -26,6 +26,7 @@
 
 import sys
 import copy
+import time
 import numpy as np
 from datetime import datetime
 from scipy.special import ellipk
@@ -804,6 +805,26 @@ class Gauge_Wire (Wire):
 
 # end class Gauge_Wire
 
+def measure_time (method):
+    """ Decorator for time measurement
+        Needs member variable do_timing in calling class
+    """
+    def timer (self, *args, **kw):
+        if self.do_timing:
+            start_time = time.time ()
+            retval = method (self, *args, **kw)
+            end_time = time.time ()
+            print \
+                ( 'Time %7.3f for %s'
+                % (end_time - start_time, method.__name__)
+                , file = sys.stderr
+                )
+            return retval
+        return method (self, *args, **kw)
+    # end def timer
+    return timer
+# end measure_time
+
 class Mininec:
     """ A mininec implementation in Python
     >>> w = []
@@ -839,7 +860,7 @@ class Mininec:
     g0 = 29.979221
     c  = 299.8 # speed of light
 
-    def __init__ (self, f, geo, media = None, print_opts = None):
+    def __init__ (self, f, geo, media = None, print_opts = None, t = False):
         """ Initialize, no interactive input is done here
             f:   Frequency in MHz, (F)
             media: sequence of Medium objects, if empty use perfect ground
@@ -897,6 +918,7 @@ class Mininec:
         conn r:
         <BLANKLINE>
         """
+        self.do_timing  = t
         self.f          = f
         self.media      = media
         self.loads      = []
@@ -976,7 +998,7 @@ class Mininec:
         self.compute_impedance_matrix ()
         self.compute_impedance_matrix_loads ()
         self.compute_rhs ()
-        self.current = np.linalg.solve (self.Z, self.rhs)
+        self.compute_currents ()
         # Used by far field and near field calculation
         self.power = sum (s.power for s in self.sources)
     # end def compute
@@ -1119,6 +1141,15 @@ class Mininec:
         self.w_per   -= 1
     # end def compute_connectivity
 
+    @measure_time
+    def compute_currents (self):
+        """ This just solves the matrix equation, this function is
+            introduced for timing measurements.
+        """
+        self.current = np.linalg.solve (self.Z, self.rhs)
+    # end def compute_currents
+
+    @measure_time
     def compute_far_field \
         (self, zenith_angle, azimuth_angle, pwr = None, dist = 0):
         """ Compute far field
@@ -1274,6 +1305,7 @@ class Mininec:
                     Far_Field_Pattern (zen_d, azi_d, p123, h12, x34, rat)
     # end def compute_far_field
 
+    @measure_time
     def compute_impedance_matrix (self):
         """ This starts at line 195 (with entry-point for gosub at 196)
             in the original basic code.
@@ -1613,6 +1645,7 @@ class Mininec:
         return v35
     # end def nf_helper
 
+    @measure_time
     def compute_near_field (self, start, inc, nvec, pwr = None):
         """ Near field
             Asumes that the impedance matrix has been computed.
@@ -1754,6 +1787,7 @@ class Mininec:
             self.h_field.append (h * f_h)
     # end def compute_near_field
 
+    @measure_time
     def compute_rhs (self):
         rhs = np.zeros (len (self.seg_idx), dtype=complex)
         for src in self.sources:
@@ -3356,6 +3390,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
+        ( '-T', '--timing'
+        , help    = 'Measure the time for certain parts of the algorithm'
+        , action  = 'store_true'
+        )
+    cmd.add_argument \
         ( '--trap-load'
         , help    = 'Trap load, R+L in series parallel to C, '
                     'specify R,L,C in Ohm, Henry, Farad,'
@@ -3500,7 +3539,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         p = p [:3]
         media.append (Medium (*p, **d))
     media = media or None
-    m = Mininec (args.frequency, wires, media = media)
+    m = Mininec (args.frequency, wires, media = media, t = args.timing)
     for i, v in zip (args.excitation_segment, args.excitation_voltage):
         s = Excitation (cvolt = v)
         m.register_source (s, i - 1)
