@@ -1702,22 +1702,18 @@ class Mininec:
                         # We compute both, E and H and continue
                         d   = sum (v35_e * t567 [i]) * self.w2
                         # compute psi(.5,J,J+1)
-                        p2   = 2 * p.wire.n + j + 1
-                        p3   = p2 + 1
                         u    = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p2, p3, p.wires [1])
+                            (vec, t567 [i], k, .5, p, 1)
                         # compute psi(-.5,J,J+1)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p2, p3, p.wires [1])
+                            (vec, t567 [i], k, -.5, p, 1)
                         u   = (tmp - u) / p.wires [1].seg_len
                         # compute psi(.5,J-1,J)
-                        p3   = p2
-                        p2  -= 1
                         u34  = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p2, p3, p.wires [0])
+                            (vec, t567 [i], k, .5, p, -1)
                         # compute psi(-.5,J-1,J)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p2, p3, p.wires [0])
+                            (vec, t567 [i], k, -.5, p, -1)
                         # gradient of scalar potential
                         u56 += (u + (u34 - tmp) / p.wires [0].seg_len + d) * k
                         # Here would be a GOTO 1048 (a continue of the K loop)
@@ -2048,12 +2044,12 @@ class Mininec:
         return v2, vv
     # end def psi_common_vec1_vecv
 
-    def psi_near_field_56 (self, vec0, vect, k, p1, p2, p3, wire):
+    def psi_near_field_56 (self, vec0, vect, k, ds0, pulse2, ds2):
         """ Compute psi used several times during computation of near field
             Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
             vect originally is (T5, T6, T7)
-            Note that p1 is the only non-zero-based variable, it's not
+            Note that ds0 is the only non-zero-based variable, it's not
             used as an index but as a factor.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
@@ -2065,16 +2061,17 @@ class Mininec:
         # 0.5496336 -0.3002106j
         >>> vec0 = np.array ([0, -1, -1])
         >>> vect = np.array ([8.565715E-02, 0, 0])
-        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, 1, 2, m.geo [0])
+        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, m.pulses [0], 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.5496335 -0.3002106j
         """
-        kvec = np.ones (3)
-        kvec [-1] = k
-        vec1 = vec0 + p1 * vect / 2
-        vec2 = vec1 - kvec * self.seg [int (p2)]
-        vecv = vec1 - kvec * self.seg [int (p3)]
-        return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
+        wire = pulse2.wires [ds2 > 0]
+        kvec = np.array ([1, 1, k])
+        vec1 = vec0 + ds0 * vect / 2
+        v2, vv = pulse2.dvecs (ds2)
+        v2 = vec1 - kvec * v2
+        vv = vec1 - kvec * vv
+        return self.psi (v2, vv, k, abs (ds2), wire, exact = False)
     # end def psi_near_field_56
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -2202,12 +2199,7 @@ class Mininec:
             This *used* to use A(P4), S(P4), where P4 is the index into
             the wire datastructures, A(P4) is the wire radius and S(P4)
             is the segment length of the wire, we now directly use the
-            wire, not p4 as the wire index.
-            The variable p1 is the index of the segment.
-            Inputs:
-            k, p2, p3, x(p1),y(p1),z(p1)
-            Outputs:
-            t1, t2
+            wire.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         >>> s = Excitation (1, 0)
