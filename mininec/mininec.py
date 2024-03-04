@@ -1092,7 +1092,7 @@ class Mininec:
                             f3 = p.sign [f5] * self.w * wire.seg_len / 2
                             # Line 723, 724
                             # No contribution by grounded end
-                            if p.ground.any () and p.sign [f5] < 0:
+                            if p.gnd_sgn [f5] < 0:
                                 continue
                             # Standard case (condition Line 725, 726)
                             if  (  k == 1
@@ -1656,7 +1656,7 @@ class Mininec:
         return iter ([1, -1])
     # end def image_iter
 
-    def integral_i2_i3 (self, t, vec2, vecv, k, wire, exact_kernel = False) :
+    def integral_i2_i3 (self, t, vec2, vecv, k, wire, exact_kernel = False):
         """ Starts line 28
             Uses variables:
             vec2 (originally (X2, Y2, Z2))
@@ -1894,32 +1894,6 @@ class Mininec:
         return (r + i6) * s4
     # end def psi
 
-    def psi_common_vec1_vecv (self, vec1, k, pulse2, ds):
-        """ Compute the two difference vectors between two vectors on
-            pulse2 and vec1. The displacement ds defines the two points
-            on pulse2, a negative number is the start and the
-            middlepoint of the pulse while a positive number is the
-            middlepoint and the endpoint of the pulse. Note that
-            pulses start and end in the middle of a segment.
-            The result are two distance vectors:
-                v2 (originally (X2, Y2, Z2))
-            and vv (originally (V1, V2, V3))
-            common to scalar and vector potential.
-            This originally was an entry point at 113 used by scalar and
-            vector potential computation.
-            Note that this is tested by scalar_potential and
-            vector_potential tests above.
-            The original comment read:
-            S(U)-S(M) GOES IN (X2,Y2,Z2) [this is now v2]
-            S(V)-S(M) GOES IN (V1,V2,V3) [this is now vv]
-        """
-        kvec = np.array ([1, 1, k])
-        v2, vv = pulse2.dvecs (ds)
-        v2 = kvec * v2 - vec1
-        vv = kvec * vv - vec1
-        return v2, vv
-    # end def psi_common_vec1_vecv
-
     def psi_near_field_56 (self, vec0, vect, k, ds0, pulse2, ds2):
         """ Compute psi used several times during computation of near field
             Original entry point in line 56
@@ -2050,16 +2024,19 @@ class Mininec:
         """
         wire = pulse2.wires [ds2 > 0]
         vec1 = pulse1.endseg (ds1)
+        kvec = np.array ([1, 1, k])
         if  (  k < 1
             or wire.r > self.srm
             or pulse1.wire.n != pulse2.wire.n
             or pulse1.idx + ds1 != pulse2.idx + ds2 / 2
             ):
-            v1   = pulse1.endseg (ds1)
-            wd   = self.wires_unconnected (pulse1, pulse2)
-            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds2)
+            v1 = pulse1.endseg (ds1)
+            wd = self.wires_unconnected (pulse1, pulse2)
+            v2, vv = pulse2.dvecs (ds2)
+            v2 = kvec * v2 - vec1
+            vv = kvec * vv - vec1
             return self.psi \
-                (vec2, vecv, k, abs (ds2), wire, fvs = 1, exact = not wd)
+                (v2, vv, k, abs (ds2), wire, fvs = 1, exact = not wd)
         t1 = 2 * np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len
         return t1 + t2 * 1j
@@ -2092,12 +2069,14 @@ class Mininec:
         0.6747199 -0.1555773j
         """
         wire = pulse2.wires [ds > 0]
+        kvec = np.array ([1, 1, k])
         if k < 1 or wire.r >= self.srm or pulse1 != pulse2:
-            vec1 = pulse1.point
-            vec2, vecv = self.psi_common_vec1_vecv (vec1, k, pulse2, ds)
+            v1 = pulse1.point
+            v2, vv = pulse2.dvecs (ds)
+            v2 = kvec * v2 - v1
+            vv = kvec * vv - v1
             wd = self.wires_unconnected (pulse1, pulse2)
-            return self.psi \
-                (vec2, vecv, k, abs (ds), wire, fvs = 0, exact = not wd)
+            return self.psi (v2, vv, k, abs (ds), wire, fvs = 0, exact = not wd)
         t1 = np.log (wire.seg_len / wire.r)
         t2 = -self.w * wire.seg_len / 2
         return t1 + t2 * 1j
