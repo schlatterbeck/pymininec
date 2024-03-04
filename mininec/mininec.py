@@ -1590,26 +1590,46 @@ class Mininec:
         return '\n'.join (r)
     # end def geo_as_str
 
-    def nf_helper (self, j, k, v, pulse):
+    def nf_helper (self, k, v1, pulse):
+        """ Compute potentials in near field calculation
+        >>> w = []
+        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> s = Excitation (1, 0)
+        >>> m = Mininec (7, w)
+        >>> m.register_source (s, 4)
+
+        >>> nf66 = 0.4792338 -0.1544592j
+        >>> nf75 = 0.3218219 -0.1519149j
+        >>> ex   = (nf66 + nf75) * w [0].dirvec
+        >>> vec0 = np.array ([0, -1, -1])
+        >>> r    = m.nf_helper (1, vec0, m.pulses [0])
+        >>> assert r [1] == 0 and r [2] == 0
+        >>> print ("%.7f %.7fj" % (ex [0].real, ex [0].imag))
+        0.8010557 -0.3063741j
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
+        0.8010557 -0.3063742j
+        >>> assert np.linalg.norm (ex - r) < 1e-7
+        """
+        kvec = np.array ([1, 1, k])
         v6   = np.array ([1, 1, pulse.gnd_sgn [0]])
         v7   = np.array ([1, 1, pulse.gnd_sgn [1]])
         dir  = [w.dirvec for w in pulse.wires]
-        j3   = pulse.wire.n
         # compute psi(0,J,J+.5)
-        p2   = 2 * j3 + j + 1
-        p3   = p2 + .5
-        wire = pulse.wires [1]
-        u    = self.psi_near_field_75 (v, k, p2, p3, wire) * pulse.sign [1]
+        v2, vv = pulse.dvecs (0.5)
+        v2     = v1 - kvec * v2
+        vv     = v1 - kvec * vv
+        u = self.psi (v2, vv, k, 0.5, pulse.wires [1], exact = False)
+
         # compute psi(0,J-.5,J)
-        p3   = p2
-        p2   = p2 - .5
-        wire = pulse.wires [0]
-        v    = self.psi_near_field_66 (v, k, p2, p3, wire) * pulse.sign [0]
+        v2, vv = pulse.dvecs (-0.5)
+        v2 = v1 - kvec * v2
+        vv = v1 - kvec * vv
+        v  = self.psi (v2, vv, k, 0.5, pulse.wires [0], exact = False)
+        v *= pulse.sign [0]
+
         # real part of vector potential contribution
         # imaginary part of vector potential contribution
-        kv  = np.array ([1, 1, k])
-        v35 = (v * dir [0] * v6 + u * dir [1] * v7) * kv
-        return v35
+        return (v * dir [0] * v6 + u * dir [1] * v7) * kvec
     # end def nf_helper
 
     @measure_time
@@ -1673,9 +1693,9 @@ class Mininec:
                         if p.ground.any () and k < 0:
                             continue
                         # compute vector potential A
-                        v35_e = self.nf_helper (j, k, vec, p)
+                        v35_e = self.nf_helper (k, vec, p)
                         v35_h = np.array \
-                            ([self.nf_helper (j, k, v [i], p) for v in v0m])
+                            ([self.nf_helper (k, v [i], p) for v in v0m])
                         # At this point comment notes
                         # magnetic field calculation completed
                         # and jumps to 1042 if H field
@@ -2056,59 +2076,6 @@ class Mininec:
         vecv = vec1 - kvec * self.seg [int (p3)]
         return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
     # end def psi_near_field_56
-
-    def psi_near_field_66 (self, vec0, k, p2, p3, wire):
-        """ Compute psi used during computation of near field
-            Original entry point in line 66
-            vec0 originally is (X0, Y0, Z0)
-        >>> w = []
-        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (1, 0)
-        >>> m = Mininec (7, w)
-        >>> m.register_source (s, 4)
-
-        # Original produces:
-        # 0.4792338 -0.1544592j
-        >>> vec0 = np.array ([0, -1, -1])
-        >>> r = m.psi_near_field_66 (vec0, k=1, p2=0.5, p3=1, wire=m.geo [0])
-        >>> print ("%.7f %.7fj" % (r.real, r.imag))
-        0.4792338 -0.1544592j
-        """
-        kvec = np.ones (3)
-        kvec [-1] = k
-        i4 = int (p2)
-        i5 = i4 + 1
-        vec2 = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        vecv = vec0 - kvec * self.seg [p3]
-        return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
-    # end def psi_near_field_66
-
-    def psi_near_field_75 (self, vec0, k, p2, p3, wire):
-        """ Compute psi used during computation of near field
-            Original entry point in line 75
-            vec0 originally is (X0, Y0, Z0)
-            vec1 originally is (X1, Y1, Z1)
-        >>> w = []
-        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
-        >>> s = Excitation (1, 0)
-        >>> m = Mininec (7, w)
-        >>> m.register_source (s, 4)
-
-        # Original produces:
-        # 0.3218219 -.1519149j
-        >>> vec0 = np.array ([0, -1, -1])
-        >>> r = m.psi_near_field_75 (vec0, k=1, p2=1, p3=1.5, wire=m.geo [0])
-        >>> print ("%.7f %.7fj" % (r.real, r.imag))
-        0.3218219 -0.1519149j
-        """
-        kvec = np.ones (3)
-        kvec [-1] = k
-        i4 = int (p3)
-        i5 = i4 + 1
-        vec2 = vec0 - kvec * self.seg [p2]
-        vecv = vec0 - kvec * (self.seg [i4] + self.seg [i5]) / 2
-        return self.psi (vec2, vecv, k, p3 - p2, wire, exact = False)
-    # end def psi_near_field_75
 
     def register_load (self, load, pulse = None, wire_idx = None):
         """ Default if no pulse is given is to add the load to *all*
