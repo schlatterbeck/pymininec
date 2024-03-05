@@ -23,6 +23,7 @@
 # ****************************************************************************
 
 import numpy as np
+from functools import cached_property
 from mininec.util import format_float
 
 class Pulse_Container:
@@ -51,6 +52,43 @@ class Pulse_Container:
     def __getitem__ (self, idx):
         return self.pulses [idx]
     # end def __getitem__
+
+    @cached_property
+    def seg_len (self):
+        return np.array \
+            ([[w.seg_len for w in p.wires] for p in self.pulses])
+    # end def seg_len
+
+    @cached_property
+    def dirvec (self):
+        return np.array \
+            ([[w.dirvec for w in p.wires] for p in self.pulses])
+    # end def dirvec
+
+    @cached_property
+    def sign (self):
+        return np.array ([p.sign for p in self.pulses])
+    # end def sign
+
+    @cached_property
+    def ground (self):
+        return np.array ([p.ground for p in self.pulses])
+    # end def ground
+
+    @cached_property
+    def inv_ground (self):
+        return np.array ([p.inv_ground for p in self.pulses])
+    # end def inv_ground
+
+    @cached_property
+    def gnd_sgn (self):
+        return np.array ([p.gnd_sgn for p in self.pulses])
+    # end def gnd_sgn
+
+    @cached_property
+    def point (self):
+        return np.array ([p.point for p in self.pulses])
+    # end def point
 
 # end class Pulse_Container
 
@@ -102,6 +140,9 @@ class Pulse:
         self.ground = np.array ([False, False])
         if gnd is not None:
             self.ground [gnd] = True
+        # Sometimes needed for ground special cases
+        # Semantics is "The other end is grounded"
+        self.inv_ground = np.array ([self.ground [1], self.ground [0]])
         # The main wire is the one with the larger index
         self.wire_idx = np.argmax ([w.n for w in self.wires])
         self.wire     = self.wires [self.wire_idx]

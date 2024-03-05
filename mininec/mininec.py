@@ -1052,17 +1052,19 @@ class Mininec:
         # about the radial distance (?)
         # 685 has code to print radials, only used for volts/meter
         # Original vars:
-        # AA: Azimuth angle initial
-        # AC: Azimuth increment
-        # NA: Azimuth number
-        # ZA: Zenith angle initial
-        # ZC: Zenith increment
-        # ZA: Zenith number
         # X1, Y1, Z1: vec real
         # X2, Y2, Z2: vec imag
         self.ff_dist  = dist
         self.ff_power = pwr or self.power
         self.far_field_angles = (zenith_angle, azimuth_angle)
+        if self.media:
+            nr, rr = self.media [0].nradials, self.media [0].radius
+            media_coord     = np.array ([m.coord for m in self.media])
+            media_height    = np.array ([m.height for m in self.media])
+            media_impedance = np.array \
+                ([m.impedance (self.f) for m in self.media])
+        pv = self.pulses
+        f3 = pv.sign * self.w * pv.seg_len / 2
         k9 = .016678 / self.power
         self.far_field_by_angle = {}
         for azi_d, azi in azimuth_angle.iter ():
@@ -1079,6 +1081,115 @@ class Mininec:
                 for k in self.image_iter ():
                     kvec  = np.array ([1, 1, k])
                     kvec2 = np.array ([k, k, 1])
+                    kv2   = np.tile (kvec2, (len (pv), 2, 1))
+                    kv2 [pv.ground] = np.array ([0, 0, 0])
+                    # Vectorized computation of standard case
+                    if k == 1 or not self.media or self.media [0].is_ideal:
+                        kv2g = np.copy (kv2)
+                        kv2g [pv.inv_ground] = np.array ([0, 0, 2])
+                        if k < 0:
+                            kv2g [pv.inv_ground] = np.array ([0, 0, 0])
+                        s2 = self.w * np.sum \
+                            (pv.point * rvec.real * kvec, axis = 1)
+                        s  = np.e ** (1j * s2)
+                        b  = f3.T * s * self.current
+#                        zoppel = (kv2g.T * b * pv.dirvec.T).T
+#                        with open ('/tmp/bla.log', 'a') as f:
+#                            for p in self.pulses:
+#                                for bla in range (2):
+#                                    value = zoppel [p.idx][bla]
+#                                    for v in value:
+#                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+#                                    print (file = f)
+                        vec += np.sum \
+                            ((kv2g.T * b * pv.dirvec.T).T, axis = (0, 1))
+#                        with open ('/tmp/bla.log', 'a') as f:
+#                            print ('VEC:', file = f, end = ' ')
+#                            for v in vec:
+#                                print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+#                            print (file = f)
+                        continue
+                    else:
+                    #elif False:
+                        kv2 [pv.inv_ground] = np.array ([0, 0, 0])
+                        assert self.media
+                        # begin by finding specular distance
+                        t4 = 1e5
+                        if rt3.real != 0:
+                            t4 = -pv.point.T [2] * rt3.imag / rt3.real
+                        b9 = t4 * v21.real + pv.point.T [0]
+                        if self.boundary != 'linear':
+                            # Pythagoras in case of circular boundary
+                            b9 *= b9
+                            b9 += (pv.point.T [1] - t4 * v21.imag) ** 2
+                            b9 = np.sqrt (b9)
+                        # search for the corresponding medium
+                        # Find minimum index where b9 > coord
+                        # Note: the coord of a medium is the perimeter
+                        # in the linear case in x-direction, otherwise
+                        # circular, b9 > media_coord will be True as
+                        # long as b9 is greater and is False when it
+                        # exceeds the perimenter, the argmin finds that
+                        # first False value.
+                        tc = np.tile (media_coord, (len (b9), 1))
+                        j2 = np.argmin ((b9 > tc.T).T, axis = 1)
+                        z45 = media_impedance [j2]
+                        if nr != 0:
+                            prod = nr * rr
+                            r = b9 + prod
+                            z8  = self.w * r * np.log (r / prod) / nr
+                            s89 = z45 * z8 * 1j
+                            t89 = z45 + (z8 * 1j)
+                            z45 [j2 == 0] = (s89 / t89) [j2 == 0]
+                        # form SQR(1-Z^2*SIN^2)
+                        w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
+                        # vertical reflection coefficient
+                        s89 = rt3.real - w67 * z45
+                        t89 = rt3.real + w67 * z45
+                        v89 = s89 / t89
+                        # horizontal reflection coefficient
+                        s89 = w67 - rt3.real * z45
+                        t89 = w67 + rt3.real * z45
+                        h89 = s89 / t89 - v89
+                        # compute contribution to sum
+                        z   = np.zeros (len (self.pulses))
+                        h   = media_height [j2]
+                        sh  = pv.point - np.array ([z, z, 2 * h]).T
+                        s2 = self.w * np.sum \
+                            (sh * rvec.real * kvec, axis = 1)
+                        s   = np.e ** (1j * s2)
+                        b   = f3.T * s * self.current
+                        w67 = b * v89
+                        d   = v21.imag * pv.dirvec.T [0] \
+                            + v21.real * pv.dirvec.T [1]
+                        z67 = d * b * h89
+                        tm1 = np.array \
+                            ([         v21.imag * z67.real
+                               + 1j * (v21.imag * z67.imag)
+                             ,         v21.real * z67.real
+                               + 1j * (v21.real * z67.imag)
+                             , np.zeros ((2, len (self.pulses)))
+                            ])
+                        vec += np.sum \
+                            ((pv.dirvec.T * w67 + tm1) * kv2.T, axis = (1, 2))
+                        zoppel = ((pv.dirvec.T * w67 + tm1) * kv2.T).T
+#                        with open ('/tmp/bla.log', 'a') as f:
+#                            for p in self.pulses:
+#                                for bla in range (2):
+#                                    print (' s2: %.7e %.7ej' % (s2 [p.idx].real, s2 [p.idx].imag), file = f)
+#                                    print ('v89: %.7e %.7ej' % (v89 [p.idx].real, v89 [p.idx].imag), file = f)
+#                                    print ('w67: %.7e %.7ej' % (w67 [bla][p.idx].real, w67 [bla][p.idx].imag), file = f)
+#                                    print ('z67: %.7e %.7ej' % (z67 [bla][p.idx].real, z67 [bla][p.idx].imag), file = f)
+#                                    value = zoppel [p.idx][bla]
+#                                    for v in value:
+#                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+#                                    print (file = f)
+                        #with open ('/tmp/bla.log', 'a') as f:
+                        #    print ('VEC:', file = f, end = ' ')
+                        #    for v in vec:
+                        #        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+                        #    print (file = f)
+                        continue
                     for p in self.pulses:
                         # Code at 716, 717
                         # For mirror image do nothing if one end is grounded
@@ -1108,13 +1219,14 @@ class Mininec:
                                     v = np.array ([0, 0, 1])
                                     vec += 2 * b * wire.dirvec * v
                                     continue
+#                                with open ('/tmp/bla.log', 'a') as f:
+#                                    for v in tuple (kvec2 * b * wire.dirvec):
+#                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+#                                    print (file = f)
                                 vec += kvec2 * b * wire.dirvec
                                 continue
                             else: # real ground case (Line 747)
                                 assert self.media
-                                med = self.media [0]
-                                nr  = med.nradials
-                                rr  = med.radius
                                 # begin by finding specular distance
                                 t4 = 1e5
                                 if rt3.real != 0:
@@ -1126,12 +1238,11 @@ class Mininec:
                                     b9 += (p.point [1] - t4 * v21.imag) ** 2
                                     b9 = np.sqrt (b9)
                                 # search for the corresponding medium
-                                # Find minimum index where b9 > coord
-                                coord = [m.coord for m in self.media]
-                                j2 = np.argmin ((b9 > coord) * coord)
+                                # Find minimum index where b9 > media_coord
+                                j2 = np.argmin ((b9 > media_coord) * media_coord)
                                 z45 = self.media [j2].impedance (self.f)
                                 # Line 764, 765
-                                if nr != 0 and b9 <= coord [0]:
+                                if nr != 0 and b9 <= media_coord [0]:
                                     prod = nr * rr
                                     r = b9 + prod
                                     z8  = self.w * r * np.log (r / prod) / nr
@@ -1159,6 +1270,11 @@ class Mininec:
                                 d   = v21.imag * wire.dirvec [0] \
                                     + v21.real * wire.dirvec [1]
                                 z67 = d * b * h89
+                                with open ('/tmp/bla.log', 'a') as f:
+                                    print (' s2: %.7e %.7ej' % (s2.real, s2.imag), file = f)
+                                    print ('v89: %.7e %.7ej' % (v89.real, v89.imag), file = f)
+                                    print ('w67: %.7e %.7ej' % (w67.real, w67.imag), file = f)
+                                    print ('z67: %.7e %.7ej' % (z67.real, z67.imag), file = f)
                                 tm1 = np.array \
                                     ([         v21.imag * z67.real
                                        + 1j * (v21.imag * z67.imag)
@@ -1167,6 +1283,15 @@ class Mininec:
                                      , 0
                                     ])
                                 vec += (wire.dirvec * w67 + tm1) * kvec2
+                                with open ('/tmp/bla.log', 'a') as f:
+                                    for v in (wire.dirvec * w67 + tm1) * kvec2:
+                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+                                    print (file = f)
+#                with open ('/tmp/bla.log', 'a') as f:
+#                    print ('VEC:', file = f, end = ' ')
+#                    for v in vec:
+#                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
+#                    print (file = f)
                 h12 = sum (vec * rvec.imag) * self.g0 * -1j
                 vv  = np.array ([v21.imag, v21.real])
                 x34 = sum (vec [:2] * vv) * self.g0 * -1j
