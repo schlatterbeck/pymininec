@@ -52,11 +52,16 @@ class Angle:
         self.number  = number
     # end def __init__
 
-    def iter (self):
-        for i in range (self.number):
-            angle = self.initial + i * self.inc
-            yield (angle, angle / 180 * np.pi)
-    # end def iter
+    def angle_deg (self):
+        idx = np.array (range (self.number))
+        a   = self.initial + idx * self.inc
+        return a
+    # end def angle_deg
+
+    def angle_rad (self):
+        return self.angle_deg () / 180 * np.pi
+    # end def angle_rad
+
 # end class Angle
 
 class Connected_Wires:
@@ -227,47 +232,44 @@ class Far_Field_Pattern:
     """ Values in dBi and/or V/m for far field
         Angles are in degrees for printing
     """
-    def __init__ (self, theta, phi, gain, e_theta, e_phi, pwr_ratio):
-        self.theta     = theta
-        self.phi       = phi
+    def __init__ (self, azi, zen, gain, e_theta, e_phi, pwr_ratio):
+        self.azi       = azi
+        self.zen       = zen
         self.gain      = gain
-        self._e_theta  = e_theta
-        self._e_phi    = e_phi
         self.pwr_ratio = np.sqrt (pwr_ratio)
+        self.e_theta   = e_theta * self.pwr_ratio
+        self.e_phi     = e_phi   * self.pwr_ratio
     # end def __init__
 
-    @property
-    def e_theta (self):
-        return self._e_theta * self.pwr_ratio
-    # end def e_theta
-
-    @property
-    def e_phi (self):
-        return self._e_phi * self.pwr_ratio
-    # end def e_phi
-
     def db_as_mininec (self):
-        v, h, t = self.gain
-        return \
-            ( ('%s     ' * 4 + '%s')
-            % ( format_float ((self.theta, self.phi))
-              + format_float ((v, h, t))
-              )
-            )
+        r = []
+        v, h, t = self.gain.T
+        for theta, phi, v, h, t in zip \
+            (self.zen.flat, self.azi.flat, v.flat, h.flat, t.flat):
+            r.append \
+                ( ('%s     ' * 4 + '%s')
+                % ( format_float ((theta, phi))
+                  + format_float ((v, h, t))
+                  )
+                )
+        return '\n'.join (r)
     # end def db_as_mininec
 
     def abs_gain_as_mininec (self):
-        e_theta_abs   = np.abs   (self.e_theta)
-        e_phi_abs     = np.abs   (self.e_phi)
-        e_theta_angle = np.angle (self.e_theta) / np.pi * 180
-        e_phi_angle   = np.angle (self.e_phi)   / np.pi * 180
-        return \
-            ( '%6.2f %9.2f %20.3E % 8.2f %19.3E % 8.2f'
-            % ( self.theta,  self.phi
-              , e_theta_abs, e_theta_angle
-              , e_phi_abs,   e_phi_angle
-              )
-            )
+        e_t_abs = np.abs   (self.e_theta)
+        e_p_abs = np.abs   (self.e_phi)
+        e_t_ang = np.angle (self.e_theta) / np.pi * 180
+        e_p_ang = np.angle (self.e_phi)   / np.pi * 180
+        r = []
+        for th, ph, et_abs, ep_abs, et_ang, ep_ang in zip \
+            ( self.zen.flat, self.azi.flat
+            , e_t_abs.flat, e_p_abs.flat, e_t_ang.flat, e_p_ang.flat
+            ):
+            r.append \
+                ( '%6.2f %9.2f %20.3E % 8.2f %19.3E % 8.2f'
+                % (th,  ph, et_abs, et_ang, ep_abs, ep_ang)
+                )
+        return '\n'.join (r)
     # end def abs_gain_as_mininec
 
 # end class Far_Field_Pattern
@@ -1063,21 +1065,27 @@ class Mininec:
             media_height    = np.array ([m.height for m in self.media])
             media_impedance = np.array \
                 ([m.impedance (self.f) for m in self.media])
-        pv = self.pulses
-        f3 = pv.sign * self.w * pv.seg_len / 2
-        k9 = .016678 / self.power
-        self.far_field_by_angle = {}
-        for azi_d, azi in azimuth_angle.iter ():
-            # exchange real/imag
-            v21 = np.e ** (-1j * azi)
-            for zen_d, zen in zenith_angle.iter ():
+        rd   = dist or 0
+        pv   = self.pulses
+        f3   = pv.sign * self.w * pv.seg_len / 2
+        k9   = .016678 / self.power
+        # cos, -sin for azi and zen angles
+        acs  = np.e ** (-1j * azimuth_angle.angle_rad ())
+        zcs  = np.e ** (-1j * zenith_angle.angle_rad ())
+        zcs_m, acs_m = np.meshgrid (zcs, acs)
+        rvec = np.array (
+            [ -zcs_m.imag * acs_m.real + 1j * (zcs_m.real * acs_m.real)
+            ,  zcs_m.imag * acs_m.imag - 1j * (zcs_m.real * acs_m.imag)
+            ,  zcs_m
+            ]).T
+        gain = np.zeros ((len (zcs), len (acs), 3), dtype = complex)
+        for i_a, v21 in enumerate (acs):
+            for i_z, rt3 in enumerate (zcs):
                 # Can we somehow reduce this with complex artithmetics?
                 # What is/was the intention of that code?
-                rt3  = np.e ** (-1j * zen)
-                rt1  = -rt3.imag * v21.real + 1j * (rt3.real * v21.real)
-                rt2  =  rt3.imag * v21.imag - 1j * (rt3.real * v21.imag)
-                rvec = np.array ([rt1, rt2, rt3])
-                vec  = np.zeros (3, dtype = complex)
+                #rt1  = -rt3.imag * v21.real + 1j * (rt3.real * v21.real)
+                #rt2  =  rt3.imag * v21.imag - 1j * (rt3.real * v21.imag)
+                #rvec = np.array ([rt1, rt2, rt3])
                 for k in self.image_iter ():
                     kvec  = np.array ([1, 1, k])
                     kvec2 = np.array ([k, k, 1])
@@ -1090,7 +1098,7 @@ class Mininec:
                         if k < 0:
                             kv2g [pv.inv_ground] = np.array ([0, 0, 0])
                         s2 = self.w * np.sum \
-                            (pv.point * rvec.real * kvec, axis = 1)
+                            (pv.point * rvec [i_z, i_a].real * kvec, axis = 1)
                         s  = np.e ** (1j * s2)
                         b  = f3.T * s * self.current
 #                        zoppel = (kv2g.T * b * pv.dirvec.T).T
@@ -1101,11 +1109,11 @@ class Mininec:
 #                                    for v in value:
 #                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
 #                                    print (file = f)
-                        vec += np.sum \
+                        gain [i_z][i_a] += np.sum \
                             ((kv2g.T * b * pv.dirvec.T).T, axis = (0, 1))
 #                        with open ('/tmp/bla.log', 'a') as f:
 #                            print ('VEC:', file = f, end = ' ')
-#                            for v in vec:
+#                            for v in gain [i_z][i_a]:
 #                                print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
 #                            print (file = f)
                         continue
@@ -1156,7 +1164,7 @@ class Mininec:
                         h   = media_height [j2]
                         sh  = pv.point - np.array ([z, z, 2 * h]).T
                         s2 = self.w * np.sum \
-                            (sh * rvec.real * kvec, axis = 1)
+                            (sh * rvec [i_z, i_a].real * kvec, axis = 1)
                         s   = np.e ** (1j * s2)
                         b   = f3.T * s * self.current
                         w67 = b * v89
@@ -1170,7 +1178,7 @@ class Mininec:
                                + 1j * (v21.real * z67.imag)
                              , np.zeros ((2, len (self.pulses)))
                             ])
-                        vec += np.sum \
+                        gain [i_z][i_a] += np.sum \
                             ((pv.dirvec.T * w67 + tm1) * kv2.T, axis = (1, 2))
                         zoppel = ((pv.dirvec.T * w67 + tm1) * kv2.T).T
 #                        with open ('/tmp/bla.log', 'a') as f:
@@ -1186,7 +1194,7 @@ class Mininec:
 #                                    print (file = f)
                         #with open ('/tmp/bla.log', 'a') as f:
                         #    print ('VEC:', file = f, end = ' ')
-                        #    for v in vec:
+                        #    for v in gain [i_z][i_a]:
                         #        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
                         #    print (file = f)
                         continue
@@ -1210,20 +1218,20 @@ class Mininec:
                                 or not self.media
                                 or self.media [0].is_ideal
                                 ):
-                                s2  = self.w * sum (p.point * rvec.real * kvec)
+                                s2  = self.w * sum (p.point * rvec [i_z, i_a].real * kvec)
                                 s   = np.e ** (1j * s2)
                                 b   = f3 * s * self.current [p.idx]
                                 # Line 733
                                 if p.ground.any ():
                                     # grounded ends, only update last axis
                                     v = np.array ([0, 0, 1])
-                                    vec += 2 * b * wire.dirvec * v
+                                    gain [i_z][i_a] += 2 * b * wire.dirvec * v
                                     continue
 #                                with open ('/tmp/bla.log', 'a') as f:
 #                                    for v in tuple (kvec2 * b * wire.dirvec):
 #                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
 #                                    print (file = f)
-                                vec += kvec2 * b * wire.dirvec
+                                gain [i_z][i_a] += kvec2 * b * wire.dirvec
                                 continue
                             else: # real ground case (Line 747)
                                 assert self.media
@@ -1263,7 +1271,7 @@ class Mininec:
                                 assert self.media and j2 < len (self.media)
                                 h = self.media [j2].height
                                 sh  = p.point - np.array ([0, 0, 2 * h])
-                                s2  = self.w * sum (kvec * sh * rvec.real)
+                                s2  = self.w * sum (kvec * sh * rvec [i_z, i_a].real)
                                 s   = np.e ** (1j * s2)
                                 b   = f3 * s * self.current [p.idx]
                                 w67 = b * v89
@@ -1282,35 +1290,36 @@ class Mininec:
                                        + 1j * (v21.real * z67.imag)
                                      , 0
                                     ])
-                                vec += (wire.dirvec * w67 + tm1) * kvec2
+                                gain [i_z][i_a] += (wire.dirvec * w67 + tm1) * kvec2
                                 with open ('/tmp/bla.log', 'a') as f:
                                     for v in (wire.dirvec * w67 + tm1) * kvec2:
                                         print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
                                     print (file = f)
 #                with open ('/tmp/bla.log', 'a') as f:
 #                    print ('VEC:', file = f, end = ' ')
-#                    for v in vec:
+#                    for v in gain [i_z][i_a]:
 #                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
 #                    print (file = f)
-                h12 = sum (vec * rvec.imag) * self.g0 * -1j
-                vv  = np.array ([v21.imag, v21.real])
-                x34 = sum (vec [:2] * vv) * self.g0 * -1j
-                rd  = dist or 0
-                # pattern in dBi
-                p123 = np.ones (3) * -999
-                t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
-                t2 = k9 * (x34.real ** 2 + x34.imag ** 2)
-                t3 = t1 + t2
-                # calculate values in dBi
-                t123 = np.array ([t1, t2, t3])
-                cond = t123 > 1e-30
-                p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
-                if rd != 0:
-                    h12 /= rd
-                    x34 /= rd
-                rat = self.ff_power / self.power
-                self.far_field_by_angle [(zen_d, azi_d)] = \
-                    Far_Field_Pattern (zen_d, azi_d, p123, h12, x34, rat)
+        h12 = np.sum (gain * rvec.imag, axis = 2) * self.g0 * -1j
+        vv  = np.array ([acs_m.imag, acs_m.real]).T
+        x34 = np.sum (gain [:, :, :2] * vv, axis = 2) * self.g0 * -1j
+        # pattern in dBi
+        p123 = np.ones ((len (zcs), len (acs), 3), dtype = float) * -999
+        t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
+        t2 = k9 * (x34.real ** 2 + x34.imag ** 2)
+        t3 = t1 + t2
+        # calculate values in dBi
+        t123 = np.array ([t1.T, t2.T, t3.T]).T
+        cond = t123 > 1e-30
+        p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
+        if rd != 0:
+            h12 /= rd
+            x34 /= rd
+        rat = self.ff_power / self.power
+        zen_d, azi_d = np.meshgrid \
+            (zenith_angle.angle_deg (), azimuth_angle.angle_deg ())
+        self.far_field = \
+            Far_Field_Pattern (azi_d, zen_d, p123, h12.T, x34.T, rat)
     # end def compute_far_field
 
     @measure_time
@@ -2348,9 +2357,7 @@ class Mininec:
             % tuple (' ' * x for x in (4, 14, 4, 6, 4))
             )
         srt = lambda x: (x [1], x [0])
-        for zen, azi in sorted (self.far_field_by_angle, key = srt):
-            ff = self.far_field_by_angle [(zen, azi)]
-            r.append (ff.abs_gain_as_mininec ())
+        r.append (self.far_field.abs_gain_as_mininec ())
         return '\n'.join (r)
     # end def far_field_absolute_as_mininec
 
@@ -2370,9 +2377,7 @@ class Mininec:
             % tuple (' ' * x for x in (9, 8))
             )
         srt = lambda x: (x [1], x [0])
-        for zen, azi in sorted (self.far_field_by_angle, key = srt):
-            ff = self.far_field_by_angle [(zen, azi)]
-            r.append (ff.db_as_mininec ())
+        r.append (self.far_field.db_as_mininec ())
         return '\n'.join (r)
     # end def far_field_as_mininec
 
