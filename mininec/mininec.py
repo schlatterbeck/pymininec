@@ -1078,7 +1078,152 @@ class Mininec:
             ,  zcs_m.imag * acs_m.imag - 1j * (zcs_m.real * acs_m.imag)
             ,  zcs_m
             ]).T
-        gain = np.zeros ((len (zcs), len (acs), 3), dtype = complex)
+        gain = np.zeros (rvec.shape, dtype = complex)
+        shp  = list (rvec.shape)
+        shp.insert (-1, len (pv))
+        rvrp = np.reshape (np.repeat (rvec, len (pv), axis = 1), shp)
+        zen_d, azi_d = np.meshgrid \
+            (zenith_angle.angle_deg (), azimuth_angle.angle_deg ())
+        for k in self.image_iter ():
+            kvec  = np.array ([1, 1, k])
+            kvec2 = np.array ([k, k, 1])
+            kv2   = np.tile (kvec2, (len (pv), 2, 1))
+            kv2 [pv.ground] = np.array ([0, 0, 0])
+            # Vectorized computation of standard case
+            if k == 1 or not self.media or self.media [0].is_ideal:
+                kv2g = np.copy (kv2)
+                kv2g [pv.inv_ground] = np.array ([0, 0, 2])
+                if k < 0:
+                    kv2g [pv.inv_ground] = np.array ([0, 0, 0])
+                s2   = self.w * np.sum \
+                    (pv.point * kvec * rvrp.real, axis = 3)
+                s    = np.e ** (1j * s2)
+                sshp = list (s.shape)
+                sshp.insert (-1, 2)
+                ss   = np.reshape (np.repeat (s, 2, axis = 1), sshp)
+                b    = f3.T * ss * self.current
+                bshp = list (b.shape)
+                bshp.insert (2, 3)
+                bs   = np.zeros (bshp, dtype = complex)
+                bs [:, :, 0, :, :] = b
+                bs [:, :, 1, :, :] = b
+                bs [:, :, 2, :, :] = b
+                gain += np.sum \
+                    (kv2g.T * pv.dirvec.T * bs, axis = (3, 4))
+            else:
+                kv2 [pv.inv_ground] = np.array ([0, 0, 0])
+                assert self.media
+                rt3 = rvrp [:, :, :, 2]
+                # begin by finding specular distance
+                cond = rt3.real != 0
+                t4 = np.zeros (rt3.shape)
+                t4 [rt3.real == 0] = 1e5
+                t4 [cond] = \
+                    (-pv.point.T [2] * rt3.imag) [cond] / rt3.real [cond]
+                b9 = (t4.T * acs_m.real).T + pv.point.T [0]
+                if self.boundary != 'linear':
+                    # Pythagoras in case of circular boundary
+                    b9 *= b9
+                    b9 += ((-t4.T * acs_m.imag).T + pv.point.T [1]) ** 2
+                    b9 = np.sqrt (b9)
+                # search for the corresponding medium
+                # Find minimum index where b9 > coord
+                # Note: the coord of a medium is the perimeter
+                # in the linear case in x-direction, otherwise
+                # circular, b9 > media_coord will be True as
+                # long as b9 is greater and is False when it
+                # exceeds the perimenter, the argmin finds that
+                # first False value.
+                shp = list (b9.shape)
+                shp.insert (0, len (media_coord))
+                tc = np.reshape \
+                    (np.tile (media_coord, (np.prod (b9.shape),1)).T, shp)
+                j2 = np.argmin (b9 > tc, axis = 0)
+                z45 = media_impedance [j2]
+                if nr != 0:
+                    prod = nr * rr
+                    r = b9 + prod
+                    z8  = self.w * r * np.log (r / prod) / nr
+                    s89 = z45 * z8 * 1j
+                    t89 = z45 + (z8 * 1j)
+                    z45 [j2 == 0] = (s89 / t89) [j2 == 0]
+                # form SQR(1-Z^2*SIN^2)
+                w671 = w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
+                # vertical reflection coefficient
+                s89 = rt3.real - w67 * z45
+                t89 = rt3.real + w67 * z45
+                v89 = s89 / t89
+                # horizontal reflection coefficient
+                s89 = w67 - rt3.real * z45
+                t89 = w67 + rt3.real * z45
+                h89 = s89 / t89 - v89
+                # Reshape to include two ends of segments
+                vsp = list (v89.shape)
+                vsp.insert (2, 2)
+                h89o = h89
+                h89 = np.zeros (vsp, dtype = complex)
+                h89 [:, :, 0, :] = h89o
+                h89 [:, :, 1, :] = h89o
+                vsp.insert (2, 3)
+                v89o = v89
+                v89 = np.zeros (vsp, dtype = complex)
+                v89 [:, :, 0, 0, :] = v89o
+                v89 [:, :, 0, 1, :] = v89o
+                v89 [:, :, 1, 0, :] = v89o
+                v89 [:, :, 1, 1, :] = v89o
+                v89 [:, :, 2, 0, :] = v89o
+                v89 [:, :, 2, 1, :] = v89o
+                # compute contribution to sum
+                shp = j2.shape + (3,)
+                h   = np.zeros (shp)
+                h [:, :, :, 2] = media_height [j2] * 2
+                sh  = pv.point - h
+                s2 = self.w * np.sum \
+                    (sh * rvrp.real * kvec, axis = 3)
+                s   = np.e ** (1j * s2)
+                sshp = list (s.shape)
+                sshp.insert (-1, 2)
+                ss   = np.reshape (np.repeat (s, 2, axis = 1), tuple (sshp))
+                b    = f3.T * ss * self.current
+                bshp = list (b.shape)
+                bshp.insert (2, 3)
+                bs   = np.zeros (bshp, dtype = complex)
+                bs [:, :, 0, :, :] = b
+                bs [:, :, 1, :, :] = b
+                bs [:, :, 2, :, :] = b
+                w67  = bs * v89
+                acs_ms = np.repeat (acs_m.T, len (pv) * 2, axis = 1)
+                acs_ms = np.reshape (acs_ms, acs_m.T.shape + (2, len (pv)))
+                d   = acs_ms.imag * pv.dirvec.T [0] \
+                    + acs_ms.real * pv.dirvec.T [1]
+                z67 = d * b * h89
+                tm1 = np.zeros (w67.shape, dtype = complex)
+                tm1 [:, :, 0, :, :] = \
+                    (acs_ms.imag * z67.real + 1j * acs_ms.imag * z67.imag)
+                tm1 [:, :, 1, :, :] = \
+                    (acs_ms.real * z67.real + 1j * acs_ms.real * z67.imag)
+                dim = end = 0
+#                with open ('/tmp/bla.log', 'a') as f:
+#                    for a in range (azi_d.shape [0]):
+#                        for z in range (zen_d.shape [-1]):
+#                            #print ('--------------------', file = f)
+#                            for dim in range (3):
+#                                for end in range (2):
+#                                    for p in self.pulses:
+#                                        v = w67 [z, a, dim, end, p.idx]
+#                                        print ('dim: %d end: %d p: %d w67: %.6e %.6ej'
+#                                              % (dim, end, p.idx, v.real, v.imag), file = f)
+#                                        #import pdb; pdb.set_trace ()
+#                                        v = h89 [z, a, end, p.idx]
+#                                        #v = h89o [z, a, p.idx]
+#                                        #v = v89 [z, a, dim, end, p.idx]
+#                                        print ('dim: %d end: %d p: %d b: %.6e %.6ej'
+#                                              % (dim, end, p.idx, v.real, v.imag), file = f)
+#                                        v = zcs [z]
+#                                        print ('dim: %d end: %d p: %d zcs: %.6e %.6ej'
+#                                              % (dim, end, p.idx, v.real, v.imag), file = f)
+                gain += np.sum \
+                    ((pv.dirvec.T * w67 + tm1) * kv2.T, axis = (3, 4))
         for i_a, v21 in enumerate (acs):
             for i_z, rt3 in enumerate (zcs):
                 # Can we somehow reduce this with complex artithmetics?
@@ -1109,8 +1254,8 @@ class Mininec:
 #                                    for v in value:
 #                                        print ('%.6e %.6ej ' % (v.real, v.imag), file = f, end = '')
 #                                    print (file = f)
-                        gain [i_z][i_a] += np.sum \
-                            ((kv2g.T * b * pv.dirvec.T).T, axis = (0, 1))
+##                        gain [i_z][i_a] += np.sum \
+##                            ((kv2g.T * b * pv.dirvec.T).T, axis = (0, 1))
 #                        with open ('/tmp/bla.log', 'a') as f:
 #                            print ('VEC:', file = f, end = ' ')
 #                            for v in gain [i_z][i_a]:
@@ -1150,7 +1295,7 @@ class Mininec:
                             t89 = z45 + (z8 * 1j)
                             z45 [j2 == 0] = (s89 / t89) [j2 == 0]
                         # form SQR(1-Z^2*SIN^2)
-                        w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
+                        w671 = w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
                         # vertical reflection coefficient
                         s89 = rt3.real - w67 * z45
                         t89 = rt3.real + w67 * z45
@@ -1178,8 +1323,24 @@ class Mininec:
                                + 1j * (v21.real * z67.imag)
                              , np.zeros ((2, len (self.pulses)))
                             ])
-                        gain [i_z][i_a] += np.sum \
-                            ((pv.dirvec.T * w67 + tm1) * kv2.T, axis = (1, 2))
+                        dim = end = 0
+#                        with open ('/tmp/bla2.log', 'a') as f:
+#                            #print ('--------------------', file = f)
+#                            for dim in range (3):
+#                                for end in range (2):
+#                                    for p in self.pulses:
+#                                        v = w67 [end, p.idx]
+#                                        print ('dim: %d end: %d p: %d w67: %.6e %.6ej'
+#                                              % (dim, end, p.idx, v.real, v.imag), file = f)
+#                                        #import pdb; pdb.set_trace ()
+#                                        v = h89 [p.idx]
+#                                        print ('dim: %d end: %d p: %d b: %.6e %.6ej'
+#                                              % (dim, end, p.idx, v.real, v.imag), file = f)
+#                                        v = zcs [i_z]
+#                                        print ('dim: %d end: %d p: %d zcs: %.6e %.6ej'
+#                                              % (dim, end, p.idx, v.real, v.imag), file = f)
+##                        gain [i_z][i_a] += np.sum \
+##                            ((pv.dirvec.T * w67 + tm1) * kv2.T, axis = (1, 2))
                         zoppel = ((pv.dirvec.T * w67 + tm1) * kv2.T).T
 #                        with open ('/tmp/bla.log', 'a') as f:
 #                            for p in self.pulses:
@@ -1316,8 +1477,6 @@ class Mininec:
             h12 /= rd
             x34 /= rd
         rat = self.ff_power / self.power
-        zen_d, azi_d = np.meshgrid \
-            (zenith_angle.angle_deg (), azimuth_angle.angle_deg ())
         self.far_field = \
             Far_Field_Pattern (azi_d, zen_d, p123, h12.T, x34.T, rat)
     # end def compute_far_field
