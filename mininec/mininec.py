@@ -52,11 +52,16 @@ class Angle:
         self.number  = number
     # end def __init__
 
-    def iter (self):
-        for i in range (self.number):
-            angle = self.initial + i * self.inc
-            yield (angle, angle / 180 * np.pi)
-    # end def iter
+    def angle_deg (self):
+        idx = np.array (range (self.number))
+        a   = self.initial + idx * self.inc
+        return a
+    # end def angle_deg
+
+    def angle_rad (self):
+        return self.angle_deg () / 180 * np.pi
+    # end def angle_rad
+
 # end class Angle
 
 class Connected_Wires:
@@ -227,47 +232,44 @@ class Far_Field_Pattern:
     """ Values in dBi and/or V/m for far field
         Angles are in degrees for printing
     """
-    def __init__ (self, theta, phi, gain, e_theta, e_phi, pwr_ratio):
-        self.theta     = theta
-        self.phi       = phi
+    def __init__ (self, azi, zen, gain, e_theta, e_phi, pwr_ratio):
+        self.azi       = azi
+        self.zen       = zen
         self.gain      = gain
-        self._e_theta  = e_theta
-        self._e_phi    = e_phi
         self.pwr_ratio = np.sqrt (pwr_ratio)
+        self.e_theta   = e_theta * self.pwr_ratio
+        self.e_phi     = e_phi   * self.pwr_ratio
     # end def __init__
 
-    @property
-    def e_theta (self):
-        return self._e_theta * self.pwr_ratio
-    # end def e_theta
-
-    @property
-    def e_phi (self):
-        return self._e_phi * self.pwr_ratio
-    # end def e_phi
-
     def db_as_mininec (self):
-        v, h, t = self.gain
-        return \
-            ( ('%s     ' * 4 + '%s')
-            % ( format_float ((self.theta, self.phi))
-              + format_float ((v, h, t))
-              )
-            )
+        r = []
+        v, h, t = self.gain.T
+        for theta, phi, v, h, t in zip \
+            (self.zen.flat, self.azi.flat, v.flat, h.flat, t.flat):
+            r.append \
+                ( ('%s     ' * 4 + '%s')
+                % ( format_float ((theta, phi))
+                  + format_float ((v, h, t))
+                  )
+                )
+        return '\n'.join (r)
     # end def db_as_mininec
 
     def abs_gain_as_mininec (self):
-        e_theta_abs   = np.abs   (self.e_theta)
-        e_phi_abs     = np.abs   (self.e_phi)
-        e_theta_angle = np.angle (self.e_theta) / np.pi * 180
-        e_phi_angle   = np.angle (self.e_phi)   / np.pi * 180
-        return \
-            ( '%6.2f %9.2f %20.3E % 8.2f %19.3E % 8.2f'
-            % ( self.theta,  self.phi
-              , e_theta_abs, e_theta_angle
-              , e_phi_abs,   e_phi_angle
-              )
-            )
+        e_t_abs = np.abs   (self.e_theta)
+        e_p_abs = np.abs   (self.e_phi)
+        e_t_ang = np.angle (self.e_theta) / np.pi * 180
+        e_p_ang = np.angle (self.e_phi)   / np.pi * 180
+        r = []
+        for th, ph, et_abs, ep_abs, et_ang, ep_ang in zip \
+            ( self.zen.flat, self.azi.flat
+            , e_t_abs.flat, e_p_abs.flat, e_t_ang.flat, e_p_ang.flat
+            ):
+            r.append \
+                ( '%6.2f %9.2f %20.3E % 8.2f %19.3E % 8.2f'
+                % (th,  ph, et_abs, et_ang, ep_abs, ep_ang)
+                )
+        return '\n'.join (r)
     # end def abs_gain_as_mininec
 
 # end class Far_Field_Pattern
@@ -1052,140 +1054,182 @@ class Mininec:
         # about the radial distance (?)
         # 685 has code to print radials, only used for volts/meter
         # Original vars:
-        # AA: Azimuth angle initial
-        # AC: Azimuth increment
-        # NA: Azimuth number
-        # ZA: Zenith angle initial
-        # ZC: Zenith increment
-        # ZA: Zenith number
         # X1, Y1, Z1: vec real
         # X2, Y2, Z2: vec imag
         self.ff_dist  = dist
         self.ff_power = pwr or self.power
         self.far_field_angles = (zenith_angle, azimuth_angle)
-        k9 = .016678 / self.power
-        self.far_field_by_angle = {}
-        for azi_d, azi in azimuth_angle.iter ():
-            # exchange real/imag
-            v21 = np.e ** (-1j * azi)
-            for zen_d, zen in zenith_angle.iter ():
-                # Can we somehow reduce this with complex artithmetics?
-                # What is/was the intention of that code?
-                rt3  = np.e ** (-1j * zen)
-                rt1  = -rt3.imag * v21.real + 1j * (rt3.real * v21.real)
-                rt2  =  rt3.imag * v21.imag - 1j * (rt3.real * v21.imag)
-                rvec = np.array ([rt1, rt2, rt3])
-                vec  = np.zeros (3, dtype = complex)
-                for k in self.image_iter ():
-                    kvec  = np.array ([1, 1, k])
-                    kvec2 = np.array ([k, k, 1])
-                    for p in self.pulses:
-                        # Code at 716, 717
-                        # For mirror image do nothing if one end is grounded
-                        if k <= 0 and p.ground.any ():
-                            continue
-                        # for each end of pulse compute
-                        # a contribution to e-field
-                        # End of this loop (goto for continue) is 812
-                        for f5 in range (2):
-                            wire = p.wires [f5]
-                            f3 = p.sign [f5] * self.w * wire.seg_len / 2
-                            # Line 723, 724
-                            # No contribution by grounded end
-                            if p.gnd_sgn [f5] < 0:
-                                continue
-                            # Standard case (condition Line 725, 726)
-                            if  (  k == 1
-                                or not self.media
-                                or self.media [0].is_ideal
-                                ):
-                                s2  = self.w * sum (p.point * rvec.real * kvec)
-                                s   = np.e ** (1j * s2)
-                                b   = f3 * s * self.current [p.idx]
-                                # Line 733
-                                if p.ground.any ():
-                                    # grounded ends, only update last axis
-                                    v = np.array ([0, 0, 1])
-                                    vec += 2 * b * wire.dirvec * v
-                                    continue
-                                vec += kvec2 * b * wire.dirvec
-                                continue
-                            else: # real ground case (Line 747)
-                                assert self.media
-                                med = self.media [0]
-                                nr  = med.nradials
-                                rr  = med.radius
-                                # begin by finding specular distance
-                                t4 = 1e5
-                                if rt3.real != 0:
-                                    t4 = -p.point [2] * rt3.imag / rt3.real
-                                b9 = t4 * v21.real + p.point [0]
-                                if self.boundary != 'linear':
-                                    # Hmm this is pythagoras?
-                                    b9 *= b9
-                                    b9 += (p.point [1] - t4 * v21.imag) ** 2
-                                    b9 = np.sqrt (b9)
-                                # search for the corresponding medium
-                                # Find minimum index where b9 > coord
-                                coord = [m.coord for m in self.media]
-                                j2 = np.argmin ((b9 > coord) * coord)
-                                z45 = self.media [j2].impedance (self.f)
-                                # Line 764, 765
-                                if nr != 0 and b9 <= coord [0]:
-                                    prod = nr * rr
-                                    r = b9 + prod
-                                    z8  = self.w * r * np.log (r / prod) / nr
-                                    s89 = z45 * z8 * 1j
-                                    t89 = z45 + (z8 * 1j)
-                                    z45 = s89 / t89
-                                # form SQR(1-Z^2*SIN^2)
-                                w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
-                                # vertical reflection coefficient
-                                s89 = rt3.real - w67 * z45
-                                t89 = rt3.real + w67 * z45
-                                v89 = s89 / t89
-                                # horizontal reflection coefficient
-                                s89 = w67 - rt3.real * z45
-                                t89 = w67 + rt3.real * z45
-                                h89 = s89 / t89 - v89
-                                # compute contribution to sum
-                                assert self.media and j2 < len (self.media)
-                                h = self.media [j2].height
-                                sh  = p.point - np.array ([0, 0, 2 * h])
-                                s2  = self.w * sum (kvec * sh * rvec.real)
-                                s   = np.e ** (1j * s2)
-                                b   = f3 * s * self.current [p.idx]
-                                w67 = b * v89
-                                d   = v21.imag * wire.dirvec [0] \
-                                    + v21.real * wire.dirvec [1]
-                                z67 = d * b * h89
-                                tm1 = np.array \
-                                    ([         v21.imag * z67.real
-                                       + 1j * (v21.imag * z67.imag)
-                                     ,         v21.real * z67.real
-                                       + 1j * (v21.real * z67.imag)
-                                     , 0
-                                    ])
-                                vec += (wire.dirvec * w67 + tm1) * kvec2
-                h12 = sum (vec * rvec.imag) * self.g0 * -1j
-                vv  = np.array ([v21.imag, v21.real])
-                x34 = sum (vec [:2] * vv) * self.g0 * -1j
-                rd  = dist or 0
-                # pattern in dBi
-                p123 = np.ones (3) * -999
-                t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
-                t2 = k9 * (x34.real ** 2 + x34.imag ** 2)
-                t3 = t1 + t2
-                # calculate values in dBi
-                t123 = np.array ([t1, t2, t3])
-                cond = t123 > 1e-30
-                p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
-                if rd != 0:
-                    h12 /= rd
-                    x34 /= rd
-                rat = self.ff_power / self.power
-                self.far_field_by_angle [(zen_d, azi_d)] = \
-                    Far_Field_Pattern (zen_d, azi_d, p123, h12, x34, rat)
+        if self.media:
+            nr, rr = self.media [0].nradials, self.media [0].radius
+            media_coord     = np.array ([m.coord for m in self.media])
+            media_height    = np.array ([m.height for m in self.media])
+            media_impedance = np.array \
+                ([m.impedance (self.f) for m in self.media])
+        rd   = dist or 0
+        pv   = self.pulses
+        f3   = pv.sign * self.w * pv.seg_len / 2
+        k9   = .016678 / self.power
+        # cos, -sin for azi and zen angles
+        # cos is the real, -sin the imag part
+        acs  = np.e ** (-1j * azimuth_angle.angle_rad ())
+        zcs  = np.e ** (-1j * zenith_angle.angle_rad ())
+        zcs_m, acs_m = np.meshgrid (zcs, acs)
+        # spherical coordinates??
+        rvec = np.array (
+            [ -zcs_m.imag * acs_m.real + 1j * (zcs_m.real * acs_m.real)
+            ,  zcs_m.imag * acs_m.imag - 1j * (zcs_m.real * acs_m.imag)
+            ,  zcs_m
+            ]).T
+        zen_d, azi_d = np.meshgrid \
+            (zenith_angle.angle_deg (), azimuth_angle.angle_deg ())
+        gain = np.zeros (rvec.shape, dtype = complex)
+        for k in self.image_iter ():
+            kvec  = np.array ([1, 1, k])
+            kvec2 = np.array ([k, k, 1])
+            kv2   = np.tile (kvec2, (len (pv), 2, 1))
+            kv2 [pv.ground] = np.array ([0, 0, 0])
+            if k == 1 or not self.media or self.media [0].is_ideal:
+                kv2g = np.copy (kv2)
+                kv2g [pv.inv_ground] = np.array ([0, 0, 2])
+                if k < 0:
+                    kv2g [pv.inv_ground] = np.array ([0, 0, 0])
+            else:
+                kv2 [pv.inv_ground] = np.array ([0, 0, 0])
+                assert self.media
+            for a_i, azi in enumerate (acs):
+                shp  = list (rvec.shape)
+                shp [1] = len (pv)
+                rvrp = np.reshape \
+                    (np.repeat (rvec [:, a_i, :], len (pv), axis = 0), shp)
+                # Vectorized computation of standard case
+                if k == 1 or not self.media or self.media [0].is_ideal:
+                    s2   = self.w * np.sum \
+                        (pv.point * kvec * rvrp.real, axis = 2)
+                    s    = np.e ** (1j * s2)
+                    sshp = list (s.shape)
+                    sshp.insert (-1, 2)
+                    ss   = np.reshape (np.repeat (s, 2, axis = 0), sshp)
+                    b    = f3.T * ss * self.current
+                    bshp = list (b.shape)
+                    bshp.insert (1, 3)
+                    bs   = np.zeros (bshp, dtype = complex)
+                    bs [:, 0, :, :] = b
+                    bs [:, 1, :, :] = b
+                    bs [:, 2, :, :] = b
+                    gain [:, a_i, :] += np.sum \
+                        (kv2g.T * pv.dirvec.T * bs, axis = (2, 3))
+                else:
+                    rt3 = rvrp [:, :, 2]
+                    # begin by finding specular distance
+                    cond = rt3.real != 0
+                    t4 = np.zeros (rt3.shape)
+                    t4 [rt3.real == 0] = 1e5
+                    t4 [cond] = \
+                        (-pv.point.T [2] * rt3.imag) [cond] / rt3.real [cond]
+                    b9 = (t4.T * acs [a_i].real).T + pv.point.T [0]
+                    if self.boundary != 'linear':
+                        # Pythagoras in case of circular boundary
+                        b9 *= b9
+                        b9 += ((-t4.T * acs [a_i].imag).T + pv.point.T [1]) ** 2
+                        b9 = np.sqrt (b9)
+                    # search for the corresponding medium
+                    # Find minimum index where b9 > coord
+                    # Note: the coord of a medium is the perimeter
+                    # in the linear case in x-direction, otherwise
+                    # circular, b9 > media_coord will be True as
+                    # long as b9 is greater and is False when it
+                    # exceeds the perimenter, the argmin finds that
+                    # first False value.
+                    shp = list (b9.shape)
+                    shp.insert (0, len (media_coord))
+                    tc = np.reshape \
+                        (np.tile (media_coord, (np.prod (b9.shape),1)).T, shp)
+                    j2 = np.argmin (b9 > tc, axis = 0)
+                    z45 = media_impedance [j2]
+                    if nr != 0:
+                        prod = nr * rr
+                        r = b9 + prod
+                        z8  = self.w * r * np.log (r / prod) / nr
+                        s89 = z45 * z8 * 1j
+                        t89 = z45 + (z8 * 1j)
+                        z45 [j2 == 0] = (s89 / t89) [j2 == 0]
+                    # form SQR(1-Z^2*SIN^2)
+                    w671 = w67 = np.sqrt (1 - z45 ** 2 * rt3.imag ** 2)
+                    # vertical reflection coefficient
+                    s89 = rt3.real - w67 * z45
+                    t89 = rt3.real + w67 * z45
+                    v89 = s89 / t89
+                    # horizontal reflection coefficient
+                    s89 = w67 - rt3.real * z45
+                    t89 = w67 + rt3.real * z45
+                    h89 = s89 / t89 - v89
+                    # Reshape to include two ends of segments
+                    vsp = list (v89.shape)
+                    vsp.insert (1, 2)
+                    h89o = h89
+                    h89 = np.zeros (vsp, dtype = complex)
+                    h89 [:, 0, :] = h89o
+                    h89 [:, 1, :] = h89o
+                    vsp.insert (1, 3)
+                    v89o = v89
+                    v89 = np.zeros (vsp, dtype = complex)
+                    v89 [:, 0, 0, :] = v89o
+                    v89 [:, 0, 1, :] = v89o
+                    v89 [:, 1, 0, :] = v89o
+                    v89 [:, 1, 1, :] = v89o
+                    v89 [:, 2, 0, :] = v89o
+                    v89 [:, 2, 1, :] = v89o
+                    # compute contribution to sum
+                    shp = j2.shape + (3,)
+                    h   = np.zeros (shp)
+                    h [:, :, 2] = media_height [j2] * 2
+                    sh  = pv.point - h
+                    s2 = self.w * np.sum \
+                        (sh * rvrp.real * kvec, axis = 2)
+                    s   = np.e ** (1j * s2)
+                    sshp = list (s.shape)
+                    sshp.insert (-1, 2)
+                    ss   = np.reshape (np.repeat (s, 2, axis = 0), sshp)
+                    b    = f3.T * ss * self.current
+                    bshp = list (b.shape)
+                    bshp.insert (1, 3)
+                    bs   = np.zeros (bshp, dtype = complex)
+                    bs [:, 0, :, :] = b
+                    bs [:, 1, :, :] = b
+                    bs [:, 2, :, :] = b
+                    w67  = bs * v89
+                    d   = acs [a_i].imag * pv.dirvec.T [0] \
+                        + acs [a_i].real * pv.dirvec.T [1]
+                    z67 = d * b * h89
+                    tm1 = np.zeros (w67.shape, dtype = complex)
+                    tm1 [:, 0, :, :] = \
+                        ( acs [a_i].imag * z67.real
+                        + acs [a_i].imag * z67.imag * 1j
+                        )
+                    tm1 [:, 1, :, :] = \
+                        ( acs [a_i].real * z67.real
+                        + acs [a_i].real * z67.imag * 1j
+                        )
+                    gain [:, a_i, :] += np.sum \
+                        ((pv.dirvec.T * w67 + tm1) * kv2.T, axis = (2, 3))
+        h12 = np.sum (gain * rvec.imag, axis = 2) * self.g0 * -1j
+        vv  = np.array ([acs_m.imag, acs_m.real]).T
+        x34 = np.sum (gain [:, :, :2] * vv, axis = 2) * self.g0 * -1j
+        # pattern in dBi
+        p123 = np.ones ((len (zcs), len (acs), 3), dtype = float) * -999
+        t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
+        t2 = k9 * (x34.real ** 2 + x34.imag ** 2)
+        t3 = t1 + t2
+        # calculate values in dBi
+        t123 = np.array ([t1.T, t2.T, t3.T]).T
+        cond = t123 > 1e-30
+        p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
+        if rd != 0:
+            h12 /= rd
+            x34 /= rd
+        rat = self.ff_power / self.power
+        self.far_field = \
+            Far_Field_Pattern (azi_d, zen_d, p123, h12.T, x34.T, rat)
     # end def compute_far_field
 
     @measure_time
@@ -2223,9 +2267,7 @@ class Mininec:
             % tuple (' ' * x for x in (4, 14, 4, 6, 4))
             )
         srt = lambda x: (x [1], x [0])
-        for zen, azi in sorted (self.far_field_by_angle, key = srt):
-            ff = self.far_field_by_angle [(zen, azi)]
-            r.append (ff.abs_gain_as_mininec ())
+        r.append (self.far_field.abs_gain_as_mininec ())
         return '\n'.join (r)
     # end def far_field_absolute_as_mininec
 
@@ -2245,9 +2287,7 @@ class Mininec:
             % tuple (' ' * x for x in (9, 8))
             )
         srt = lambda x: (x [1], x [0])
-        for zen, azi in sorted (self.far_field_by_angle, key = srt):
-            ff = self.far_field_by_angle [(zen, azi)]
-            r.append (ff.db_as_mininec ())
+        r.append (self.far_field.db_as_mininec ())
         return '\n'.join (r)
     # end def far_field_as_mininec
 
