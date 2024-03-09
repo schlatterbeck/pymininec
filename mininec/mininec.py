@@ -1772,29 +1772,48 @@ class Mininec:
         >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.03563231 -0.05976447j
+
+        # Now compute for two vecs
+        >>> vv  = np.array ([[16.06072, 0, 0], [ 1.07071418591, 0, 0]])
+        >>> v2  = np.array ([[13.91929, 0, 0], [-1.07071418591, 0, 0]])
+        >>> t   = np.array ([[0.7886752, 0.2113249], [0.4900725, 0.4900725]])
+        >>> r   = np.array ([wire.r, wire.r])
+        >>> xct = np.array ([False, True], dtype = bool)
+        >>> res = m.integral_i2_i3 (t, v2, vv, 1, r, xct)
+        >>> for k in res.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        -0.0421984 -0.0482092j
+        -0.0356323 -0.0597645j
+        -2.2903413 -0.1467052j
+        -2.2903413 -0.1467052j
         """
         t34  = np.zeros (t.shape, dtype = complex)
         if k < 0:
-            vec3 = vecv + (vec2 - vecv) * t[:,np.newaxis]
+            vecv, vec2 = vec2, vecv
+        if len (vec2.shape) > 1:
+            mul  = t.shape [-1]
+            shp  = (mul,) + vec2.shape
+            dvec = np.reshape (np.repeat (vecv - vec2, mul, axis = 0), shp)
+            v2s  = np.reshape (np.repeat (vec2, mul, axis = 0), shp)
         else:
-            vec3 = vec2 + (vecv - vec2) * t[:,np.newaxis]
-        d = d3 = np.linalg.norm (vec3, axis = 1)
+            dvec = vecv - vec2
+            v2s  = vec2
+        vec3 = v2s + dvec * t [..., np.newaxis]
+        d = d3 = np.linalg.norm (vec3, axis = -1)
         # MOD FOR SMALL RADIUS TO WAVELENGTH RATIO
-        if r > self.srm:
-            # SQUARE OF WIRE RADIUS
-            a2 = r * r
-            d3 = d3 * d3
-            d  = np.sqrt (d3 + a2)
-            # criteria for using reduced kernel
-            if exact_kernel:
-                # exact kernel calculation with elliptic integral
-                b = d3 / (d3 + 4 * a2)
-                v0 = ellipk (1 - b) * np.sqrt (1 - b)
-                # Note: This adds only a real part, the imag part of the
-                # elliptic integral is 0
-                t34 += ( (v0 + np.log (d3 / (64 * a2)) / 2)
-                       / np.pi / r - 1 / d
-                       )
+        cond = r > self.srm
+        xact = np.logical_and (cond, exact_kernel)
+        a2   = r * r
+        d3   = d3 * d3
+        if not hasattr (a2, 'shape'):
+            a2 = np.array ([a2])
+        d [cond] = np.sqrt (a2 [cond] + d3 [cond])
+        b    = d3 [xact] / (d3 [xact] + 4 * a2 [xact])
+        v0   = ellipk (1 - b) * np.sqrt (1 - b)
+        t34 [xact] += \
+            ( (v0 + np.log (d3 [xact] / (64 * a2 [xact])) / 2) / np.pi / r
+            - 1 / d [xact]
+            )
         b1 = d * self.w
         # EXP(-J*K*R)/R
         t34 += np.e ** (-1j * b1) / d
