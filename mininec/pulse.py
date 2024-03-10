@@ -29,8 +29,9 @@ from mininec.util import format_float
 class Pulse_Container:
 
     def __init__ (self):
-        self.pulses    = []
-        self.pulse_idx = 0
+        self.pulses      = []
+        self.pulse_idx   = 0
+        self.dvecs_cache = {}
     # end def __init__
 
     def add (self, pulse):
@@ -53,42 +54,103 @@ class Pulse_Container:
         return self.pulses [idx]
     # end def __getitem__
 
+    def __getattr__ (self, n):
+        if n.startswith ('matrix_'):
+            return self.matrix (n.split ('_', 1) [1])
+        raise AttributeError (n)
+    # end def __getattr__
+
+    # Wire properties
+
     @cached_property
     def seg_len (self):
-        return np.array \
-            ([[w.seg_len for w in p.wires] for p in self.pulses])
+        return np.array ([[w.seg_len for w in p.wires] for p in self])
     # end def seg_len
 
     @cached_property
     def dirvec (self):
-        return np.array \
-            ([[w.dirvec for w in p.wires] for p in self.pulses])
+        return np.array ([[w.dirvec for w in p.wires] for p in self])
     # end def dirvec
 
+    def dvecs (self, ds):
+        if ds not in self.dvecs_cache:
+            dvecs_cache [ds] = np.array \
+                ([np.array (p.dvecs (ds)) for p in self])
+        return dvecs_cache [ds]
+    # end def dvecs
+
     @cached_property
-    def sign (self):
-        return np.array ([p.sign for p in self.pulses])
-    # end def sign
+    def i6 (self):
+        return np.array ([[w.i6 for w in p.wires] for p in self])
+    # end def i6
+
+    @cached_property
+    def radius (self):
+        return np.array ([[w.r for w in p.wires] for p in self])
+    # end def radius
+
+    @cached_property
+    def same_wire (self):
+        return np.array ([(p.wires [0] == p.wires [1]) for p in self])
+    # end def same_wire
+
+    @cached_property
+    def wire_idx_0 (self):
+        return np.array ([p.wires [0].idx for p in self])
+    # end def wire_idx_0
+
+    # Pulse properties
+
+    @cached_property
+    def gnd_sgn (self):
+        return np.array ([p.gnd_sgn for p in self])
+    # end def gnd_sgn
 
     @cached_property
     def ground (self):
-        return np.array ([p.ground for p in self.pulses])
+        return np.array ([p.ground for p in self])
     # end def ground
 
     @cached_property
     def inv_ground (self):
-        return np.array ([p.inv_ground for p in self.pulses])
+        return np.array ([p.inv_ground for p in self])
     # end def inv_ground
 
     @cached_property
-    def gnd_sgn (self):
-        return np.array ([p.gnd_sgn for p in self.pulses])
-    # end def gnd_sgn
+    def point (self):
+        return np.array ([p.point for p in self])
+    # end def point
 
     @cached_property
-    def point (self):
-        return np.array ([p.point for p in self.pulses])
-    # end def point
+    def sign (self):
+        return np.array ([p.sign for p in self])
+    # end def sign
+
+    # Matrix generalisation
+
+    def matrix (self, name):
+        """ This does the same with a pulses X pulses matrix which the
+            above convenience functions do for the pulse container.
+            Also with caching of course.
+        """
+        n = 'matrix_' + name
+        r = getattr (self, name)
+        assert len (r.shape) == 1
+        setattr (self, n, np.meshgrid (r, r))
+        return getattr (self, n)
+    # end def matrix
+
+    def matrix_wires_unconnected (self):
+        if not getattr (self, '_matrix_wires_unconnected'):
+            l = len (self)
+            r = np.zeros ((l, l), dtype = bool)
+            for p1 in self:
+                for p2 in self:
+                    if p1.wires_unconnected (p2):
+                        r [p1.idx, p2.idx] = True
+            self._matrix_wires_unconnected = r
+        return self._matrix_wires_unconnected
+    # end def matrix_wires_unconnected
 
 # end class Pulse_Container
 
@@ -184,5 +246,14 @@ class Pulse:
         return self.point, self.endseg (ds)
     # end def dvecs
 
-# end class Pulse
+    def wires_unconnected (self, other):
+        """ Check if the wires to which the given pulses belong are
+            *not* connected.
+        """
+        w1 = self.wire
+        w2 = other.wire
+        # Well this should really be symmetric, so one should be enough :-)
+        return not w1.is_connected (w2) and not w2.is_connected (w1)
+    # end def wires_unconnected
 
+# end class Pulse
