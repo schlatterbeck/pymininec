@@ -1438,26 +1438,24 @@ class Mininec:
                             if f8 == 1:
                                 u56 = p_j.sign [1] * u + vp
                             else:
-                                u56 = self.scalar_potential \
-                                    (k, p_i, p_j, 0.5, 1)
+                                u56 = self.scalar_potential (k, (i, j), 0.5, 1)
                             # compute PSI(M-1/2,N,N+1)
                             # Code at 291
-                            sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
+                            sp = self.scalar_potential (k, (i, j), -.5, 1)
                             seglen = p_j.wires [1].seg_len
                             u12 = (sp - u56) / seglen
                             # compute PSI(M+1/2,N-1,N)
-                            u34 = self.scalar_potential (k, p_i, p_j, .5, -1)
+                            u34 = self.scalar_potential (k, (i, j), .5, -1)
                             # compute PSI(M-1/2,N-1,N)
                             if f8 >= 1:
                                 sp = u56
                             else:
-                                sp = self.scalar_potential \
-                                    (k, p_i, p_j, -.5, -1)
+                                sp = self.scalar_potential (k, (i, j), -.5, -1)
                             # gradient of scalar potential contribution
                             seglen = p_j.wires [0].seg_len
                             u12 += (u34 - sp) / seglen
                         else:
-                            sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
+                            sp = self.scalar_potential (k, (i, j), -.5, 1)
                             seglen = p_j.wires [1].seg_len
                             sg  = p_j.sign [1]
                             u12 = (2 * sp - 4 * u * sg) / seglen
@@ -2132,8 +2130,12 @@ class Mininec:
             source.register (self, pulse)
     # end def register_source
 
-    def scalar_potential (self, k, pulse1, pulse2, ds1, ds2):
+    def scalar_potential (self, k, pidx, ds1, ds2):
         """ Compute scalar potential
+            We're now using a two-dimensional index into the pulse
+            matrix. This is used to access all pulse matrix items that
+            are created via meshgrid. Note that it is possible to use a
+            tuple instead to access a single item in the matrix.
             Inputs:
             ds1 in the displacement on pulse1, we compute the endseg
             (the endpoint in positive or negative direction).
@@ -2158,41 +2160,71 @@ class Mininec:
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
-        >>> method = m.scalar_potential
         >>> p0 = m.pulses [0]
         >>> p8 = m.pulses [8]
-        >>> r = method (1, p0, p8, 0.5, -1)
+        >>> r = m.scalar_potential (1, (0, 8), 0.5, -1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
         >>> w [0].r = 0.001
 
         # When changing wire we need to flush the relevant parts of the
         # pulse cache
-        >>> del m.pulses.radius
-        >>> del m.pulses.seg_len
-        >>> del m.pulses.i6
-        >>> r = method (1, p0, p0, -0.5, 1)
+        >>> m.pulses.reset ()
+        >>> r = m.scalar_potential (1, (0, 0), -0.5, 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         1.0497691 -0.3085993j
+
+        >>> w [0].r = 0.01
+        >>> m.pulses.reset ()
+
+        # vector case
+        # Compute (0, 8) and (8, 0)
+        >>> l = len (m.pulses)
+        >>> cond = np.zeros ((l, l), dtype = bool)
+        >>> cond [0, 8] = True
+        >>> cond [8, 0] = True
+        >>> r = m.scalar_potential (1, cond, 0.5, -1)
+        >>> print (r.shape)
+        (9, 9)
+        >>> print ("%.7f %.7fj" % (r [0, 8].real, r [0, 8].imag))
+        -0.0833344 -0.1156091j
+        >>> print ("%.7f %.7fj" % (r [8, 0].real, r [8, 0].imag))
+        -0.1052472 -0.0345366j
         """
-        wire = pulse2.wires [ds2 > 0]
-        vec1 = pulse1.endseg (ds1)
-        kvec = np.array ([1, 1, k])
-        if  (  k < 1
-            or wire.r > self.srm
-            or pulse1.wire.n != pulse2.wire.n
-            or pulse1.idx + ds1 != pulse2.idx + ds2 / 2
-            ):
-            v1 = pulse1.endseg (ds1)
-            wd = pulse1.wires_unconnected (pulse2)
-            v2, vv = pulse2.dvecs (ds2)
-            v2 = kvec * v2 - vec1
-            vv = kvec * vv - vec1
-            return self.psi \
-                (v2, vv, k, ds2, pulse2.idx, fvs = 1, exact = not wd)
-        t1 = 2 * np.log (wire.seg_len / wire.r)
-        t2 = -self.w * wire.seg_len
-        return t1 + t2 * 1j
+        widx   = int (ds2 > 0)
+        kvec   = np.array ([1, 1, k])
+        plen   = len (self.pulses)
+        retval = np.zeros ((plen, plen), dtype = complex)
+        cidx   = np.zeros ((plen, plen), dtype = bool)
+        cidx [pidx] = True
+        midx   = self.pulses.matrix_idx
+        mwx    = self.pulses.matrix_wire_idx
+        cond   = midx [0] + ds1 != midx [1] + ds2 / 2
+        cond   = np.logical_or (cond, mwx [0] != mwx [1])
+        cond   = np.logical_or \
+            (cond, self.pulses.matrix_radius [1][..., widx] >= self.srm)
+        cond   = np.logical_or (cond, k < 1)
+        co1    = cidx * cond
+        co2    = cidx * np.logical_not (cond)
+        if co1.any ():
+            v1  = self.pulses.matrix_endseg (ds1) [0][co1]
+            dv  = self.pulses.matrix_dvecs (ds2) [1]
+            v2  = kvec * dv [..., 0, :][co1] - v1
+            vv  = kvec * dv [..., 1, :][co1] - v1
+            wd  = self.pulses.matrix_wires_unconnected ()
+            xct = np.logical_not (wd)
+            px  = midx [1]
+            retval [co1] = self.psi \
+                (v2, vv, k, ds2, px [co1], fvs = 1, exact = xct [co1])
+        if co2.any ():
+            wl = self.pulses.matrix_seg_len [1].T [widx].T [co2]
+            wr = self.pulses.matrix_radius  [1].T [widx].T [co2]
+            t1 = 2 * np.log (wl / wr)
+            t2 = -self.w * wl
+            retval [co2] = t1 + t2 * 1j
+        if isinstance (pidx, tuple):
+            return retval [pidx]
+        return retval
     # end def scalar_potential
 
     def vector_potential (self, k, pidx, ds):
@@ -2257,11 +2289,12 @@ class Mininec:
             px  = self.pulses.matrix_idx [1]
             retval [co1] = self.psi \
                 (v2, vv, k, ds, px [co1], exact = xct [co1])
-        wl = self.pulses.matrix_seg_len [1].T [widx].T [co2]
-        wr = self.pulses.matrix_radius  [1].T [widx].T [co2]
-        t1 = np.log (wl / wr)
-        t2 = -self.w * wl / 2
-        retval [co2] = t1 + t2 * 1j
+        if co2.any ():
+            wl = self.pulses.matrix_seg_len [1].T [widx].T [co2]
+            wr = self.pulses.matrix_radius  [1].T [widx].T [co2]
+            t1 = np.log (wl / wr)
+            t2 = -self.w * wl / 2
+            retval [co2] = t1 + t2 * 1j
         if isinstance (pidx, tuple):
             return retval [pidx]
         return retval

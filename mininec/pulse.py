@@ -49,8 +49,10 @@ class Pulse_Container:
         for name in list (self.__dict__):
             if name.startswith ('matrix_') or name.startswith ('_matrix_'):
                 delattr (self, name)
-        self.dvecs_cache = {}
-        self.matrix_dvecs_cache = {}
+        self.dvecs_cache         = {}
+        self.endseg_cache        = {}
+        self.matrix_dvecs_cache  = {}
+        self.matrix_endseg_cache = {}
     # end def reset
 
     def __iter__ (self):
@@ -91,6 +93,12 @@ class Pulse_Container:
         return self.dvecs_cache [ds]
     # end def dvecs
 
+    def endseg (self, ds):
+        if ds not in self.endseg_cache:
+            self.endseg_cache [ds] = np.array ([p.endseg (ds) for p in self])
+        return self.endseg_cache [ds]
+    # end def endseg
+
     @cached_property
     def i6 (self):
         return np.array ([[w.i6 for w in p.wires] for p in self])
@@ -107,8 +115,13 @@ class Pulse_Container:
     # end def same_wire
 
     @cached_property
+    def wire_idx (self):
+        return np.array ([p.wire.n for p in self])
+    # end def wire_idx
+
+    @cached_property
     def wire_idx_0 (self):
-        return np.array ([p.wires [0].idx for p in self])
+        return np.array ([p.wires [0].n for p in self])
     # end def wire_idx_0
 
     # Pulse properties
@@ -171,6 +184,15 @@ class Pulse_Container:
             self.matrix_dvecs_cache [ds] = v
         return self.matrix_dvecs_cache [ds]
     # end def matrix_dvecs
+
+    def matrix_endseg (self, ds):
+        if ds not in self.matrix_endseg_cache:
+            es = self.endseg (ds)
+            mi = self.matrix_idx
+            v = [es [mi [0]], es [mi [1]]]
+            self.matrix_endseg_cache [ds] = v
+        return self.matrix_endseg_cache [ds]
+    # end def matrix_endseg
 
     def matrix_wires_unconnected (self):
         if getattr (self, '_matrix_wires_unconnected', None) is None:
