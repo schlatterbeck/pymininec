@@ -1786,19 +1786,36 @@ class Mininec:
         -0.0356323 -0.0597645j
         -2.2903413 -0.1467052j
         -2.2903413 -0.1467052j
+        >>> vecv = np.array ([1.070714, 0, 0])
+        >>> vec2 = np.zeros ((2, 2, 3))
+        >>> vecv = np.tile (vecv, (2, 2, 1))
+        >>> radi = np.ones ((2, 2), dtype = float) * 0.01
+        >>> args = vec2, vecv, 1, radi, np.ones ((2, 2), dtype = bool)
+        >>> x, w = legendre_cache [8]
+        >>> y = (x + .5)
+        >>> res  = np.sum (w * m.integral_i2_i3 (y, *args), axis = -1)
+        >>> for k in res.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
         """
-        t34  = np.zeros (t.shape, dtype = complex)
         if k < 0:
             vecv, vec2 = vec2, vecv
         if len (vec2.shape) > 1:
             mul  = t.shape [-1]
-            shp  = (mul,) + vec2.shape
-            dvec = np.reshape (np.repeat (vecv - vec2, mul, axis = 0), shp)
-            v2s  = np.reshape (np.repeat (vec2, mul, axis = 0), shp)
+            shp  = list (vec2.shape)
+            shp.insert (-1, mul)
+            dvec = np.repeat \
+                ((vecv - vec2) [..., np.newaxis, :], mul, axis = -2)
+            v2s  = np.repeat \
+                (vec2          [..., np.newaxis, :], mul, axis = -2)
         else:
             dvec = vecv - vec2
             v2s  = vec2
         vec3 = v2s + dvec * t [..., np.newaxis]
+        t34  = np.zeros (vec3.shape [:-1], dtype = complex)
         d = d3 = np.linalg.norm (vec3, axis = -1)
         # MOD FOR SMALL RADIUS TO WAVELENGTH RATIO
         cond = r > self.srm
@@ -1807,11 +1824,16 @@ class Mininec:
         d3   = d3 * d3
         if not hasattr (a2, 'shape'):
             a2 = np.array ([a2])
+            r  = np.array ([r])
+        else:
+            a2 = a2 [..., np.newaxis]
+            r  = r  [..., np.newaxis]
         d [cond] = np.sqrt (a2 [cond] + d3 [cond])
         b    = d3 [xact] / (d3 [xact] + 4 * a2 [xact])
         v0   = ellipk (1 - b) * np.sqrt (1 - b)
         t34 [xact] += \
-            ( (v0 + np.log (d3 [xact] / (64 * a2 [xact])) / 2) / np.pi / r
+            ( (v0 + np.log (d3 [xact] / (64 * a2 [xact])) / 2)
+            / np.pi / r [xact]
             - 1 / d [xact]
             )
         b1 = d * self.w
@@ -1849,6 +1871,27 @@ class Mininec:
         >>> r = m.fast_quad (0, 1, args, 5)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         55.5802636 -0.1465045j
+        >>> r = m.fast_quad (0, 1, args, 8)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        55.7187703 -0.1465045j
+        >>> vec2 = np.zeros ((2, 2, 3))
+        >>> vecv = np.tile (vecv, (2, 2, 1))
+        >>> radi = np.ones ((2, 2), dtype = float) * 0.01
+        >>> args = vec2, vecv, 1, radi, np.ones ((2, 2), dtype = bool)
+        >>> r = m.fast_quad (0, 1, args, 5)
+        >>> for k in r.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        55.5802636 -0.1465045j
+        55.5802636 -0.1465045j
+        55.5802636 -0.1465045j
+        55.5802636 -0.1465045j
+        >>> r = m.fast_quad (0, 1, args, 8)
+        >>> for k in r.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
         """
         if n in legendre_cache and a == 0:
             x, w = legendre_cache [n]
