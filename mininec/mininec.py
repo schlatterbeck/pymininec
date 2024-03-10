@@ -609,13 +609,13 @@ class Wire:
         # Parameters. So we can avoid re-computing this for each
         # combination of segments.
         # My original note was:
-	# Hmm, dividing by f2 here removes scale = (p3-p2) from logarithm
-	# So i6 depends only on wire/seg parameters?!
-	# Moved to wire. Original formula was:
-	# i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
-	# But s4 / f2 reduces to wire.seg_len / 2
-	# See above, i6 is now passed as a parameter which is set to
-	# 0 if not using the exact kernel.
+        # Hmm, dividing by f2 here removes scale = (p3-p2) from logarithm
+        # So i6 depends only on wire/seg parameters?!
+        # Moved to wire. Original formula was:
+        # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+        # But s4 / f2 reduces to wire.seg_len / 2
+        # See above, i6 is now passed as a parameter which is set to
+        # 0 if not using the exact kernel.
         self.i6 = (1 + np.log (16 * r / self.seg_len)) / np.pi / r
     # end def __init__
 
@@ -1410,11 +1410,11 @@ class Mininec:
                                 f8 = 2
                     # This was a conditional goto 317 in line 246
                     if k < 0 or self.Z [i][j].real == 0:
-                        vp = self.vector_potential (k, p_i, p_j, 0.5)
+                        vp = self.vector_potential (k, (i, j), 0.5)
                         u = vp * p_j.sign [1]
                         # compute PSI(M,N-1/2,N)
                         if f8 < 2:
-                            vp = self.vector_potential (k, p_i, p_j, -0.5)
+                            vp = self.vector_potential (k, (i, j), -0.5)
                         v = vp * p_j.sign [0]
                         # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
                         # We use p_j.sgn, the sign resulting from only
@@ -1837,7 +1837,7 @@ class Mininec:
         xact = np.logical_and (cond, exact_kernel)
         a2   = r * r
         d3   = d3 * d3
-        if not hasattr (a2, 'shape') or len (a2.shape) == 0:
+        if np.isscalar (a2):
             a2 = np.array ([a2])
             r  = np.array ([r])
         else:
@@ -1909,6 +1909,7 @@ class Mininec:
         55.7187703 -0.1465045j
         """
         if n in legendre_cache and a == 0:
+            
             x, w = legendre_cache [n]
             y = (x + .5) * b
             return np.sum (w * self.integral_i2_i3 (y, *args), axis = -1)
@@ -1984,7 +1985,7 @@ class Mininec:
         r       = self.pulses.radius.T  [int (scale > 0)][pidx]
         seg_len = self.pulses.seg_len.T [int (scale > 0)][pidx]
         i6      = self.pulses.i6.T      [int (scale > 0)][pidx]
-        if not hasattr (r, 'shape') or len (r.shape) == 0:
+        if np.isscalar (r):
             r       = np.array ([r])
             seg_len = np.array ([seg_len])
             i6      = np.array ([i6])
@@ -2021,12 +2022,15 @@ class Mininec:
             assert r.shape     [-1] == 1
             assert exact.shape [-1] == 1
             args = vec2, vecv, k, r [0], exact [0]
-        # Integrate, need to multiply by f2 below.
+        # Integrate, need to distinguish different f2 values (1/f2 is
+        # the upper integration bound and fast_quad needs a scalar)
         for quad in (8, 4, 2):
             qidx = np.logical_and (rest_idx, gauss_n == quad)
-            if qidx.any ():
-                retval [qidx] = self.fast_quad (0, 1/f2, args, quad)
-                retval [qidx] = (retval [qidx] + i6 [qidx]) * s4 [qidx]
+            for f2val in set (f2):
+                i = np.logical_and (qidx, f2 == f2val)
+                if i.any ():
+                    retval [i] = self.fast_quad (0, 1/f2val, args, quad)
+                    retval [i] = (retval [i] + i6 [i]) * s4 [i]
         if len (vecv.shape) == 1:
             assert retval.shape == (1,)
             with open ('/tmp/bla_new.txt', 'a') as f:
@@ -2191,8 +2195,12 @@ class Mininec:
         return t1 + t2 * 1j
     # end def scalar_potential
 
-    def vector_potential (self, k, pulse1, pulse2, ds):
+    def vector_potential (self, k, pidx, ds):
         """ Compute vector potential
+            We're now using a two-dimensional index into the pulse
+            matrix. This is used to access all pulse matrix items that
+            are created via meshgrid. Note that it is possible to use a
+            tuple instead to access a single item in the matrix.
             Original entry point in line 102.
             Original comment:
             S(M) goes in (X1,Y1,Z1) for vector potential
@@ -2210,25 +2218,53 @@ class Mininec:
 
         # Original produces:
         # 0.6747199 -.1555772j
-        >>> method = m.vector_potential
-        >>> p0 = m.pulses [0]
-        >>> p1 = m.pulses [1]
-        >>> r = method (1, p0, p1, -0.5)
+        >>> r = m.vector_potential (1, (0, 1), -0.5)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.6747199 -0.1555773j
+
+        # Compute (0, 1) and (1, 0)
+        >>> l = len (m.pulses)
+        >>> cond = np.zeros ((l, l), dtype = bool)
+        >>> cond [0, 1] = True
+        >>> cond [1, 0] = True
+        >>> r = m.vector_potential (1, cond, -0.5)
+        >>> print (r.shape)
+        (9, 9)
+        >>> print ("%.7f %.7fj" % (r [0, 1].real, r [0, 1].imag))
+        0.6747199 -0.1555773j
+        >>> print ("%.7f %.7fj" % (r [1, 0].real, r [1, 0].imag))
+        0.3750293 -0.1530220j
         """
-        wire = pulse2.wires [ds > 0]
-        kvec = np.array ([1, 1, k])
-        if k < 1 or wire.r >= self.srm or pulse1 != pulse2:
-            v1 = pulse1.point
-            v2, vv = pulse2.dvecs (ds)
-            v2 = kvec * v2 - v1
-            vv = kvec * vv - v1
-            wd = pulse1.wires_unconnected (pulse2)
-            return self.psi (v2, vv, k, ds, pulse2.idx, fvs = 0, exact = not wd)
-        t1 = np.log (wire.seg_len / wire.r)
-        t2 = -self.w * wire.seg_len / 2
-        return t1 + t2 * 1j
+        widx   = int (ds > 0)
+        kvec   = np.array ([1, 1, k])
+        plen   = len (self.pulses)
+        retval = np.zeros ((plen, plen), dtype = complex)
+        cidx   = np.zeros ((plen, plen), dtype = bool)
+        cidx [pidx] = True
+        cond   = np.logical_not (np.eye (plen, dtype = bool))
+        cond   = np.logical_or (cond, k < 1)
+        cond   = np.logical_or \
+            (cond, self.pulses.matrix_radius [1][..., widx] >= self.srm)
+        co1    = cidx * cond
+        co2    = cidx * np.logical_not (cond)
+        if co1.any ():
+            v1  = self.pulses.matrix_point [0][co1]
+            dv  = self.pulses.matrix_dvecs (ds) [1]
+            v2  = kvec * dv [..., 0, :][co1] - v1
+            vv  = kvec * dv [..., 1, :][co1] - v1
+            wd  = self.pulses.matrix_wires_unconnected ()
+            xct = np.logical_not (wd)
+            px  = self.pulses.matrix_idx [1]
+            retval [co1] = self.psi \
+                (v2, vv, k, ds, px [co1], exact = xct [co1])
+        wl = self.pulses.matrix_seg_len [1].T [widx].T [co2]
+        wr = self.pulses.matrix_radius  [1].T [widx].T [co2]
+        t1 = np.log (wl / wr)
+        t2 = -self.w * wl / 2
+        retval [co2] = t1 + t2 * 1j
+        if isinstance (pidx, tuple):
+            return retval [pidx]
+        return retval
     # end def vector_potential
 
     # All the *as_mininec methods

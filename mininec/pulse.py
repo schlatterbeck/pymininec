@@ -29,9 +29,9 @@ from mininec.util import format_float
 class Pulse_Container:
 
     def __init__ (self):
-        self.pulses      = []
-        self.pulse_idx   = 0
-        self.dvecs_cache = {}
+        self.pulses             = []
+        self.pulse_idx          = 0
+        self.reset ()
     # end def __init__
 
     def add (self, pulse):
@@ -40,6 +40,18 @@ class Pulse_Container:
         self.pulse_idx += 1
         assert len (self.pulses) == self.pulse_idx
     # end def add
+
+    def reset (self):
+        """ Reset all cached properties """
+        for name in self.__class__.__dict__:
+            if name in self.__dict__:
+                delattr (self, name)
+        for name in list (self.__dict__):
+            if name.startswith ('matrix_') or name.startswith ('_matrix_'):
+                delattr (self, name)
+        self.dvecs_cache = {}
+        self.matrix_dvecs_cache = {}
+    # end def reset
 
     def __iter__ (self):
         for p in self.pulses:
@@ -74,9 +86,9 @@ class Pulse_Container:
 
     def dvecs (self, ds):
         if ds not in self.dvecs_cache:
-            dvecs_cache [ds] = np.array \
+            self.dvecs_cache [ds] = np.array \
                 ([np.array (p.dvecs (ds)) for p in self])
-        return dvecs_cache [ds]
+        return self.dvecs_cache [ds]
     # end def dvecs
 
     @cached_property
@@ -122,6 +134,11 @@ class Pulse_Container:
     # end def point
 
     @cached_property
+    def idx (self):
+        return np.arange (self.pulse_idx, dtype = int)
+    # end def idx
+
+    @cached_property
     def sign (self):
         return np.array ([p.sign for p in self])
     # end def sign
@@ -135,13 +152,28 @@ class Pulse_Container:
         """
         n = 'matrix_' + name
         r = getattr (self, name)
-        assert len (r.shape) == 1
-        setattr (self, n, np.meshgrid (r, r))
+        if len (r.shape) == 1:
+            # We need to reverse this otherwise when we rely on our
+            # indeces to return pulse0, pulse1 the order is reversed.
+            setattr (self, n, list (reversed (np.meshgrid (r, r))))
+        else:
+            mi = self.matrix_idx
+            v = [r [mi [0]], r [mi [1]]]
+            setattr (self, n, v)
         return getattr (self, n)
     # end def matrix
 
+    def matrix_dvecs (self, ds):
+        if ds not in self.matrix_dvecs_cache:
+            dv = self.dvecs (ds)
+            mi = self.matrix_idx
+            v = [dv [mi [0]], dv [mi [1]]]
+            self.matrix_dvecs_cache [ds] = v
+        return self.matrix_dvecs_cache [ds]
+    # end def matrix_dvecs
+
     def matrix_wires_unconnected (self):
-        if not getattr (self, '_matrix_wires_unconnected'):
+        if getattr (self, '_matrix_wires_unconnected', None) is None:
             l = len (self)
             r = np.zeros ((l, l), dtype = bool)
             for p1 in self:
