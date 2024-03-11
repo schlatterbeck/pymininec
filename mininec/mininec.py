@@ -1383,120 +1383,131 @@ class Mininec:
         """
         n      = len (self.pulses)
         self.Z = np.zeros ((n, n), dtype=complex)
-#        for k in self.image_iter ():
-#            f8 = np.zeros (shape (self.Z))
-#            same = np.prod (self.pulses.matrix_same_wire ())
-#            idx0, idx1 = self.pulses.matrix_wire_idx_0 ()
-#            f8 [same * (idx0 == idx1)] = 1
-#            f8 [np.diag_indeces (n)] *= 2
 
-        for p_i in self.pulses:
-            i = p_i.idx
-            for p_j in self.pulses:
-                j = p_j.idx
-                # 230
-                for k in self.image_iter ():
-                    if p_j.ground.any () and k < 0:
-                        continue
-                    f8 = 0
-                    if k >= 0:
-                        # set flag to avoid redundant calculations
-                        if  (   p_i.wires [0] == p_i.wires [1]
-                            and p_j.wires [0] == p_j.wires [1]
-                            ):
-                            if p_i.wires [0] == p_j.wires [0]:
-                                f8 = 1
-                            if p_i == p_j:
-                                f8 = 2
-                    # This was a conditional goto 317 in line 246
-                    if k < 0 or self.Z [i][j].real == 0:
-                        vp = self.vector_potential (k, (i, j), 0.5)
-                        u = vp * p_j.sign [1]
-                        # compute PSI(M,N-1/2,N)
-                        if f8 < 2:
-                            vp = self.vector_potential (k, (i, j), -0.5)
-                        v = vp * p_j.sign [0]
-                        # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
-                        # We use p_j.sgn, the sign resulting from only
-                        # the inverted wire, not from grounding
-                        f6v  = np.array ([1, 1, p_j.gnd_sgn [0]])
-                        f7v  = np.array ([1, 1, p_j.gnd_sgn [1]])
-                        di1  = p_j.wires [0].dirvec
-                        di2  = p_j.wires [1].dirvec
-                        kvec = np.array ([1, 1, k])
-                        # We do real and imaginary part in one go:
-                        vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
-                        zzz = sum \
-                            ( p_i.dir_sgn [idx]
-                            * p_i.wires [idx].seg_len
-                            * p_i.wires [idx].dirvec
-                            for idx in (0, 1)
-                            )
-                        d    = self.w2 * sum (vec3 * zzz)
-                        # compute PSI(M+1/2,N,N+1)
-                        if f8 < 2:
-                            if f8 == 1:
-                                u56 = p_j.sign [1] * u + vp
-                            else:
-                                u56 = self.scalar_potential (k, (i, j), 0.5, 1)
-                            # compute PSI(M-1/2,N,N+1)
-                            # Code at 291
-                            sp = self.scalar_potential (k, (i, j), -.5, 1)
-                            seglen = p_j.wires [1].seg_len
-                            u12 = (sp - u56) / seglen
-                            # compute PSI(M+1/2,N-1,N)
-                            u34 = self.scalar_potential (k, (i, j), .5, -1)
-                            # compute PSI(M-1/2,N-1,N)
-                            if f8 >= 1:
-                                sp = u56
-                            else:
-                                sp = self.scalar_potential (k, (i, j), -.5, -1)
-                            # gradient of scalar potential contribution
-                            seglen = p_j.wires [0].seg_len
-                            u12 += (u34 - sp) / seglen
-                        else:
-                            sp = self.scalar_potential (k, (i, j), -.5, 1)
-                            seglen = p_j.wires [1].seg_len
-                            sg  = p_j.sign [1]
-                            u12 = (2 * sp - 4 * u * sg) / seglen
-                        # 314
-                        # sum into impedance matrix
-                        self.Z [i][j] = self.Z [i][j] + k * (d + u12)
+        # Independent of k
+        same         = np.logical_and (*self.pulses.matrix_same_wire)
+        idx0, idx1   = self.pulses.matrix_wire_idx_0
+        gs           = self.pulses.matrix_gnd_sgn [1]
+        sg           = self.pulses.matrix_sign [1]
+        sl           = self.pulses.matrix_seg_len [1]
+        f6v          = np.ones ((n, n, 3), dtype = int)
+        f6v [..., 2] = gs [..., 0]
+        f7v          = np.ones ((n, n, 3), dtype = int)
+        f7v [..., 2] = gs [..., 1]
+        dv           = self.pulses.matrix_dirvec [1]
+        di1          = dv [..., 0, :]
+        di2          = dv [..., 1, :]
+        zzz          = np.sum \
+            ( self.pulses.matrix_dir_sgn [0][..., np.newaxis]
+            * self.pulses.matrix_seg_len [0][..., np.newaxis]
+            * self.pulses.matrix_dirvec  [0]
+            , axis = -2
+            )
+        diag         = np.diag_indices (n)
+        zero         = np.zeros (self.Z.shape, dtype = int)
+        opt          = np.zeros (self.Z.shape, dtype = int)
+        opt [np.logical_and (same, (idx0 == idx1))] = 1
+        opt [diag] *= 2
 
-                    # avoid redundant calculations
-                    # 317
-                    if j < i or f8 == 0:
-                        continue
-                    self.Z [j][i] = self.Z [i][j]
-                    # segments on same wire same distance apart
-                    # have same Z
-                    if j + 1 >= len (self.pulses):
-                        continue
-                    p1 = j + 1
-                    p_j_next = self.pulses [j + 1]
-                    if  (  p_j_next.wires [0] != p_j_next.wires [1]
-                        or p_j_next.ground.any ()
-                        ):
-                        continue
-                    d = p_j.wires [1].dirvec
-                    # 325-327
-                    # The original condition was reached for the t-ant.pym
-                    # example with j == 7.
-                    # Note: the reversed original tested for d [0] + d [1] != 0
-                    # This was probably meant to check that both are nonzero.
-                    # (Resulting in a test for a grounded vertical wire)
-                    # Since an empty matrix element is recomputed anyway
-                    # adding a large test (with questionable semantics)
-                    # here doesn't make much sense.
-                    # So we kept only the condition with equal wires.
-                    if p_j_next.wires [1] == p_j.wires [1]:
-                        self.Z [i + 1][j + 1] = self.Z [i][j]
-            # Here follows a GOSUB 1599 which calculates the remaining time,
-            # not implemented
-        # end matrix fill time calculation
-        # Here follows a GOSUB 1589 which calculates elapsed time,
-        # not implemented
-        # addition of loads happens in compute_impedance_matrix_loads
+        # Optimization on (upper) diagonals: The Z of two pulses is the
+        # same if they are the same distance as two other pulses and
+        # all are on the same wire. This amounts to checking pulses on
+        # diagonals (not just the main diagonal) for being on the same
+        # wire.
+        # Note that this creates probably more work than simply
+        # computing the values but to get *exactly* the same numbers
+        # like the original implementation we're doing this here.
+        # The optimization is only applied for the above-ground case
+        # (k == 1).
+        cpy_src = []
+        cpy_dst = []
+        diag_i, diag_j = diag
+        for k in range (n):
+            if k == 0:
+                d = np.eye (n, dtype = bool)
+            else:
+                d = np.zeros ((n, n), dtype = bool)
+                d [diag_i [:-k], diag_j [k:]] = True
+            valid = np.logical_and (d, opt > 0)
+            # We can use idx0 or idx 1 because we established both
+            # pulses have same wire at that point
+            for wire in set (idx0 [valid]):
+                v = np.logical_and (valid, idx0 == wire)
+                a, b = np.where (v)
+                if len (a) < 2:
+                    continue
+                cpy_src.append ((a [0], b [0]))
+                v [cpy_src [-1]] = False
+                cpy_dst.append (v)
+        # Make sure cpy_dst are not computed:
+        excp = np.logical_not (np.logical_or.reduce (cpy_dst))
+
+        # We only compute upper triangle and copy to lower
+        # But only if f8 (see below) is nonzero
+        # This is the case for the mirror image (k == -1)
+        triu = np.zeros ((n, n), dtype = bool)
+        triu [np.triu_indices (n, 1)] = True
+        ngnd   = np.logical_not (self.pulses.matrix_ground [1])
+        ngnd   = np.logical_and (ngnd [..., 0], ngnd [..., 1])
+        for k in self.image_iter ():
+            ng         = ngnd if k < 0 else True
+            kvec       = np.array ([1, 1, k])
+            f8         = opt if k >= 0 else zero
+            # These are elements not computed but copied from other triu
+            # Note tht this happens only in the above-ground part (k > 0)
+            copy       = np.logical_and (triu, f8 > 0)
+            # And these must be computed
+            compu      = np.logical_and (np.logical_not (copy.T), ng)
+            if k > 0:
+                compu  = np.logical_and (compu, excp)
+            v          = np.zeros ((n, n), dtype = complex)
+            u          = np.zeros ((n, n), dtype = complex)
+            vp         = np.zeros ((n, n), dtype = complex)
+            vp [compu] = self.vector_potential (k, compu, 0.5)
+            u  [compu] = vp [compu] * sg [..., 1][compu]
+            # compute PSI(M,N-1/2,N)
+            # Here we had 'if f8 < 2'
+            cond       = f8 < 2
+            c          = np.logical_and (cond, compu)
+            vp [c]     = self.vector_potential (k, c, -0.5)
+            v [compu]  = vp [compu] * sg [..., 0] [compu]
+            # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
+            vec3       = \
+                ( f7v * u [..., np.newaxis] * di2
+                + f6v * v [..., np.newaxis] * di1
+                ) * kvec
+            d          = self.w2 * np.sum (vec3 * zzz, axis = -1)
+            # compute PSI(M+1/2,N,N+1)
+            c1         = np.logical_and (f8 == 1, compu)
+            u56        = np.zeros (u.shape, dtype = complex)
+            u56 [c1]   = \
+                self.pulses.matrix_sign [1][..., 1][c1] * u [c1] + vp [c1]
+            c0         = np.logical_and (f8 == 0, compu)
+            u56 [c0]   = self.scalar_potential (k, c0, 0.5, 1)
+            # compute PSI(M-1/2,N,N+1)
+            sp         = np.zeros (u.shape, dtype = complex)
+            sp [c]     = self.scalar_potential (k, c, -.5, 1)
+            u12        = np.zeros (u.shape, dtype = complex)
+            u12 [c]    = (sp [c] - u56 [c]) / sl [..., 1][c]
+            # compute PSI(M+1/2,N-1,N)
+            u34        = np.zeros (u.shape, dtype = complex)
+            u34 [c]    = self.scalar_potential (k, c, .5, -1)
+            sp [c1]    = u56 [c1]
+            sp [c0]    = self.scalar_potential (k, c0, -.5, -1)
+            u12 [c]   += (u34 [c] - sp [c]) / sl [..., 0][c]
+            # Here we had else (from 'if f8 < 2' above)
+            cond       = np.logical_not (cond)
+            c          = np.logical_and (cond, compu)
+            sp [c]     = self.scalar_potential (k, c, -.5, 1)
+            u12 [c]    = (2 * sp [c] - 4 * u [c] * sg [..., 1][c]) \
+                       / sl [..., 1][c]
+            self.Z    += k * (d + u12)
+            # Copy diagonal optimizations
+            if k == 1:
+                for src, dst in zip (cpy_src, cpy_dst):
+                    self.Z [dst] = self.Z [src]
+            # Copy to lower triangle
+            self.Z.T [copy] = self.Z [copy]
     # end def compute_impedance_matrix
 
     def compute_impedance_matrix_loads (self):
@@ -2015,11 +2026,6 @@ class Mininec:
         g_idx    = np.logical_and (rest_idx, np.logical_not (exact))
         gauss_n [np.logical_and (g_idx, t >  6)] = 4
         gauss_n [np.logical_and (g_idx, t > 10)] = 2
-        args = vec2, vecv, k, r, exact
-        if len (vecv.shape) == 1:
-            assert r.shape     [-1] == 1
-            assert exact.shape [-1] == 1
-            args = vec2, vecv, k, r [0], exact [0]
         # Integrate, need to distinguish different f2 values (1/f2 is
         # the upper integration bound and fast_quad needs a scalar)
         for quad in (8, 4, 2):
@@ -2027,14 +2033,16 @@ class Mininec:
             for f2val in set (f2):
                 i = np.logical_and (qidx, f2 == f2val)
                 if i.any ():
+                    if len (vecv.shape) == 1:
+                        assert r.shape     [-1] == 1
+                        assert exact.shape [-1] == 1
+                        args = vec2, vecv, k, r [0], exact [0]
+                    else:
+                        args = vec2 [i], vecv [i], k, r [i], exact [i]
                     retval [i] = self.fast_quad (0, 1/f2val, args, quad)
                     retval [i] = (retval [i] + i6 [i]) * s4 [i]
         if len (vecv.shape) == 1:
             assert retval.shape == (1,)
-            with open ('/tmp/bla_new.txt', 'a') as f:
-                print ( "%.7f %.7fj" % (retval [0].real, retval [0].imag)
-                      , file = f
-                      )
             return retval [0]
         return retval
     # end def psi
@@ -2185,10 +2193,10 @@ class Mininec:
         >>> cond [8, 0] = True
         >>> r = m.scalar_potential (1, cond, 0.5, -1)
         >>> print (r.shape)
-        (9, 9)
-        >>> print ("%.7f %.7fj" % (r [0, 8].real, r [0, 8].imag))
+        (2,)
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
         -0.0833344 -0.1156091j
-        >>> print ("%.7f %.7fj" % (r [8, 0].real, r [8, 0].imag))
+        >>> print ("%.7f %.7fj" % (r [1].real, r [1].imag))
         -0.1052472 -0.0345366j
         """
         widx   = int (ds2 > 0)
@@ -2222,9 +2230,7 @@ class Mininec:
             t1 = 2 * np.log (wl / wr)
             t2 = -self.w * wl
             retval [co2] = t1 + t2 * 1j
-        if isinstance (pidx, tuple):
-            return retval [pidx]
-        return retval
+        return retval [pidx]
     # end def scalar_potential
 
     def vector_potential (self, k, pidx, ds):
@@ -2261,10 +2267,10 @@ class Mininec:
         >>> cond [1, 0] = True
         >>> r = m.vector_potential (1, cond, -0.5)
         >>> print (r.shape)
-        (9, 9)
-        >>> print ("%.7f %.7fj" % (r [0, 1].real, r [0, 1].imag))
+        (2,)
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
         0.6747199 -0.1555773j
-        >>> print ("%.7f %.7fj" % (r [1, 0].real, r [1, 0].imag))
+        >>> print ("%.7f %.7fj" % (r [1].real, r [1].imag))
         0.3750293 -0.1530220j
         """
         widx   = int (ds > 0)
@@ -2295,9 +2301,7 @@ class Mininec:
             t1 = np.log (wl / wr)
             t2 = -self.w * wl / 2
             retval [co2] = t1 + t2 * 1j
-        if isinstance (pidx, tuple):
-            return retval [pidx]
-        return retval
+        return retval [pidx]
     # end def vector_potential
 
     # All the *as_mininec methods

@@ -127,6 +127,11 @@ class Pulse_Container:
     # Pulse properties
 
     @cached_property
+    def dir_sgn (self):
+        return np.array ([p.dir_sgn for p in self])
+    # end def dir_sgn
+
+    @cached_property
     def gnd_sgn (self):
         return np.array ([p.gnd_sgn for p in self])
     # end def gnd_sgn
