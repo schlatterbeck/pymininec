@@ -173,7 +173,7 @@ class Pulse_Container:
         if len (r.shape) == 1:
             # We need to reverse this otherwise when we rely on our
             # indeces to return pulse0, pulse1 the order is reversed.
-            setattr (self, n, list (reversed (np.meshgrid (r, r))))
+            setattr (self, n, np.meshgrid (r, r, indexing = 'ij'))
         else:
             mi = self.matrix_idx
             v = [r [mi [0]], r [mi [1]]]
