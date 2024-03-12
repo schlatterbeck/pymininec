@@ -608,6 +608,14 @@ class Wire:
         # used in Basic this boils down to only wire-dependent
         # Parameters. So we can avoid re-computing this for each
         # combination of segments.
+        # My original note was:
+        # Hmm, dividing by f2 here removes scale = (p3-p2) from logarithm
+        # So i6 depends only on wire/seg parameters?!
+        # Moved to wire. Original formula was:
+        # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
+        # But s4 / f2 reduces to wire.seg_len / 2
+        # See above, i6 is now passed as a parameter which is set to
+        # 0 if not using the exact kernel.
         self.i6 = (1 + np.log (16 * r / self.seg_len)) / np.pi / r
     # end def __init__
 
@@ -1373,117 +1381,133 @@ class Mininec:
         0.00000000+0.00000000j
         0.00000000+0.00000000j
         """
-        n    = len (self.pulses)
+        n      = len (self.pulses)
         self.Z = np.zeros ((n, n), dtype=complex)
-        for p_i in self.pulses:
-            i = p_i.idx
-            for p_j in self.pulses:
-                j = p_j.idx
-                # 230
-                for k in self.image_iter ():
-                    if p_j.ground.any () and k < 0:
-                        continue
-                    f8 = 0
-                    if k >= 0:
-                        # set flag to avoid redundant calculations
-                        if  (   p_i.wires [0] == p_i.wires [1]
-                            and p_j.wires [0] == p_j.wires [1]
-                            ):
-                            if p_i.wires [0] == p_j.wires [0]:
-                                f8 = 1
-                            if p_i == p_j:
-                                f8 = 2
-                    # This was a conditional goto 317 in line 246
-                    if k < 0 or self.Z [i][j].real == 0:
-                        vp = self.vector_potential (k, p_i, p_j, 0.5)
-                        u = vp * p_j.sign [1]
-                        # compute PSI(M,N-1/2,N)
-                        if f8 < 2:
-                            vp = self.vector_potential (k, p_i, p_j, -0.5)
-                        v = vp * p_j.sign [0]
-                        # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
-                        # We use p_j.sgn, the sign resulting from only
-                        # the inverted wire, not from grounding
-                        f6v  = np.array ([1, 1, p_j.gnd_sgn [0]])
-                        f7v  = np.array ([1, 1, p_j.gnd_sgn [1]])
-                        di1  = p_j.wires [0].dirvec
-                        di2  = p_j.wires [1].dirvec
-                        kvec = np.array ([1, 1, k])
-                        # We do real and imaginary part in one go:
-                        vec3 = (f7v * u * di2 + f6v * v * di1) * kvec
-                        zzz = sum \
-                            ( p_i.dir_sgn [idx]
-                            * p_i.wires [idx].seg_len
-                            * p_i.wires [idx].dirvec
-                            for idx in (0, 1)
-                            )
-                        d    = self.w2 * sum (vec3 * zzz)
-                        # compute PSI(M+1/2,N,N+1)
-                        if f8 < 2:
-                            if f8 == 1:
-                                u56 = p_j.sign [1] * u + vp
-                            else:
-                                u56 = self.scalar_potential \
-                                    (k, p_i, p_j, 0.5, 1)
-                            # compute PSI(M-1/2,N,N+1)
-                            # Code at 291
-                            sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
-                            seglen = p_j.wires [1].seg_len
-                            u12 = (sp - u56) / seglen
-                            # compute PSI(M+1/2,N-1,N)
-                            u34 = self.scalar_potential (k, p_i, p_j, .5, -1)
-                            # compute PSI(M-1/2,N-1,N)
-                            if f8 >= 1:
-                                sp = u56
-                            else:
-                                sp = self.scalar_potential \
-                                    (k, p_i, p_j, -.5, -1)
-                            # gradient of scalar potential contribution
-                            seglen = p_j.wires [0].seg_len
-                            u12 += (u34 - sp) / seglen
-                        else:
-                            sp = self.scalar_potential (k, p_i, p_j, -.5, 1)
-                            seglen = p_j.wires [1].seg_len
-                            sg  = p_j.sign [1]
-                            u12 = (2 * sp - 4 * u * sg) / seglen
-                        # 314
-                        # sum into impedance matrix
-                        self.Z [i][j] = self.Z [i][j] + k * (d + u12)
 
-                    # avoid redundant calculations
-                    # 317
-                    if j < i or f8 == 0:
-                        continue
-                    self.Z [j][i] = self.Z [i][j]
-                    # segments on same wire same distance apart
-                    # have same Z
-                    if j + 1 >= len (self.pulses):
-                        continue
-                    p1 = j + 1
-                    p_j_next = self.pulses [j + 1]
-                    if  (  p_j_next.wires [0] != p_j_next.wires [1]
-                        or p_j_next.ground.any ()
-                        ):
-                        continue
-                    d = p_j.wires [1].dirvec
-                    # 325-327
-                    # The original condition was reached for the t-ant.pym
-                    # example with j == 7.
-                    # Note: the reversed original tested for d [0] + d [1] != 0
-                    # This was probably meant to check that both are nonzero.
-                    # (Resulting in a test for a grounded vertical wire)
-                    # Since an empty matrix element is recomputed anyway
-                    # adding a large test (with questionable semantics)
-                    # here doesn't make much sense.
-                    # So we kept only the condition with equal wires.
-                    if p_j_next.wires [1] == p_j.wires [1]:
-                        self.Z [i + 1][j + 1] = self.Z [i][j]
-            # Here follows a GOSUB 1599 which calculates the remaining time,
-            # not implemented
-        # end matrix fill time calculation
-        # Here follows a GOSUB 1589 which calculates elapsed time,
-        # not implemented
-        # addition of loads happens in compute_impedance_matrix_loads
+        # Independent of k
+        same         = np.logical_and (*self.pulses.matrix_same_wire)
+        idx0, idx1   = self.pulses.matrix_wire_idx_0
+        gs           = self.pulses.matrix_gnd_sgn [1]
+        sg           = self.pulses.matrix_sign [1]
+        sl           = self.pulses.matrix_seg_len [1]
+        f6v          = np.ones ((n, n, 3), dtype = int)
+        f6v [..., 2] = gs [..., 0]
+        f7v          = np.ones ((n, n, 3), dtype = int)
+        f7v [..., 2] = gs [..., 1]
+        dv           = self.pulses.matrix_dirvec [1]
+        di1          = dv [..., 0, :]
+        di2          = dv [..., 1, :]
+        zzz          = np.sum \
+            ( self.pulses.matrix_dir_sgn [0][..., np.newaxis]
+            * self.pulses.matrix_seg_len [0][..., np.newaxis]
+            * self.pulses.matrix_dirvec  [0]
+            , axis = -2
+            )
+        diag         = np.diag_indices (n)
+        zero         = np.zeros (self.Z.shape, dtype = int)
+        opt          = np.zeros (self.Z.shape, dtype = int)
+        opt [np.logical_and (same, (idx0 == idx1))] = 1
+        opt [diag] *= 2
+
+        # Optimization on (upper) diagonals: The Z of two pulses is the
+        # same if they are the same distance as two other pulses and
+        # all are on the same wire. This amounts to checking pulses on
+        # diagonals (not just the main diagonal) for being on the same
+        # wire.
+        # Note that this creates probably more work than simply
+        # computing the values but to get *exactly* the same numbers
+        # like the original implementation we're doing this here.
+        # The optimization is only applied for the above-ground case
+        # (k == 1).
+        cpy_src = []
+        cpy_dst = []
+        diag_i, diag_j = diag
+        for k in range (n):
+            if k == 0:
+                d = np.eye (n, dtype = bool)
+            else:
+                d = np.zeros ((n, n), dtype = bool)
+                d [diag_i [:-k], diag_j [k:]] = True
+            valid = np.logical_and (d, opt > 0)
+            # We can use idx0 or idx 1 because we established both
+            # pulses have same wire at that point
+            for wire in set (idx0 [valid]):
+                v = np.logical_and (valid, idx0 == wire)
+                a, b = np.where (v)
+                if len (a) < 2:
+                    continue
+                cpy_src.append ((a [0], b [0]))
+                v [cpy_src [-1]] = False
+                cpy_dst.append (v)
+        # Make sure cpy_dst are not computed:
+        excp = np.logical_not (np.logical_or.reduce (cpy_dst))
+
+        # We only compute upper triangle and copy to lower
+        # But only if f8 (see below) is nonzero
+        # This is the case for the mirror image (k == -1)
+        triu = np.zeros ((n, n), dtype = bool)
+        triu [np.triu_indices (n, 1)] = True
+        ngnd   = np.logical_not (self.pulses.matrix_ground [1])
+        ngnd   = np.logical_and (ngnd [..., 0], ngnd [..., 1])
+        for k in self.image_iter ():
+            ng         = ngnd if k < 0 else True
+            kvec       = np.array ([1, 1, k])
+            f8         = opt if k >= 0 else zero
+            # These are elements not computed but copied from other triu
+            # Note tht this happens only in the above-ground part (k > 0)
+            copy       = np.logical_and (triu, f8 > 0)
+            # And these must be computed
+            compu      = np.logical_and (np.logical_not (copy.T), ng)
+            if k > 0:
+                compu  = np.logical_and (compu, excp)
+            v          = np.zeros ((n, n), dtype = complex)
+            u          = np.zeros ((n, n), dtype = complex)
+            vp         = np.zeros ((n, n), dtype = complex)
+            vp [compu] = self.vector_potential (k, compu, 0.5)
+            u  [compu] = vp [compu] * sg [..., 1][compu]
+            # compute PSI(M,N-1/2,N)
+            # Here we had 'if f8 < 2'
+            cond       = f8 < 2
+            c          = np.logical_and (cond, compu)
+            vp [c]     = self.vector_potential (k, c, -0.5)
+            v [compu]  = vp [compu] * sg [..., 0] [compu]
+            # S(N+1/2)*PSI(M,N,N+1/2) + S(N-1/2)*PSI(M,N-1/2,N)
+            vec3       = \
+                ( f7v * u [..., np.newaxis] * di2
+                + f6v * v [..., np.newaxis] * di1
+                ) * kvec
+            d          = self.w2 * np.sum (vec3 * zzz, axis = -1)
+            # compute PSI(M+1/2,N,N+1)
+            c1         = np.logical_and (f8 == 1, compu)
+            u56        = np.zeros (u.shape, dtype = complex)
+            u56 [c1]   = \
+                self.pulses.matrix_sign [1][..., 1][c1] * u [c1] + vp [c1]
+            c0         = np.logical_and (f8 == 0, compu)
+            u56 [c0]   = self.scalar_potential (k, c0, 0.5, 1)
+            # compute PSI(M-1/2,N,N+1)
+            sp         = np.zeros (u.shape, dtype = complex)
+            sp [c]     = self.scalar_potential (k, c, -.5, 1)
+            u12        = np.zeros (u.shape, dtype = complex)
+            u12 [c]    = (sp [c] - u56 [c]) / sl [..., 1][c]
+            # compute PSI(M+1/2,N-1,N)
+            u34        = np.zeros (u.shape, dtype = complex)
+            u34 [c]    = self.scalar_potential (k, c, .5, -1)
+            sp [c1]    = u56 [c1]
+            sp [c0]    = self.scalar_potential (k, c0, -.5, -1)
+            u12 [c]   += (u34 [c] - sp [c]) / sl [..., 0][c]
+            # Here we had else (from 'if f8 < 2' above)
+            cond       = np.logical_not (cond)
+            c          = np.logical_and (cond, compu)
+            sp [c]     = self.scalar_potential (k, c, -.5, 1)
+            u12 [c]    = (2 * sp [c] - 4 * u [c] * sg [..., 1][c]) \
+                       / sl [..., 1][c]
+            self.Z    += k * (d + u12)
+            # Copy diagonal optimizations
+            if k == 1:
+                for src, dst in zip (cpy_src, cpy_dst):
+                    self.Z [dst] = self.Z [src]
+            # Copy to lower triangle
+            self.Z.T [copy] = self.Z [copy]
     # end def compute_impedance_matrix
 
     def compute_impedance_matrix_loads (self):
@@ -1538,13 +1562,14 @@ class Mininec:
         v2, vv = pulse.dvecs (0.5)
         v2     = v1 - kvec * v2
         vv     = v1 - kvec * vv
-        u = self.psi (v2, vv, k, 0.5, pulse.wires [1], exact = False)
+        w      = pulse.wires [1]
+        u = self.psi (v2, vv, k, 0.5, pulse.idx, exact = False)
 
         # compute psi(0,J-.5,J)
         v2, vv = pulse.dvecs (-0.5)
         v2 = v1 - kvec * v2
         vv = v1 - kvec * vv
-        v  = self.psi (v2, vv, k, 0.5, pulse.wires [0], exact = False)
+        v  = self.psi (v2, vv, k, 0.5, pulse.idx, exact = False)
         v *= pulse.sign [0]
 
         # real part of vector potential contribution
@@ -1700,23 +1725,20 @@ class Mininec:
         return iter ([1, -1])
     # end def image_iter
 
-    def integral_i2_i3 (self, t, vec2, vecv, k, wire, exact_kernel = False):
-        """ Starts line 28
+    def integral_i2_i3 (self, t, vec2, vecv, k, r, exact_kernel = False):
+        """ This is the to-be-integrated function called from psi via
+            fast_quad.
             Uses variables:
             vec2 (originally (X2, Y2, Z2))
             vecv (originally (V1, V2, V3))
             k, t, exact_kernel
+            r: the wire radius (originally a(p4))
+            Starts line 28
             c0 - c9  # Parameter of elliptic integral
             w: 2 * pi * f / c
                (omega / c, frequency-dependent constant in program)
             srm: small radius modification condition
                  0.0001 * c / f
-            a(p4): wire radius
-            t3, t4: Sum of Integrals I2 and I3, t3 is real and t4 imag
-
-            Temporary variables:
-            d3, d, b, b1, w0, w1, v0, vec3 (originally (X3, Y3, Z3))
-
             Note when comparing results to the BASIC implementation: The
             basic implementation *adds* its results to the *existing*
             values of t3 and t4!
@@ -1731,10 +1753,10 @@ class Mininec:
         >>> vv = np.array ([3.21214267693, 0, 0])
         >>> v2 = np.array ([1.07071418591, 0, 0])
         >>> t  = np.array ([0.980144947186])
-        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
-        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819959 -0.1414754j
 
@@ -1742,7 +1764,7 @@ class Mininec:
         # Original produces
         # 0.2819941 -0.1414753j
         >>> w [0].r = 0.01
-        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819941 -0.1414753j
 
@@ -1752,7 +1774,7 @@ class Mininec:
         >>> vv = np.array ([ 1.07071418591, 0, 0])
         >>> v2 = np.array ([-1.07071418591, 0, 0])
         >>> t  = np.array ([0.4900725])
-        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, True)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -2.2903413 -0.1467052j
 
@@ -1761,7 +1783,7 @@ class Mininec:
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
         >>> t  = np.array ([0.7886752])
-        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.04219836 -0.04820921j
 
@@ -1771,32 +1793,73 @@ class Mininec:
         >>> vv = np.array ([16.06072, 0, 0])
         >>> v2 = np.array ([13.91929, 0, 0])
         >>> t  = np.array ([0.2113249])
-        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire, False)
+        >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, False)
         >>> print ("%.8f %.8fj" % (r.real, r.imag))
         -0.03563231 -0.05976447j
+
+        # Now compute for two vecs
+        >>> vv  = np.array ([[16.06072, 0, 0], [ 1.07071418591, 0, 0]])
+        >>> v2  = np.array ([[13.91929, 0, 0], [-1.07071418591, 0, 0]])
+        >>> t   = np.array ([[0.7886752, 0.2113249], [0.4900725, 0.4900725]])
+        >>> r   = np.array ([wire.r, wire.r])
+        >>> xct = np.array ([False, True], dtype = bool)
+        >>> res = m.integral_i2_i3 (t, v2, vv, 1, r, xct)
+        >>> for k in res.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        -0.0421984 -0.0482092j
+        -0.0356323 -0.0597645j
+        -2.2903413 -0.1467052j
+        -2.2903413 -0.1467052j
+        >>> vecv = np.array ([1.070714, 0, 0])
+        >>> vec2 = np.zeros ((2, 2, 3))
+        >>> vecv = np.tile (vecv, (2, 2, 1))
+        >>> radi = np.ones ((2, 2), dtype = float) * 0.01
+        >>> args = vec2, vecv, 1, radi, np.ones ((2, 2), dtype = bool)
+        >>> x, w = legendre_cache [8]
+        >>> y = (x + .5)
+        >>> res  = np.sum (w * m.integral_i2_i3 (y, *args), axis = -1)
+        >>> for k in res.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
         """
-        t34  = np.zeros (t.shape, dtype = complex)
         if k < 0:
-            vec3 = vecv + (vec2 - vecv) * t[:,np.newaxis]
+            vecv, vec2 = vec2, vecv
+        if len (vec2.shape) > 1:
+            mul  = t.shape [-1]
+            shp  = list (vec2.shape)
+            shp.insert (-1, mul)
+            dvec = np.repeat \
+                ((vecv - vec2) [..., np.newaxis, :], mul, axis = -2)
+            v2s  = np.repeat \
+                (vec2          [..., np.newaxis, :], mul, axis = -2)
         else:
-            vec3 = vec2 + (vecv - vec2) * t[:,np.newaxis]
-        d = d3 = np.linalg.norm (vec3, axis = 1)
+            dvec = vecv - vec2
+            v2s  = vec2
+        vec3 = v2s + dvec * t [..., np.newaxis]
+        t34  = np.zeros (vec3.shape [:-1], dtype = complex)
+        d = d3 = np.linalg.norm (vec3, axis = -1)
         # MOD FOR SMALL RADIUS TO WAVELENGTH RATIO
-        if wire.r > self.srm:
-            # SQUARE OF WIRE RADIUS
-            a2 = wire.r * wire.r
-            d3 = d3 * d3
-            d  = np.sqrt (d3 + a2)
-            # criteria for using reduced kernel
-            if exact_kernel:
-                # exact kernel calculation with elliptic integral
-                b = d3 / (d3 + 4 * a2)
-                v0 = ellipk (1 - b) * np.sqrt (1 - b)
-                # Note: This adds only a real part, the imag part of the
-                # elliptic integral is 0
-                t34 += ( (v0 + np.log (d3 / (64 * a2)) / 2)
-                       / np.pi / wire.r - 1 / d
-                       )
+        cond = r > self.srm
+        xact = np.logical_and (cond, exact_kernel)
+        a2   = r * r
+        d3   = d3 * d3
+        if np.isscalar (a2):
+            a2 = np.array ([a2])
+            r  = np.array ([r])
+        else:
+            a2 = np.repeat (a2 [..., np.newaxis], d.shape [-1], axis = -1)
+            r  = np.repeat (r  [..., np.newaxis], d.shape [-1], axis = -1)
+        d [cond] = np.sqrt (a2 [cond] + d3 [cond])
+        b    = d3 [xact] / (d3 [xact] + 4 * a2 [xact])
+        v0   = ellipk (1 - b) * np.sqrt (1 - b)
+        t34 [xact] += \
+            ( (v0 + np.log (d3 [xact] / (64 * a2 [xact])) / 2)
+            / np.pi / r [xact]
+            - 1 / d [xact]
+            )
         b1 = d * self.w
         # EXP(-J*K*R)/R
         t34 += np.e ** (-1j * b1) / d
@@ -1828,12 +1891,34 @@ class Mininec:
         >>> m.register_source (s, 4)
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> args = vec2, vecv, 1, w [0], True
+        >>> args = vec2, vecv, 1, w [0].r, True
         >>> r = m.fast_quad (0, 1, args, 5)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         55.5802636 -0.1465045j
+        >>> r = m.fast_quad (0, 1, args, 8)
+        >>> print ("%.7f %.7fj" % (r.real, r.imag))
+        55.7187703 -0.1465045j
+        >>> vec2 = np.zeros ((2, 2, 3))
+        >>> vecv = np.tile (vecv, (2, 2, 1))
+        >>> radi = np.ones ((2, 2), dtype = float) * 0.01
+        >>> args = vec2, vecv, 1, radi, np.ones ((2, 2), dtype = bool)
+        >>> r = m.fast_quad (0, 1, args, 5)
+        >>> for k in r.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        55.5802636 -0.1465045j
+        55.5802636 -0.1465045j
+        55.5802636 -0.1465045j
+        55.5802636 -0.1465045j
+        >>> r = m.fast_quad (0, 1, args, 8)
+        >>> for k in r.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
+        55.7187703 -0.1465045j
         """
         if n in legendre_cache and a == 0:
+            
             x, w = legendre_cache [n]
             y = (x + .5) * b
             return np.sum (w * self.integral_i2_i3 (y, *args), axis = -1)
@@ -1843,15 +1928,15 @@ class Mininec:
             return r / b
     # end def fast_quad
 
-    def psi (self, vec2, vecv, k, scale, wire, exact = False, fvs = 0):
+    def psi (self, vec2, vecv, k, scale, pidx, exact = False, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
             The variable fvs is used to distiguish code path at the end.
             Both p2 and p3 used to be floating-point segment indeces.
             We now directly pass the difference, it is always positive
             and can be 1 or 0.5.
-            The variable p4 was the index of the wire, we now pass wire
-            directly.
+            The variable p4 was the index of the wire, we now pass the
+            pulse index to compute the wire parameters from.
             vec2 replaces (X2, Y2, Z2)
             vecv replaces (V1, V2, V3)
             i6: Use reduced kernel if 0, this was I6! (single precision)
@@ -1860,30 +1945,30 @@ class Mininec:
 
             Input:
             vec2, vecv
-            k:
-            scale (used to be p3 - p2)
-            wire: the wire
+            k: ground index (-1 or 1, always a scalar)
+            scale (used to be p3 - p2, this is always a scalar)
+            pidx is the list of pulse indeces for which to compute wire
+                parameters from the pulse matrix.
+                r: the wire radius
+                seg_len: the segment length of the wire
+                i6: the wire i6
             fvs: scalar vs. vector potential
             is_near: This originally tested input C$ for "N" which is
-                     the selection of near field compuation, this forces
-                     non-exact kernel, see exact flag
-            Output:
-            vec2:
-            vecv:
-            t1:
-            t2:
+                the selection of near field compuation, this forces
+                non-exact kernel, see exact flag
 
-        >>> w = []
-        >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> ws = []
+        >>> ws.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
+        >>> w = ws [0]
         >>> s = Excitation (1, 0)
-        >>> m = Mininec (7, w)
+        >>> m = Mininec (7, ws)
         >>> m.register_source (s, 4)
 
         # Original produces:
         # 5.330494 -0.1568644j
         >>> vec2 = np.zeros (3)
         >>> vecv = np.array ([1.070714, 0, 0])
-        >>> r = m.psi (vec2, vecv, 1, 0.5, m.geo [0], exact = True)
+        >>> r = m.psi (vec2, vecv, 1, 0.5, 0, exact = True)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         5.3304830 -0.1568644j
 
@@ -1891,51 +1976,75 @@ class Mininec:
         # -8.333431E-02 -0.1156091j
         >>> vec2 = np.array ([13.91929, 0, 0])
         >>> vecv = np.array ([16.06072, 0, 0])
-        >>> x = m.psi
-        >>> r = x (vec2, vecv, k=1, scale=1, wire=m.geo [0], fvs = 1)
+        >>> r = m.psi (vec2, vecv, 1, 1, 0, fvs = 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156090j
+
+        # The above one two times
+        >>> vec2 = np.array ([[13.91929, 0, 0], [13.91929, 0, 0]])
+        >>> vecv = np.array ([[16.06072, 0, 0], [16.06072, 0, 0]])
+        >>> r = m.psi (vec2, vecv, 1, 1, np.array ([0, 0]), fvs = 1)
+        >>> print (r.shape)
+        (2,)
+        >>> for k in r.flat:
+        ...     print ("%.7f %.7fj" % (k.real, k.imag))
+        -0.0833344 -0.1156090j
+        -0.0833344 -0.1156090j
         """
+        r       = self.pulses.radius.T  [int (scale > 0)][pidx]
+        seg_len = self.pulses.seg_len.T [int (scale > 0)][pidx]
+        i6      = self.pulses.i6.T      [int (scale > 0)][pidx]
+        if np.isscalar (r):
+            r       = np.array ([r])
+            seg_len = np.array ([seg_len])
+            i6      = np.array ([i6])
         # magnitude of S(U) - S(M)
-        d0 = np.linalg.norm (vec2)
+        d0 = np.linalg.norm (vec2, axis = -1)
         # magnitude of S(V) - S(M)
-        d3 = np.linalg.norm (vecv)
+        d3 = np.linalg.norm (vecv, axis = -1)
         # magnitude of S(V) - S(U)
-        s4 = scale * wire.seg_len
+        s4 = abs (scale) * seg_len
         # order of integration
         # gauss_n order gaussian quadrature
-        i6 = 0
-        f2 = 1
-        gauss_n = 8
-        t = (d0 + d3) / wire.seg_len
+        t = (d0 + d3) / seg_len
         # CRITERIA FOR EXACT KERNEL
-        if t > 1.1 or not exact:
-            # This starts line 165
-            if t > 6:
-                gauss_n = 4
-            if t > 10:
-                gauss_n = 2
-        elif exact:
-            if wire.r <= self.srm:
-                t12 = 2 * np.log (wire.seg_len / wire.r) \
-                    - self.w * wire.seg_len * 1j
-                if fvs != 1:
-                    t12 /= 2
-                return t12
-            # The following starts line 162
-            f2 = 2 * scale
-            # Hmm, dividing by f2 here removes scale = (p3-p2) from logarithm
-            # So i6 depends only on wire/seg parameters?!
-            # Moved to wire. Original formula was:
-            # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
-            # But s4 / f2 reduces to wire.seg_len / 2
-            i6 = wire.i6
-        # Gauss quadrature was explicitly implemented here, we use
-        # fixed_quad from a scipy lib for now.
-        args = vec2, vecv, k, wire, bool (i6)
-        # Integrate, need to multiply by f2 below.
-        r = self.fast_quad (0, 1/f2, args, gauss_n)
-        return (r + i6) * s4
+        # Use exact kernel only if t <= 1.1 (and exact was specified)
+        exact *= (t <= 1.1)
+        f2 = np.ones (r.shape, dtype = int)
+        f2 [exact] = 2 * abs (scale)
+        # gauss_n order gaussian quadrature
+        gauss_n = np.ones (r.shape) * 8
+        # i6 is 0 if not using exact kernel
+        i6 *= exact
+        retval  = np.zeros (r.shape, dtype = complex)
+        srm_idx = np.logical_and (exact, r <= self.srm)
+        fvs_f   = 1 if fvs != 1 else 2
+        retval [srm_idx] = fvs_f * np.log (seg_len [srm_idx] / r [srm_idx]) \
+                         - 0.5 * fvs_f * self.w * seg_len [srm_idx] * 1j
+        rest_idx = np.logical_not (srm_idx)
+        # When exact is set we always use gauss_n == 8
+        g_idx    = np.logical_and (rest_idx, np.logical_not (exact))
+        gauss_n [np.logical_and (g_idx, t >  6)] = 4
+        gauss_n [np.logical_and (g_idx, t > 10)] = 2
+        # Integrate, need to distinguish different f2 values (1/f2 is
+        # the upper integration bound and fast_quad needs a scalar)
+        for quad in (8, 4, 2):
+            qidx = np.logical_and (rest_idx, gauss_n == quad)
+            for f2val in set (f2):
+                i = np.logical_and (qidx, f2 == f2val)
+                if i.any ():
+                    if len (vecv.shape) == 1:
+                        assert r.shape     [-1] == 1
+                        assert exact.shape [-1] == 1
+                        args = vec2, vecv, k, r [0], exact [0]
+                    else:
+                        args = vec2 [i], vecv [i], k, r [i], exact [i]
+                    retval [i] = self.fast_quad (0, 1/f2val, args, quad)
+                    retval [i] = (retval [i] + i6 [i]) * s4 [i]
+        if len (vecv.shape) == 1:
+            assert retval.shape == (1,)
+            return retval [0]
+        return retval
     # end def psi
 
     def psi_near_field_56 (self, vec0, vect, k, ds0, pulse2, ds2):
@@ -1965,7 +2074,7 @@ class Mininec:
         v2, vv = pulse2.dvecs (ds2)
         v2 = vec1 - kvec * v2
         vv = vec1 - kvec * vv
-        return self.psi (v2, vv, k, abs (ds2), wire, exact = False)
+        return self.psi (v2, vv, k, ds2, pulse2.idx, exact = False)
     # end def psi_near_field_56
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -2029,8 +2138,12 @@ class Mininec:
             source.register (self, pulse)
     # end def register_source
 
-    def scalar_potential (self, k, pulse1, pulse2, ds1, ds2):
+    def scalar_potential (self, k, pidx, ds1, ds2):
         """ Compute scalar potential
+            We're now using a two-dimensional index into the pulse
+            matrix. This is used to access all pulse matrix items that
+            are created via meshgrid. Note that it is possible to use a
+            tuple instead to access a single item in the matrix.
             Inputs:
             ds1 in the displacement on pulse1, we compute the endseg
             (the endpoint in positive or negative direction).
@@ -2055,39 +2168,77 @@ class Mininec:
 
         # Original produces:
         # -8.333431E-02 -0.1156091j
-        >>> method = m.scalar_potential
         >>> p0 = m.pulses [0]
         >>> p8 = m.pulses [8]
-        >>> r = method (1, p0, p8, 0.5, -1)
+        >>> r = m.scalar_potential (1, (0, 8), 0.5, -1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
         >>> w [0].r = 0.001
-        >>> r = method (1, p0, p0, -0.5, 1)
+
+        # When changing wire we need to flush the relevant parts of the
+        # pulse cache
+        >>> m.pulses.reset ()
+        >>> r = m.scalar_potential (1, (0, 0), -0.5, 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         1.0497691 -0.3085993j
+
+        >>> w [0].r = 0.01
+        >>> m.pulses.reset ()
+
+        # vector case
+        # Compute (0, 8) and (8, 0)
+        >>> l = len (m.pulses)
+        >>> cond = np.zeros ((l, l), dtype = bool)
+        >>> cond [0, 8] = True
+        >>> cond [8, 0] = True
+        >>> r = m.scalar_potential (1, cond, 0.5, -1)
+        >>> print (r.shape)
+        (2,)
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
+        -0.0833344 -0.1156091j
+        >>> print ("%.7f %.7fj" % (r [1].real, r [1].imag))
+        -0.1052472 -0.0345366j
         """
-        wire = pulse2.wires [ds2 > 0]
-        vec1 = pulse1.endseg (ds1)
-        kvec = np.array ([1, 1, k])
-        if  (  k < 1
-            or wire.r > self.srm
-            or pulse1.wire.n != pulse2.wire.n
-            or pulse1.idx + ds1 != pulse2.idx + ds2 / 2
-            ):
-            v1 = pulse1.endseg (ds1)
-            wd = self.wires_unconnected (pulse1, pulse2)
-            v2, vv = pulse2.dvecs (ds2)
-            v2 = kvec * v2 - vec1
-            vv = kvec * vv - vec1
-            return self.psi \
-                (v2, vv, k, abs (ds2), wire, fvs = 1, exact = not wd)
-        t1 = 2 * np.log (wire.seg_len / wire.r)
-        t2 = -self.w * wire.seg_len
-        return t1 + t2 * 1j
+        widx   = int (ds2 > 0)
+        kvec   = np.array ([1, 1, k])
+        plen   = len (self.pulses)
+        retval = np.zeros ((plen, plen), dtype = complex)
+        cidx   = np.zeros ((plen, plen), dtype = bool)
+        cidx [pidx] = True
+        midx   = self.pulses.matrix_idx
+        mwx    = self.pulses.matrix_wire_idx
+        cond   = midx [0] + ds1 != midx [1] + ds2 / 2
+        cond   = np.logical_or (cond, mwx [0] != mwx [1])
+        cond   = np.logical_or \
+            (cond, self.pulses.matrix_radius [1][..., widx] >= self.srm)
+        cond   = np.logical_or (cond, k < 1)
+        co1    = cidx * cond
+        co2    = cidx * np.logical_not (cond)
+        if co1.any ():
+            v1  = self.pulses.matrix_endseg (ds1) [0][co1]
+            dv  = self.pulses.matrix_dvecs (ds2) [1]
+            v2  = kvec * dv [..., 0, :][co1] - v1
+            vv  = kvec * dv [..., 1, :][co1] - v1
+            wd  = self.pulses.matrix_wires_unconnected ()
+            xct = np.logical_not (wd)
+            px  = midx [1]
+            retval [co1] = self.psi \
+                (v2, vv, k, ds2, px [co1], fvs = 1, exact = xct [co1])
+        if co2.any ():
+            wl = self.pulses.matrix_seg_len [1].T [widx].T [co2]
+            wr = self.pulses.matrix_radius  [1].T [widx].T [co2]
+            t1 = 2 * np.log (wl / wr)
+            t2 = -self.w * wl
+            retval [co2] = t1 + t2 * 1j
+        return retval [pidx]
     # end def scalar_potential
 
-    def vector_potential (self, k, pulse1, pulse2, ds):
+    def vector_potential (self, k, pidx, ds):
         """ Compute vector potential
+            We're now using a two-dimensional index into the pulse
+            matrix. This is used to access all pulse matrix items that
+            are created via meshgrid. Note that it is possible to use a
+            tuple instead to access a single item in the matrix.
             Original entry point in line 102.
             Original comment:
             S(M) goes in (X1,Y1,Z1) for vector potential
@@ -2105,36 +2256,53 @@ class Mininec:
 
         # Original produces:
         # 0.6747199 -.1555772j
-        >>> method = m.vector_potential
-        >>> p0 = m.pulses [0]
-        >>> p1 = m.pulses [1]
-        >>> r = method (1, p0, p1, -0.5)
+        >>> r = m.vector_potential (1, (0, 1), -0.5)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.6747199 -0.1555773j
-        """
-        wire = pulse2.wires [ds > 0]
-        kvec = np.array ([1, 1, k])
-        if k < 1 or wire.r >= self.srm or pulse1 != pulse2:
-            v1 = pulse1.point
-            v2, vv = pulse2.dvecs (ds)
-            v2 = kvec * v2 - v1
-            vv = kvec * vv - v1
-            wd = self.wires_unconnected (pulse1, pulse2)
-            return self.psi (v2, vv, k, abs (ds), wire, fvs = 0, exact = not wd)
-        t1 = np.log (wire.seg_len / wire.r)
-        t2 = -self.w * wire.seg_len / 2
-        return t1 + t2 * 1j
-    # end def vector_potential
 
-    def wires_unconnected (self, pulse1, pulse2):
-        """ Check if the wires to which the given segment indeces belong
-            are *not* connected.
+        # Compute (0, 1) and (1, 0)
+        >>> l = len (m.pulses)
+        >>> cond = np.zeros ((l, l), dtype = bool)
+        >>> cond [0, 1] = True
+        >>> cond [1, 0] = True
+        >>> r = m.vector_potential (1, cond, -0.5)
+        >>> print (r.shape)
+        (2,)
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
+        0.6747199 -0.1555773j
+        >>> print ("%.7f %.7fj" % (r [1].real, r [1].imag))
+        0.3750293 -0.1530220j
         """
-        w1 = pulse1.wire
-        w2 = pulse2.wire
-        # Well this should really be symmetric, so one should be enough :-)
-        return not w1.is_connected (w2) and not w2.is_connected (w1)
-    # end def wires_unconnected
+        widx   = int (ds > 0)
+        kvec   = np.array ([1, 1, k])
+        plen   = len (self.pulses)
+        retval = np.zeros ((plen, plen), dtype = complex)
+        cidx   = np.zeros ((plen, plen), dtype = bool)
+        cidx [pidx] = True
+        cond   = np.logical_not (np.eye (plen, dtype = bool))
+        cond   = np.logical_or (cond, k < 1)
+        cond   = np.logical_or \
+            (cond, self.pulses.matrix_radius [1][..., widx] >= self.srm)
+        co1    = cidx * cond
+        co2    = cidx * np.logical_not (cond)
+        if co1.any ():
+            v1  = self.pulses.matrix_point [0][co1]
+            dv  = self.pulses.matrix_dvecs (ds) [1]
+            v2  = kvec * dv [..., 0, :][co1] - v1
+            vv  = kvec * dv [..., 1, :][co1] - v1
+            wd  = self.pulses.matrix_wires_unconnected ()
+            xct = np.logical_not (wd)
+            px  = self.pulses.matrix_idx [1]
+            retval [co1] = self.psi \
+                (v2, vv, k, ds, px [co1], exact = xct [co1])
+        if co2.any ():
+            wl = self.pulses.matrix_seg_len [1].T [widx].T [co2]
+            wr = self.pulses.matrix_radius  [1].T [widx].T [co2]
+            t1 = np.log (wl / wr)
+            t2 = -self.w * wl / 2
+            retval [co2] = t1 + t2 * 1j
+        return retval [pidx]
+    # end def vector_potential
 
     # All the *as_mininec methods
 

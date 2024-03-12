@@ -25,3 +25,5 @@ upload_pypi
 *.hacked
 old
 zoppel.png
+timing*
+stuff
