@@ -1534,7 +1534,7 @@ class Mininec:
         return '\n'.join (r)
     # end def geo_as_str
 
-    def nf_helper (self, k, v1, pulse):
+    def nf_helper (self, k, v1, pidx):
         """ Compute potentials in near field calculation
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
@@ -1546,35 +1546,54 @@ class Mininec:
         >>> nf75 = 0.3218219 -0.1519149j
         >>> ex   = (nf66 + nf75) * w [0].dirvec
         >>> vec0 = np.array ([0, -1, -1])
-        >>> r    = m.nf_helper (1, vec0, m.pulses [0])
+        >>> r    = m.nf_helper (1, vec0, 0)
         >>> assert r [1] == 0 and r [2] == 0
         >>> print ("%.7f %.7fj" % (ex [0].real, ex [0].imag))
         0.8010557 -0.3063741j
         >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
         0.8010557 -0.3063742j
         >>> assert np.linalg.norm (ex - r) < 1e-7
+
+        # Vectorized
+        >>> vec0 = np.array ([vec0, vec0])
+        >>> r    = m.nf_helper (1, vec0, np.array ([0, 0]))
+        >>> assert (r [0] == r [1]).all ()
+        >>> assert r [0][1] == 0 and r [0][2] == 0
+        >>> print ("%.7f %.7fj" % (r [0][0].real, r [0][0].imag))
+        0.8010557 -0.3063742j
         """
-        kvec = np.array ([1, 1, k])
-        v6   = np.array ([1, 1, pulse.gnd_sgn [0]])
-        v7   = np.array ([1, 1, pulse.gnd_sgn [1]])
-        dir  = [w.dirvec for w in pulse.wires]
+        kvec        = np.array ([1, 1, k])
+        gs          = self.pulses.gnd_sgn
+        v6          = np.ones (v1.shape, dtype = int)
+        v6 [..., 2] = gs.T [0][pidx]
+        v7          = np.ones (v1.shape, dtype = int)
+        v7 [..., 2] = gs.T [1][pidx]
+        dir         = self.pulses.dirvec
+        d1          = dir [:, 0, :]
+        d2          = dir [:, 1, :]
         # compute psi(0,J,J+.5)
-        v2, vv = pulse.dvecs (0.5)
-        v2     = v1 - kvec * v2
-        vv     = v1 - kvec * vv
-        w      = pulse.wires [1]
-        u = self.psi (v2, vv, k, 0.5, pulse.idx, exact = False)
+        dv          = self.pulses.dvecs (0.5)
+        v2          = dv [:, 0, :]
+        vv          = dv [:, 1, :]
+        v2          = v1 - kvec * v2 [pidx]
+        vv          = v1 - kvec * vv [pidx]
+        u           = self.psi (v2, vv, k, 0.5, pidx, exact = False) \
+                      [..., np.newaxis]
 
         # compute psi(0,J-.5,J)
-        v2, vv = pulse.dvecs (-0.5)
-        v2 = v1 - kvec * v2
-        vv = v1 - kvec * vv
-        v  = self.psi (v2, vv, k, 0.5, pulse.idx, exact = False)
-        v *= pulse.sign [0]
+        dv          = self.pulses.dvecs (-0.5)
+        v2          = dv [:, 0, :]
+        vv          = dv [:, 1, :]
+        v2          = v1 - kvec * v2 [pidx]
+        vv          = v1 - kvec * vv [pidx]
+        v           = \
+            ( self.psi (v2, vv, k, 0.5, pidx, exact = False)
+            * self.pulses.sign [..., 0][pidx]
+            ) [..., np.newaxis]
 
         # real part of vector potential contribution
         # imaginary part of vector potential contribution
-        return (v * dir [0] * v6 + u * dir [1] * v7) * kvec
+        return (v * d1 [pidx] * v6 + u * d1 [pidx] * v7) * kvec
     # end def nf_helper
 
     @measure_time
@@ -1641,9 +1660,9 @@ class Mininec:
                         if p.ground.any () and k < 0:
                             continue
                         # compute vector potential A
-                        v35_e = self.nf_helper (k, vec, p)
+                        v35_e = self.nf_helper (k, vec, p.idx)
                         v35_h = np.array \
-                            ([self.nf_helper (k, v [i], p) for v in v0m])
+                            ([self.nf_helper (k, v [i], p.idx) for v in v0m])
                         # At this point comment notes
                         # magnetic field calculation completed
                         # and jumps to 1042 if H field
