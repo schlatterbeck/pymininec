@@ -1590,7 +1590,7 @@ class Mininec:
             power is originally  O2
             Basic code starts at 875
         """
-        self.nf_param = np.array ([list (start), list (inc), list (nvec)])
+        self.nf_param = np.array ([list (start), list (inc), list (nvec)]).T
         self.e_field = []
         self.h_field = []
         # virtual dipole length for near field calculation:
@@ -1600,12 +1600,15 @@ class Mininec:
         self.nf_power = pwr
         f_e = np.sqrt (pwr / self.power)
         f_h = f_e / s0 / (4*np.pi)
-        # Compute the grid
+        # Compute grid, coordinate lists can be different lengths on the axes
         r = [np.arange (s, s + n * i, i)
-             for (s, n, i) in
-                 (zip (*(reversed (x) for x in (start, nvec, inc))))
+             for (s, i, n) in reversed (self.nf_param)
             ]
-        self.near_field_idx = np.meshgrid (*r, indexing = 'ij')
+        self.near_field_coord = np.flip \
+            ( np.array
+                ([x.flatten () for x in np.meshgrid (*r, indexing = 'ij')])
+            , axis = 0
+            )
 
         # Looks like T5, T6, T7 are 0 except for the diagonale at each
         # iteration of I (the dimension), we build everything in one go
@@ -1867,8 +1870,8 @@ class Mininec:
     #end def integral_i2_i3
 
     def near_field_iter (self):
-        for a in zip (*(x.flat for x in self.near_field_idx)):
-            yield np.array (list (reversed (a)))
+        for a in self.near_field_coord.T:
+            yield a
     # end def near_field_iter
 
     def fast_quad (self, a, b, args, n):
@@ -2669,7 +2672,7 @@ class Mininec:
         r = []
         r.append ('*' * 20 + '    NEAR FIELDS     ' + '*' * 20)
         r.append ('')
-        for coord, (nf_s, nf_i, nf_c) in zip ('XYZ', self.nf_param.T):
+        for coord, (nf_s, nf_i, nf_c) in zip ('XYZ', self.nf_param):
             ff = tuple \
                 (x.rstrip () for x in format_float ((nf_s, nf_i, nf_c)))
             r.append \
