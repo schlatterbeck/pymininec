@@ -1670,17 +1670,17 @@ class Mininec:
                         d   = sum (v35_e * t567 [i]) * self.w2
                         # compute psi(.5,J,J+1)
                         u    = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p, 1)
+                            (vec, t567 [i], k, .5, j, 1)
                         # compute psi(-.5,J,J+1)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p, 1)
+                            (vec, t567 [i], k, -.5, j, 1)
                         u   = (tmp - u) / p.wires [1].seg_len
                         # compute psi(.5,J-1,J)
                         u34  = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p, -1)
+                            (vec, t567 [i], k, .5, j, -1)
                         # compute psi(-.5,J-1,J)
                         tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p, -1)
+                            (vec, t567 [i], k, -.5, j, -1)
                         # gradient of scalar potential
                         u56 += (u + (u34 - tmp) / p.wires [0].seg_len + d) * k
                         # Here would be a GOTO 1048 (a continue of the K loop)
@@ -2069,7 +2069,7 @@ class Mininec:
         return retval
     # end def psi
 
-    def psi_near_field_56 (self, vec0, vect, k, ds0, pulse2, ds2):
+    def psi_near_field_56 (self, vec0, vect, k, ds0, pidx, ds2):
         """ Compute psi used several times during computation of near field
             Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
@@ -2086,17 +2086,27 @@ class Mininec:
         # 0.5496336 -0.3002106j
         >>> vec0 = np.array ([0, -1, -1])
         >>> vect = np.array ([8.565715E-02, 0, 0])
-        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, m.pulses [0], 1)
+        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, 0, 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.5496335 -0.3002106j
+
+        # Vectorized
+        >>> v0 = np.array ([vec0, vec0])
+        >>> vt = np.array ([vect, vect])
+        >>> ix = np.zeros (2, dtype = int)
+        >>> r  = m.psi_near_field_56 (v0, vt, 1, 0.5, ix, 1)
+        >>> assert (r [0] == r [1]).all ()
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
+        0.5496335 -0.3002106j
         """
-        wire = pulse2.wires [ds2 > 0]
         kvec = np.array ([1, 1, k])
         vec1 = vec0 + ds0 * vect / 2
-        v2, vv = pulse2.dvecs (ds2)
-        v2 = vec1 - kvec * v2
-        vv = vec1 - kvec * vv
-        return self.psi (v2, vv, k, ds2, pulse2.idx, exact = False)
+        dv = self.pulses.dvecs (ds2)
+        v2 = dv [:, 0, :]
+        vv = dv [:, 1, :]
+        v2 = vec1 - kvec * v2 [pidx]
+        vv = vec1 - kvec * vv [pidx]
+        return self.psi (v2, vv, k, ds2, pidx, exact = False)
     # end def psi_near_field_56
 
     def register_load (self, load, pulse = None, wire_idx = None):
