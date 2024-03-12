@@ -1661,8 +1661,8 @@ class Mininec:
                             continue
                         # compute vector potential A
                         v35_e = self.nf_helper (k, vec, p.idx)
-                        v35_h = np.array \
-                            ([self.nf_helper (k, v [i], p.idx) for v in v0m])
+                        idx   = np.array ([p.idx, p.idx])
+                        v35_h = self.nf_helper (k, v0m [:, i, :], idx)
                         # At this point comment notes
                         # magnetic field calculation completed
                         # and jumps to 1042 if H field
