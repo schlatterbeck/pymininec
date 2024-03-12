@@ -1652,44 +1652,53 @@ class Mininec:
                 # takes the value -1 and 1 in the v0m initialization
                 # (originally X0, Y0, Z0)
                 kf  = np.zeros ((2, 3), dtype = complex)
-                # Loop over pulses
-                for p in self.pulses:
-                    j   = p.idx
-                    u56 = 0j
-                    for k in self.image_iter ():
-                        if p.ground.any () and k < 0:
-                            continue
-                        # compute vector potential A
-                        v35_e = self.nf_helper (k, vec, p.idx)
-                        idx   = np.array ([p.idx, p.idx])
-                        v35_h = self.nf_helper (k, v0m [:, i, :], idx)
-                        # At this point comment notes
-                        # magnetic field calculation completed
-                        # and jumps to 1042 if H field
-                        # We compute both, E and H and continue
-                        d   = sum (v35_e * t567 [i]) * self.w2
-                        # compute psi(.5,J,J+1)
-                        u    = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, j, 1)
-                        # compute psi(-.5,J,J+1)
-                        tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, j, 1)
-                        u   = (tmp - u) / p.wires [1].seg_len
-                        # compute psi(.5,J-1,J)
-                        u34  = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, j, -1)
-                        # compute psi(-.5,J-1,J)
-                        tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, j, -1)
-                        # gradient of scalar potential
-                        u56 += (u + (u34 - tmp) / p.wires [0].seg_len + d) * k
-                        # Here would be a GOTO 1048 (a continue of the K loop)
-                        # that jumps over the H-field calculation
-                        # we do both, E and H field
-                        # components of vector potential A
-                        kf += v35_h * self.current [j] * k
-                    # The following code only for E-field (line 1050)
-                    u78 += u56 * self.current [j]
+                px  = self.pulses.idx
+                sl  = self.pulses.seg_len
+                pxl = len (px)
+                vp  = np.repeat (vec [np.newaxis, ...], pxl, axis = 0)
+                u56 = np.zeros (pxl, dtype = complex)
+                for k in self.image_iter ():
+                    cond = np.ones (pxl, dtype = bool)
+                    if k < 0:
+                        cond = np.logical_and \
+                            (*np.logical_not (self.pulses.ground.T))
+                    # compute vector potential A
+                    v35_e = self.nf_helper (k, vp, px)
+                    v35_h = np.zeros \
+                        ( (pxl, v0m.shape [0], v0m.shape [-1])
+                        , dtype = complex
+                        )
+                    v = np.repeat (v0m [np.newaxis, ...], pxl, axis = 0)
+                    v35_h [:, 0, :] = self.nf_helper (k, v [:, 0, i, :], px)
+                    v35_h [:, 1, :] = self.nf_helper (k, v [:, 1, i, :], px)
+                    # At this point comment notes
+                    # magnetic field calculation completed
+                    # and jumps to 1042 if H field
+                    # We compute both, E and H and continue
+                    d = np.sum (v35_e * t567 [i], axis = 1) * self.w2
+                    # compute psi(.5,J,J+1)
+                    t567px = np.repeat (t567 [np.newaxis, i, :], pxl, axis = 0)
+                    u      = self.psi_near_field_56 (vp, t567px, k, .5, px, 1)
+                    # compute psi(-.5,J,J+1)
+                    tmp = self.psi_near_field_56 (vec, t567px, k, -.5, px, 1)
+                    u   = (tmp - u) / sl [:, 1]
+                    # compute psi(.5,J-1,J)
+                    u34  = self.psi_near_field_56 (vec, t567px, k, .5, px, -1)
+                    # compute psi(-.5,J-1,J)
+                    tmp = self.psi_near_field_56 (vec, t567px, k, -.5, px, -1)
+                    # gradient of scalar potential
+                    u56 [cond] += ((u + (u34 - tmp) / sl [:, 0] + d) * k) [cond]
+                    # Here would be a GOTO 1048 (a continue of the K loop)
+                    # that jumps over the H-field calculation
+                    # we do both, E and H field
+                    # components of vector potential A
+                    wcur = (v35_h * self.current [:, np.newaxis, np.newaxis])
+                    kf += np.sum (wcur [cond], axis = 0) * k
+                # The following code only for E-field (line 1050)
+                # Note: We do not sum inside the loop because this leads
+                # to a different sum, it seems often image and original
+                # cancel.
+                u78 += np.sum (u56 * self.current)
 
                 # Here the original code has a conditional backjump to
                 # 964 (just before the J loop) re-initializing the
