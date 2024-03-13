@@ -1534,7 +1534,7 @@ class Mininec:
         return '\n'.join (r)
     # end def geo_as_str
 
-    def nf_helper (self, k, v1, pulse):
+    def nf_helper (self, k, v1, pidx):
         """ Compute potentials in near field calculation
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
@@ -1546,35 +1546,54 @@ class Mininec:
         >>> nf75 = 0.3218219 -0.1519149j
         >>> ex   = (nf66 + nf75) * w [0].dirvec
         >>> vec0 = np.array ([0, -1, -1])
-        >>> r    = m.nf_helper (1, vec0, m.pulses [0])
+        >>> r    = m.nf_helper (1, vec0, 0)
         >>> assert r [1] == 0 and r [2] == 0
         >>> print ("%.7f %.7fj" % (ex [0].real, ex [0].imag))
         0.8010557 -0.3063741j
         >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
         0.8010557 -0.3063742j
         >>> assert np.linalg.norm (ex - r) < 1e-7
+
+        # Vectorized
+        >>> vec0 = np.array ([vec0, vec0])
+        >>> r    = m.nf_helper (1, vec0, np.array ([0, 0]))
+        >>> assert (r [0] == r [1]).all ()
+        >>> assert r [0][1] == 0 and r [0][2] == 0
+        >>> print ("%.7f %.7fj" % (r [0][0].real, r [0][0].imag))
+        0.8010557 -0.3063742j
         """
-        kvec = np.array ([1, 1, k])
-        v6   = np.array ([1, 1, pulse.gnd_sgn [0]])
-        v7   = np.array ([1, 1, pulse.gnd_sgn [1]])
-        dir  = [w.dirvec for w in pulse.wires]
+        kvec        = np.array ([1, 1, k])
+        gs          = self.pulses.gnd_sgn
+        v6          = np.ones (v1.shape, dtype = int)
+        v6 [..., 2] = gs.T [0][pidx]
+        v7          = np.ones (v1.shape, dtype = int)
+        v7 [..., 2] = gs.T [1][pidx]
+        dir         = self.pulses.dirvec
+        d1          = dir [:, 0, :]
+        d2          = dir [:, 1, :]
         # compute psi(0,J,J+.5)
-        v2, vv = pulse.dvecs (0.5)
-        v2     = v1 - kvec * v2
-        vv     = v1 - kvec * vv
-        w      = pulse.wires [1]
-        u = self.psi (v2, vv, k, 0.5, pulse.idx, exact = False)
+        dv          = self.pulses.dvecs (0.5)
+        v2          = dv [:, 0, :]
+        vv          = dv [:, 1, :]
+        v2          = v1 - kvec * v2 [pidx]
+        vv          = v1 - kvec * vv [pidx]
+        u           = self.psi (v2, vv, k, 0.5, pidx, exact = False) \
+                      [..., np.newaxis]
 
         # compute psi(0,J-.5,J)
-        v2, vv = pulse.dvecs (-0.5)
-        v2 = v1 - kvec * v2
-        vv = v1 - kvec * vv
-        v  = self.psi (v2, vv, k, 0.5, pulse.idx, exact = False)
-        v *= pulse.sign [0]
+        dv          = self.pulses.dvecs (-0.5)
+        v2          = dv [:, 0, :]
+        vv          = dv [:, 1, :]
+        v2          = v1 - kvec * v2 [pidx]
+        vv          = v1 - kvec * vv [pidx]
+        v           = \
+            ( self.psi (v2, vv, k, 0.5, pidx, exact = False)
+            * self.pulses.sign [..., 0][pidx]
+            ) [..., np.newaxis]
 
         # real part of vector potential contribution
         # imaginary part of vector potential contribution
-        return (v * dir [0] * v6 + u * dir [1] * v7) * kvec
+        return (v * d1 [pidx] * v6 + u * d1 [pidx] * v7) * kvec
     # end def nf_helper
 
     @measure_time
@@ -1590,7 +1609,7 @@ class Mininec:
             power is originally  O2
             Basic code starts at 875
         """
-        self.nf_param = np.array ([list (start), list (inc), list (nvec)])
+        self.nf_param = np.array ([list (start), list (inc), list (nvec)]).T
         self.e_field = []
         self.h_field = []
         # virtual dipole length for near field calculation:
@@ -1600,18 +1619,31 @@ class Mininec:
         self.nf_power = pwr
         f_e = np.sqrt (pwr / self.power)
         f_h = f_e / s0 / (4*np.pi)
-        # Compute the grid
+        # Compute grid, coordinate lists can be different lengths on the axes
         r = [np.arange (s, s + n * i, i)
-             for (s, n, i) in
-                 (zip (*(reversed (x) for x in (start, nvec, inc))))
+             for (s, i, n) in reversed (self.nf_param)
             ]
-        self.near_field_idx = np.meshgrid (*r, indexing = 'ij')
+        self.near_field_coord = np.flip \
+            ( np.array
+                ([x.flatten () for x in np.meshgrid (*r, indexing = 'ij')])
+            , axis = 0
+            )
 
         # Looks like T5, T6, T7 are 0 except for the diagonale at each
         # iteration of I (the dimension), we build everything in one go
         t567 = np.identity (3) * 2 * s0
 
-        for vec in self.near_field_iter ():
+        # Not dependent on vec
+        px  = self.pulses.idx
+        sl  = self.pulses.seg_len
+        pxl = len (px)
+        px6 = np.reshape (np.repeat (px [np.newaxis, ...], 6, axis = 1), 6*pxl)
+        px3 = np.reshape (np.repeat (px [np.newaxis, ...], 3, axis = 1), 3*pxl)
+        # We combine the two first axes to run it through psi helper
+        t567px = np.repeat (t567 [np.newaxis, ...], pxl, axis = 0)
+        t567px = np.reshape (t567px, (pxl * 3, t567px.shape [-1]))
+
+        for vecno, vec in enumerate (self.near_field_iter ()):
             # Originally X0, Y0, Z0 but only one of them is non-0 in
             # each iteration. This considers both versions of
             # J8 (the values -1,1) in the original code
@@ -1620,88 +1652,93 @@ class Mininec:
                   ]
             v0m = np.array (v0m)
             h   = np.zeros (3, dtype = complex)
-            # Loop over 3 dimensions
-            for i in range (3):
-                u78 = 0j
-                # H-field, original Basic variable K!
-                # Originally this is 6X2-dimensional in Basic, every two
-                # succeeding values are real and imag part, there seem
-                # to be two vectors which are indexed using j9 and j8
-                # takes the value -1 and 1 in the v0m initialization
-                # (originally X0, Y0, Z0)
-                kf  = np.zeros ((2, 3), dtype = complex)
-                # Loop over pulses
-                for p in self.pulses:
-                    j   = p.idx
-                    u56 = 0j
-                    for k in self.image_iter ():
-                        if p.ground.any () and k < 0:
-                            continue
-                        # compute vector potential A
-                        v35_e = self.nf_helper (k, vec, p)
-                        v35_h = np.array \
-                            ([self.nf_helper (k, v [i], p) for v in v0m])
-                        # At this point comment notes
-                        # magnetic field calculation completed
-                        # and jumps to 1042 if H field
-                        # We compute both, E and H and continue
-                        d   = sum (v35_e * t567 [i]) * self.w2
-                        # compute psi(.5,J,J+1)
-                        u    = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p, 1)
-                        # compute psi(-.5,J,J+1)
-                        tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p, 1)
-                        u   = (tmp - u) / p.wires [1].seg_len
-                        # compute psi(.5,J-1,J)
-                        u34  = self.psi_near_field_56 \
-                            (vec, t567 [i], k, .5, p, -1)
-                        # compute psi(-.5,J-1,J)
-                        tmp = self.psi_near_field_56 \
-                            (vec, t567 [i], k, -.5, p, -1)
-                        # gradient of scalar potential
-                        u56 += (u + (u34 - tmp) / p.wires [0].seg_len + d) * k
-                        # Here would be a GOTO 1048 (a continue of the K loop)
-                        # that jumps over the H-field calculation
-                        # we do both, E and H field
-                        # components of vector potential A
-                        kf += v35_h * self.current [j] * k
-                    # The following code only for E-field (line 1050)
-                    u78 += u56 * self.current [j]
+            # H-field, original Basic variable K!
+            # Originally this is 6X2-dimensional in Basic, every two
+            # succeeding values are real and imag part, there seem
+            # to be two vectors which are indexed using j9 and j8
+            # takes the value -1 and 1 in the v0m initialization
+            # (originally X0, Y0, Z0)
+            kf  = np.zeros ((2, 3, 3), dtype = complex)
+            vp  = np.repeat (vec [np.newaxis, ...], pxl, axis = 0)
+            u56 = np.zeros ((pxl, 3), dtype = complex)
+            u78 = np.zeros (3, dtype = complex)
 
-                # Here the original code has a conditional backjump to
-                # 964 (just before the J loop) re-initializing the
-                # X0, Y0, Z0 array (v0m in this implementation).
-                # This realizes the computation of both halves of v0m.
-                # We do this in one go, see above for j8, j9.
+            # Reshape inputs to run them through nf_helper in one go
+            v = np.repeat (v0m [np.newaxis, ...], pxl, axis = 0)
+            v = np.reshape (v, (pxl * 2 * 3, v.shape [-1]))
 
-                # This originally is a ON I GOTO
-                # Hmm the kf array may not be consecutive real/imag
-                # parts after all?
-                if i == 0:
-                    h [1]  = kf [0][2] - kf [1][2]
-                    h [2]  = kf [1][1] - kf [0][1]
-                elif i==1:
-                    h [0]  = kf [1][2] - kf [0][2]
-                    h [2] += (  -kf [1][0].real + kf [0][0].real
-                             + (-kf [1][0].imag + kf [0][0].imag) * 1j
-                             )
-                else: # i==2
-                    h [0] += (  -kf [1][1].real + kf [0][1].real
-                             + (-kf [1][1].imag + kf [0][1].imag) * 1j
-                             )
-                    h [1] += (  kf [1][0].real - kf [0][0].real
-                             + (kf [1][0].imag - kf [0][0].imag) * 1j
-                             )
+            for k in self.image_iter ():
+                cond = np.ones (pxl, dtype = bool)
+                if k < 0:
+                    cond = np.logical_and \
+                        (*np.logical_not (self.pulses.ground.T))
+                v35_e = self.nf_helper (k, vp, px)
+                v35hf = self.nf_helper (k, v, px6)
+                v35_h = np.reshape (v35hf, (pxl, 2, 3, 3))
+                # At this point comment notes
+                # magnetic field calculation completed
+                # and jumps to 1042 if H field
+                # We compute both, E and H and continue
+                d    = np.sum \
+                    (v35_e [..., np.newaxis] * t567, axis = 2) * self.w2
+                # compute psi(.5,J,J+1)
+                u    = self.psi_near_field_56 (vec, t567px, k, .5, px3, 1)
+                # compute psi(-.5,J,J+1)
+                tmp  = self.psi_near_field_56 (vec, t567px, k, -.5, px3, 1)
+                tmp2 = np.reshape (tmp - u, (pxl, 3))
+                u    = tmp2 / sl [:, 1, np.newaxis]
+                # compute psi(.5,J-1,J)
+                u34  = self.psi_near_field_56 (vec, t567px, k, .5, px3, -1)
+                # compute psi(-.5,J-1,J)
+                tmp  = self.psi_near_field_56 (vec, t567px, k, -.5, px3, -1)
+                tmp2 = np.reshape (u34 - tmp, (pxl, 3)) / sl [:, 0, np.newaxis]
+                # gradient of scalar potential
+                u56 [cond] += ((u + tmp2 + d) * k) [cond]
+                # Here would be a GOTO 1048 (a continue of the K loop)
+                # that jumps over the H-field calculation
+                # we do both, E and H field
+                # components of vector potential A
+                curr = self.current [:, np.newaxis, np.newaxis, np.newaxis]
+                kf += np.sum ((v35_h * curr) [cond], axis = 0) * k
+            # The following code only for E-field (line 1050)
+            # Note: We do not sum inside the loop because this leads
+            # to a different sum, it seems often image and original
+            # cancel.
+            u78 += np.sum (u56 * self.current [..., np.newaxis], axis = 0)
 
-                # imaginary part of electric field
-                # real part of electric field
-                # Don't know why real- and imag is exchanged here
-                u78 *= -1j * self.m / s0
-                if not i:
-                    self.e_field.append (np.zeros (3, dtype = complex))
-                self.e_field [-1][i] = u78 * f_e
-            self.h_field.append (h * f_h)
+            # Here the original code has a conditional backjump to
+            # 964 (just before the J loop) re-initializing the
+            # X0, Y0, Z0 array (v0m in this implementation).
+            # This realizes the computation of both halves of v0m.
+            # We do this in one go, see above for j8, j9.
+
+            # This originally is a ON I GOTO
+            # Hmm the kf array may not be consecutive real/imag
+            # parts after all?
+            # The prior variable i is the middle index
+            # i == 0
+            h [1]  = kf [0][0][2] - kf [1][0][2]
+            h [2]  = kf [1][0][1] - kf [0][0][1]
+            # i == 1
+            h [0]  = kf [1][1][2] - kf [0][1][2]
+            h [2] += (  -kf [1][1][0].real + kf [0][1][0].real
+                     + (-kf [1][1][0].imag + kf [0][1][0].imag) * 1j
+                     )
+            # i == 2
+            h [0] += (  -kf [1][2][1].real + kf [0][2][1].real
+                     + (-kf [1][2][1].imag + kf [0][2][1].imag) * 1j
+                     )
+            h [1] += (  kf [1][2][0].real - kf [0][2][0].real
+                     + (kf [1][2][0].imag - kf [0][2][0].imag) * 1j
+                     )
+
+            # imaginary part of electric field
+            # real part of electric field
+            # Don't know why real- and imag is exchanged here
+            u78 *= -1j * self.m / s0
+            #np.zeros (3, dtype = complex))
+            self.e_field.append (u78 * f_e)
+            self.h_field.append (h   * f_h)
     # end def compute_near_field
 
     @measure_time
@@ -1867,8 +1904,8 @@ class Mininec:
     #end def integral_i2_i3
 
     def near_field_iter (self):
-        for a in zip (*(x.flat for x in self.near_field_idx)):
-            yield np.array (list (reversed (a)))
+        for a in self.near_field_coord.T:
+            yield a
     # end def near_field_iter
 
     def fast_quad (self, a, b, args, n):
@@ -2047,7 +2084,7 @@ class Mininec:
         return retval
     # end def psi
 
-    def psi_near_field_56 (self, vec0, vect, k, ds0, pulse2, ds2):
+    def psi_near_field_56 (self, vec0, vect, k, ds0, pidx, ds2):
         """ Compute psi used several times during computation of near field
             Original entry point in line 56
             vec0 originally is (X0, Y0, Z0)
@@ -2064,17 +2101,27 @@ class Mininec:
         # 0.5496336 -0.3002106j
         >>> vec0 = np.array ([0, -1, -1])
         >>> vect = np.array ([8.565715E-02, 0, 0])
-        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, m.pulses [0], 1)
+        >>> r = m.psi_near_field_56 (vec0, vect, 1, 0.5, 0, 1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.5496335 -0.3002106j
+
+        # Vectorized
+        >>> v0 = np.array ([vec0, vec0])
+        >>> vt = np.array ([vect, vect])
+        >>> ix = np.zeros (2, dtype = int)
+        >>> r  = m.psi_near_field_56 (v0, vt, 1, 0.5, ix, 1)
+        >>> assert (r [0] == r [1]).all ()
+        >>> print ("%.7f %.7fj" % (r [0].real, r [0].imag))
+        0.5496335 -0.3002106j
         """
-        wire = pulse2.wires [ds2 > 0]
         kvec = np.array ([1, 1, k])
         vec1 = vec0 + ds0 * vect / 2
-        v2, vv = pulse2.dvecs (ds2)
-        v2 = vec1 - kvec * v2
-        vv = vec1 - kvec * vv
-        return self.psi (v2, vv, k, ds2, pulse2.idx, exact = False)
+        dv = self.pulses.dvecs (ds2)
+        v2 = dv [:, 0, :]
+        vv = dv [:, 1, :]
+        v2 = vec1 - kvec * v2 [pidx]
+        vv = vec1 - kvec * vv [pidx]
+        return self.psi (v2, vv, k, ds2, pidx, exact = False)
     # end def psi_near_field_56
 
     def register_load (self, load, pulse = None, wire_idx = None):
@@ -2669,7 +2716,7 @@ class Mininec:
         r = []
         r.append ('*' * 20 + '    NEAR FIELDS     ' + '*' * 20)
         r.append ('')
-        for coord, (nf_s, nf_i, nf_c) in zip ('XYZ', self.nf_param.T):
+        for coord, (nf_s, nf_i, nf_c) in zip ('XYZ', self.nf_param):
             ff = tuple \
                 (x.rstrip () for x in format_float ((nf_s, nf_i, nf_c)))
             r.append \
