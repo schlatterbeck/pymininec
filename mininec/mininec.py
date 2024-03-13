@@ -1633,7 +1633,17 @@ class Mininec:
         # iteration of I (the dimension), we build everything in one go
         t567 = np.identity (3) * 2 * s0
 
-        for vec in self.near_field_iter ():
+        # Not dependent on vec
+        px  = self.pulses.idx
+        sl  = self.pulses.seg_len
+        pxl = len (px)
+        px6 = np.reshape (np.repeat (px [np.newaxis, ...], 6, axis = 1), 6*pxl)
+        px3 = np.reshape (np.repeat (px [np.newaxis, ...], 3, axis = 1), 3*pxl)
+        # We combine the two first axes to run it through psi helper
+        t567px = np.repeat (t567 [np.newaxis, ...], pxl, axis = 0)
+        t567px = np.reshape (t567px, (pxl * 3, t567px.shape [-1]))
+
+        for vecno, vec in enumerate (self.near_field_iter ()):
             # Originally X0, Y0, Z0 but only one of them is non-0 in
             # each iteration. This considers both versions of
             # J8 (the values -1,1) in the original code
@@ -1642,97 +1652,93 @@ class Mininec:
                   ]
             v0m = np.array (v0m)
             h   = np.zeros (3, dtype = complex)
-            # Loop over 3 dimensions
-            for i in range (3):
-                u78 = 0j
-                # H-field, original Basic variable K!
-                # Originally this is 6X2-dimensional in Basic, every two
-                # succeeding values are real and imag part, there seem
-                # to be two vectors which are indexed using j9 and j8
-                # takes the value -1 and 1 in the v0m initialization
-                # (originally X0, Y0, Z0)
-                kf  = np.zeros ((2, 3), dtype = complex)
-                px  = self.pulses.idx
-                sl  = self.pulses.seg_len
-                pxl = len (px)
-                vp  = np.repeat (vec [np.newaxis, ...], pxl, axis = 0)
-                u56 = np.zeros (pxl, dtype = complex)
-                for k in self.image_iter ():
-                    cond = np.ones (pxl, dtype = bool)
-                    if k < 0:
-                        cond = np.logical_and \
-                            (*np.logical_not (self.pulses.ground.T))
-                    # compute vector potential A
-                    v35_e = self.nf_helper (k, vp, px)
-                    v35_h = np.zeros \
-                        ( (pxl, v0m.shape [0], v0m.shape [-1])
-                        , dtype = complex
-                        )
-                    v = np.repeat (v0m [np.newaxis, ...], pxl, axis = 0)
-                    v35_h [:, 0, :] = self.nf_helper (k, v [:, 0, i, :], px)
-                    v35_h [:, 1, :] = self.nf_helper (k, v [:, 1, i, :], px)
-                    # At this point comment notes
-                    # magnetic field calculation completed
-                    # and jumps to 1042 if H field
-                    # We compute both, E and H and continue
-                    d = np.sum (v35_e * t567 [i], axis = 1) * self.w2
-                    # compute psi(.5,J,J+1)
-                    t567px = np.repeat (t567 [np.newaxis, i, :], pxl, axis = 0)
-                    u      = self.psi_near_field_56 (vp, t567px, k, .5, px, 1)
-                    # compute psi(-.5,J,J+1)
-                    tmp = self.psi_near_field_56 (vec, t567px, k, -.5, px, 1)
-                    u   = (tmp - u) / sl [:, 1]
-                    # compute psi(.5,J-1,J)
-                    u34  = self.psi_near_field_56 (vec, t567px, k, .5, px, -1)
-                    # compute psi(-.5,J-1,J)
-                    tmp = self.psi_near_field_56 (vec, t567px, k, -.5, px, -1)
-                    # gradient of scalar potential
-                    u56 [cond] += ((u + (u34 - tmp) / sl [:, 0] + d) * k) [cond]
-                    # Here would be a GOTO 1048 (a continue of the K loop)
-                    # that jumps over the H-field calculation
-                    # we do both, E and H field
-                    # components of vector potential A
-                    wcur = (v35_h * self.current [:, np.newaxis, np.newaxis])
-                    kf += np.sum (wcur [cond], axis = 0) * k
-                # The following code only for E-field (line 1050)
-                # Note: We do not sum inside the loop because this leads
-                # to a different sum, it seems often image and original
-                # cancel.
-                u78 += np.sum (u56 * self.current)
+            # H-field, original Basic variable K!
+            # Originally this is 6X2-dimensional in Basic, every two
+            # succeeding values are real and imag part, there seem
+            # to be two vectors which are indexed using j9 and j8
+            # takes the value -1 and 1 in the v0m initialization
+            # (originally X0, Y0, Z0)
+            kf  = np.zeros ((2, 3, 3), dtype = complex)
+            vp  = np.repeat (vec [np.newaxis, ...], pxl, axis = 0)
+            u56 = np.zeros ((pxl, 3), dtype = complex)
+            u78 = np.zeros (3, dtype = complex)
 
-                # Here the original code has a conditional backjump to
-                # 964 (just before the J loop) re-initializing the
-                # X0, Y0, Z0 array (v0m in this implementation).
-                # This realizes the computation of both halves of v0m.
-                # We do this in one go, see above for j8, j9.
+            # Reshape inputs to run them through nf_helper in one go
+            v = np.repeat (v0m [np.newaxis, ...], pxl, axis = 0)
+            v = np.reshape (v, (pxl * 2 * 3, v.shape [-1]))
 
-                # This originally is a ON I GOTO
-                # Hmm the kf array may not be consecutive real/imag
-                # parts after all?
-                if i == 0:
-                    h [1]  = kf [0][2] - kf [1][2]
-                    h [2]  = kf [1][1] - kf [0][1]
-                elif i==1:
-                    h [0]  = kf [1][2] - kf [0][2]
-                    h [2] += (  -kf [1][0].real + kf [0][0].real
-                             + (-kf [1][0].imag + kf [0][0].imag) * 1j
-                             )
-                else: # i==2
-                    h [0] += (  -kf [1][1].real + kf [0][1].real
-                             + (-kf [1][1].imag + kf [0][1].imag) * 1j
-                             )
-                    h [1] += (  kf [1][0].real - kf [0][0].real
-                             + (kf [1][0].imag - kf [0][0].imag) * 1j
-                             )
+            for k in self.image_iter ():
+                cond = np.ones (pxl, dtype = bool)
+                if k < 0:
+                    cond = np.logical_and \
+                        (*np.logical_not (self.pulses.ground.T))
+                v35_e = self.nf_helper (k, vp, px)
+                v35hf = self.nf_helper (k, v, px6)
+                v35_h = np.reshape (v35hf, (pxl, 2, 3, 3))
+                # At this point comment notes
+                # magnetic field calculation completed
+                # and jumps to 1042 if H field
+                # We compute both, E and H and continue
+                d    = np.sum \
+                    (v35_e [..., np.newaxis] * t567, axis = 2) * self.w2
+                # compute psi(.5,J,J+1)
+                u    = self.psi_near_field_56 (vec, t567px, k, .5, px3, 1)
+                # compute psi(-.5,J,J+1)
+                tmp  = self.psi_near_field_56 (vec, t567px, k, -.5, px3, 1)
+                tmp2 = np.reshape (tmp - u, (pxl, 3))
+                u    = tmp2 / sl [:, 1, np.newaxis]
+                # compute psi(.5,J-1,J)
+                u34  = self.psi_near_field_56 (vec, t567px, k, .5, px3, -1)
+                # compute psi(-.5,J-1,J)
+                tmp  = self.psi_near_field_56 (vec, t567px, k, -.5, px3, -1)
+                tmp2 = np.reshape (u34 - tmp, (pxl, 3)) / sl [:, 0, np.newaxis]
+                # gradient of scalar potential
+                u56 [cond] += ((u + tmp2 + d) * k) [cond]
+                # Here would be a GOTO 1048 (a continue of the K loop)
+                # that jumps over the H-field calculation
+                # we do both, E and H field
+                # components of vector potential A
+                curr = self.current [:, np.newaxis, np.newaxis, np.newaxis]
+                kf += np.sum ((v35_h * curr) [cond], axis = 0) * k
+            # The following code only for E-field (line 1050)
+            # Note: We do not sum inside the loop because this leads
+            # to a different sum, it seems often image and original
+            # cancel.
+            u78 += np.sum (u56 * self.current [..., np.newaxis], axis = 0)
 
-                # imaginary part of electric field
-                # real part of electric field
-                # Don't know why real- and imag is exchanged here
-                u78 *= -1j * self.m / s0
-                if not i:
-                    self.e_field.append (np.zeros (3, dtype = complex))
-                self.e_field [-1][i] = u78 * f_e
-            self.h_field.append (h * f_h)
+            # Here the original code has a conditional backjump to
+            # 964 (just before the J loop) re-initializing the
+            # X0, Y0, Z0 array (v0m in this implementation).
+            # This realizes the computation of both halves of v0m.
+            # We do this in one go, see above for j8, j9.
+
+            # This originally is a ON I GOTO
+            # Hmm the kf array may not be consecutive real/imag
+            # parts after all?
+            # The prior variable i is the middle index
+            # i == 0
+            h [1]  = kf [0][0][2] - kf [1][0][2]
+            h [2]  = kf [1][0][1] - kf [0][0][1]
+            # i == 1
+            h [0]  = kf [1][1][2] - kf [0][1][2]
+            h [2] += (  -kf [1][1][0].real + kf [0][1][0].real
+                     + (-kf [1][1][0].imag + kf [0][1][0].imag) * 1j
+                     )
+            # i == 2
+            h [0] += (  -kf [1][2][1].real + kf [0][2][1].real
+                     + (-kf [1][2][1].imag + kf [0][2][1].imag) * 1j
+                     )
+            h [1] += (  kf [1][2][0].real - kf [0][2][0].real
+                     + (kf [1][2][0].imag - kf [0][2][0].imag) * 1j
+                     )
+
+            # imaginary part of electric field
+            # real part of electric field
+            # Don't know why real- and imag is exchanged here
+            u78 *= -1j * self.m / s0
+            #np.zeros (3, dtype = complex))
+            self.e_field.append (u78 * f_e)
+            self.h_field.append (h   * f_h)
     # end def compute_near_field
 
     @measure_time
