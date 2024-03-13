@@ -54,11 +54,18 @@ setup \
             ]
         )
     , classifiers      = \
-        [ 'Development Status :: 4 - Beta'
+        [ 'Development Status :: 5 - Production/Stable'
         , 'License :: OSI Approved :: ' + license
         , 'Operating System :: OS Independent'
-        , 'Programming Language :: Python'
         , 'Intended Audience :: Science/Research'
         , 'Intended Audience :: Other Audience'
+        , 'Topic :: Communications :: Ham Radio'
+        , 'Programming Language :: Python'
+        , 'Programming Language :: Python :: 3.7'
+        , 'Programming Language :: Python :: 3.8'
+        , 'Programming Language :: Python :: 3.9'
+        , 'Programming Language :: Python :: 3.10'
+        , 'Programming Language :: Python :: 3.11'
+        , 'Programming Language :: Python :: 3.12'
         ]
     )

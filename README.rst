@@ -45,16 +45,43 @@ option.  The command-line options for the 12-element antenna example
     --theta=0,5,37 --phi=0,5,73 \
     --excitation-segment=33 > 12-el.pout
 
+When the command line options are in a file, comments (using '#' at the
+start of the line) can be added.
 Users on Linux can run this using (I'm sure Windows users can come up
 with a similar command-line on Windows)::
 
     pymininec $(sed '/^#/d' test/12-el.pym) > 12-el.pout
+
+or using grep::
+
+    pymininec $(grep -v '#' test/12-el.pym) > 12-el.pout
 
 This removes comments from the ``.pym`` file and passes the result as
 command-line parameters to pymininec.
 The resulting output file contains currents, impedance at the feedpoint
 and antenna far field in dBi as tables. The output tries to reproduce
 the format of the original Basic implementation of Mininec.
+
+Measuring Timings
+-----------------
+
+In the latest version there is a command-line option -T which outputs
+computation timings on the standard error output. This was used for
+measuring the results of recent vectorization of computations.
+Speed ups are roughly:
+
+- About a factor of 50 for computation of the impedance matrix.
+  So we're down from around 23 seconds to 0.44 seconds for a 12 element
+  Yagi/Uda with 22 segments per element.
+- About a factor of 200 for computation of the far field.
+  So we're down from around 19 seconds to 0.09 seconds for the 12
+  element Yagi/Uda with 5° resolution of azimuth and elevation angles.
+  Even the computation of a 1° resolution takes below 2s for this
+  antenna.
+- About a factor of 5 for near-field computations. This could be further
+  improved by batching the near field coordinates in chunks. I'm
+  currently not using near-field computations much, so further
+  improvements will wait until I have more need...
 
 Plotting
 --------
@@ -86,8 +113,14 @@ against the originally basic code (or any other modelling program
 implementing the mininec engine).
 
 
+Test coverage and code quality
+------------------------------
+
+This section contains some notes on code quality and recent
+improvements.
+
 Test coverage: Making sure it is consistent with original Mininec
------------------------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 There are several tests against the `original Basic source code`_, for
 the test cases see the subdirectory ``test``. One of the test cases is
@@ -99,7 +132,7 @@ inverted-L and the T antenna from the original Mininec reports. All
 these may also serve as examples.  Tests statement coverage is currently
 at 100%.
 
-There is a line that is flagged as not covered by the ``pytest``
+There was a line that is flagged as not covered by the ``pytest``
 framework if the Python version is below 3.10. This is a ``continue``
 statement in ``compute_impedance_matrix`` near the end (as of this
 writing line 1388). This is a bug in Python in versions below 3.10:
@@ -160,6 +193,11 @@ There are two distances for which these are computed, so the code
 produces four plots. There is a second script to plot the Basic near and
 far field differences ``plot_bas_ohio.py``.
 
+Code quality before vectorization
++++++++++++++++++++++++++++++++++
+
+Before the vectorization this was the state of the code:
+
 The current Python code is still hard to understand |--| it's the
 result of a line-by-line translation from Basic, especially where I
 didn't (yet) understand the intention of the code. The same holds for
@@ -187,6 +225,24 @@ several integrals computed using `gaussian quadrature`_ or a numeric
 solution to an `elliptic integral`_. These are now implemented using
 methods (or at least constants in the case of `gaussian quadrature`_)
 from |scipy.integrate|_ and |scipy.special.ellipk|_.
+
+Code quality after vectorization
+++++++++++++++++++++++++++++++++
+
+Before beginning the vectorization I've changed the implicit pulse
+computations (this used a very complicated indexing schema to access
+pulse information) to an explicit data structure in
+``mininec/pulse.py``. This improved understandability of the code
+considerably (so that I was able to refactor it further to vectorize
+computations).
+
+The current version still has obscure variable names from the Basic
+implementations and in many cases it is not clear what intermediate
+values in computations mean. Since Basic does not have complex numbers,
+the semantics of computations can only be guessed. I hope to improve
+on this when I get a version of [2]_ -- the version available as
+ADA181682_ contains many completely unreadable pages. If you have a
+source of that report with better readability, let me know!
 
 Multiple Inverted-V Example
 +++++++++++++++++++++++++++
@@ -388,6 +444,12 @@ the two links I've given contain the same code.
 
 Release Notes
 -------------
+
+v1.0: Speed improvement by vectorization
+
+- Vectorize far field computation
+- Vectorize computation of the impedance matrix
+- Vectorize near field computation
 
 v0.6.1: Fix entry point for script
 

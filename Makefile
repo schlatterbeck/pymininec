@@ -1,10 +1,12 @@
 # To use this Makefile, get a copy of my SF Release Tools
 # git clone git://git.code.sf.net/p/sfreleasetools/code sfreleasetools
-# And point the environment variable RELEASETOOLS to the checkout
-ifeq (,${RELEASETOOLS})
-    RELEASETOOLS=../releasetools
+# or on github:
+# git clone https://github.com/schlatterbeck/releasetool.git
+# And point the environment variable RELEASETOOL to the checkout
+ifeq (,${RELEASETOOL})
+    RELEASETOOL=../releasetool
 endif
-LASTRELEASE:=$(shell $(RELEASETOOLS)/lastrelease -n -rv)
+LASTRELEASE:=$(shell $(RELEASETOOL)/lastrelease -n -rv)
 VERSIONPY=mininec/Version.py
 VERSION=$(VERSIONPY)
 README=README.rst
@@ -34,4 +36,4 @@ clean:
 
 .PHONY: clean test coverage basic_input
 
-include $(RELEASETOOLS)/Makefile-pyrelease
+include $(RELEASETOOL)/Makefile-pyrelease
