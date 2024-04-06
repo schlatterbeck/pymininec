@@ -1,0 +1,85 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                   ****************************************
+
+FREQUENCY (MHZ): 299.8
+    WAVE LENGTH =  1  METERS
+
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
+ NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
+
+NO. OF WIRES: 2
+
+WIRE NO. 1
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.23097       -.09567        .5                         0
+ 0             0             .5            .001         0              5
+
+WIRE NO. 2
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.23097        .09567        .5                         0
+ 0             0             .5            .001        -1              5
+
+                  **** ANTENNA GEOMETRY ****
+
+WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.184776      -.076536       .5            .001          0    1   1
+-.138582      -.057402       .5            .001          1    1   2
+-.092388      -.038268       .5            .001          1    1   3
+-.046194      -.019134       .5            .001          1    0   4
+
+WIRE NO.  2  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.184776       .076536       .5            .001          0    2   5
+-.138582       .057402       .5            .001          2    2   6
+-.092388       .038268       .5            .001          2    2   7
+-.046194       .019134       .5            .001          2    2   8
+ 0             0             .5            .001          2   -1   9
+
+NO. OF SOURCES :  1
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  9 , 1 , 0
+NUMBER OF LOADS 0
+
+********************    SOURCE DATA     ********************
+PULSE  9      VOLTAGE = ( 1 , 0 J)
+              CURRENT = ( 1.894850E-03 ,  1.269658E-02 J)
+              IMPEDANCE = ( 11.49832 , -77.04533 J)
+              POWER =  9.474250E-04  WATTS
+
+********************    CURRENT DATA    ********************
+
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0
+ 1            -7.075634E-04 -4.031161E-03  4.092787E-03 -99.95534 
+ 2            -1.249094E-03 -7.309252E-03  7.415214E-03 -99.69772 
+ 3            -1.643354E-03 -9.917486E-03  1.005272E-02 -99.40858 
+ 4            -1.866767E-03 -1.171658E-02  1.186436E-02 -99.05268 
+J             -1.894850E-03 -1.269658E-02  1.283720E-02 -98.48823 
+WIRE NO.  2 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0
+ 5             7.075634E-04  4.031161E-03  4.092787E-03  80.04466 
+ 6             1.249094E-03  7.309252E-03  7.415214E-03  80.30228 
+ 7             1.643354E-03  9.917486E-03  1.005272E-02  80.59142 
+ 8             1.866767E-03  1.171658E-02  1.186436E-02  80.94732 
+J              1.894850E-03  1.269658E-02  1.283720E-02  81.51177 
+
+********************     FAR FIELD      ********************
+
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER: 0 , 10 , 2
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER: 0 , 10 , 2
+
+********************    PATTERN DATA    ********************
+ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
+ ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
+ 0             0            -999          -999          -999     
+ 10            0            -222.8155     -18.80805     -18.80805
+ 0             10           -999          -999          -999     
+ 10            10           -34.14957     -18.93958     -18.81066
