@@ -117,6 +117,18 @@ class Pulse_Container:
     # end def same_wire
 
     @cached_property
+    def same_dir (self):
+        return np.array \
+            ([(p.segs [0].dirvec == p.segs [1].dirvec).all () for p in self])
+    # end def same_dir
+
+    @cached_property
+    def same_len (self):
+        return np.array \
+            ([(p.segs [0].seg_len == p.segs [1].seg_len) for p in self])
+    # end def same_len
+
+    @cached_property
     def wire_idx (self):
         return np.array ([p.wire.n for p in self])
     # end def wire_idx
