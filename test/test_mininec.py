@@ -850,4 +850,9 @@ class Test_Doctest:
         self.run_test (mininec.util, num_tests)
     # end def test_util
 
+    def test_taper (self):
+        num_tests = 38
+        self.run_test (mininec.taper, num_tests)
+    # end def test_taper
+
 # end class Test_Doctest

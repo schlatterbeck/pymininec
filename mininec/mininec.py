@@ -779,19 +779,29 @@ class Wire:
         if self.segtype == 0:
             self.compute_equal_segments ()
         elif self.segtype == 1 or self.segtype == 2:
-            self.compute_taper1_segments (self.segtype - 1)
+            self.compute_taper1_segments ()
         else:
             self.compute_taper2_segments ()
     # end def compute_segments
 
-    def compute_taper1_segments (self, dir):
-        assert 0 <= dir <= 1
-        for p1, p2 in taper2 (self.p1, self.p2, self.n_segments, self.r, dir):
+    def compute_taper1_segments (self):
+        assert 0 <= self.segtype - 1 <= 1
+        d = dict (end = self.segtype - 1)
+        if self.taper_max is not None:
+            d.update (max_t = self.taper_max)
+        if self.taper_min is not None:
+            d.update (min_t = self.taper_min)
+        for p1, p2 in taper1 (self.p1, self.p2, self.n_segments, self.r, **d):
             self.segments.append (Segment (p1, p2, self))
     # end def compute_taper1_segments
 
     def compute_taper2_segments (self):
-        for p1, p2 in taper2 (self.p1, self.p2, self.n_segments, self.r):
+        d = {}
+        if self.taper_max is not None:
+            d.update (max_t = self.taper_max)
+        if self.taper_min is not None:
+            d.update (min_t = self.taper_min)
+        for p1, p2 in taper2 (self.p1, self.p2, self.n_segments, self.r, **d):
             self.segments.append (Segment (p1, p2, self))
     # end def compute_taper2_segments
 
