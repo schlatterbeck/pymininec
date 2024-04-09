@@ -8,10 +8,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 #   The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software. 
-# 
+#   all copies or substantial portions of the Software.
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -271,8 +271,7 @@ class _Test_Base_With_File:
         assert acc.endswith (' J)')
         exc = [float (x) for x in exc [11:-3].split (',')]
         acc = [float (x) for x in acc [11:-3].split (',')]
-        assert round (abs (exc [0] - acc [0]), 12) == 0
-        assert round (abs (exc [1] - acc [1]), 12) == 0
+        assert np.allclose(exc, acc)
         off += 1
         state = 0
         for l_ex, l_ac in zip (ex [off:], ac [off:]):
