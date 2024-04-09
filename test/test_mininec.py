@@ -810,15 +810,30 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_impedance (m, 11.851-42.107j)
     # end def test_dipv_50s
 
-    def test_dipv_14st_segs (self):
-        m = self.setup_generic_file ('dipv-14st-segs', no_ff = True)
-        self.compare_impedance (m, 11.314-45.659j)
-    # end def test_dipv_14st_segs
+    def test_dipv_14st_t1s (self):
+        m = self.setup_generic_file ('dipv-14st-t1s', no_ff = True)
+        self.compare_impedance (m, 10.859-42.486j)
+    # end def test_dipv_14st_t1s
 
-    def test_dipv_14st_wire (self):
-        m = self.setup_generic_file ('dipv-14st-wire', no_ff = True)
+    def test_dipv_14st_t1sl (self):
+        m = self.setup_generic_file ('dipv-14st-t1sl', no_ff = True)
+        self.compare_impedance (m, 11.118-46.593j)
+    # end def test_dipv_14st_t1sl
+
+    def test_dipv_14st_t2s (self):
+        m = self.setup_generic_file ('dipv-14st-t2s', no_ff = True)
         self.compare_impedance (m, 11.314-45.659j)
-    # end def test_dipv_14st_wire
+    # end def test_dipv_14st_t2s
+
+    def test_dipv_14st_t2w (self):
+        m = self.setup_generic_file ('dipv-14st-t2w', no_ff = True)
+        self.compare_impedance (m, 11.314-45.659j)
+    # end def test_dipv_14st_t2w
+
+    def test_dipv_14st_lw (self):
+        m = self.setup_generic_file ('dipv-14st-lw', no_ff = True)
+        self.compare_impedance (m, 11.104-47.879j)
+    # end def test_dipv_14st_lw
 
 # end class Test_Case_Known_Structure
 

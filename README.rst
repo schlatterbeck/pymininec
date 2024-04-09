@@ -293,14 +293,31 @@ The Other Edge of The Sword
 
 There are some new tests that check the feedpoint impedance against
 known computations from the literature. In particular an old article by
-Roy Lewallen [8]_ with the same title as this section. Note that the
-"Bent Dipole" is bent horizontally (not an inverted V), all wire ends
-are the same height. I have not been able so far to reproduce the
-special segmentations scheme that uses only 14 segements with the same
-results as indicated in the article. The column "Python" is from
-pymininec, the column "Basic Yabasi" is the original Basic
-implementation run with my Basic interpreter Yabasi_. The column "Basic
-pcbasic" uses the pcbasic_ interpreter.
+Roy Lewallen [8]_ with the same title as this section.
+
+The column "Python" is from pymininec, the column "Basic
+Yabasi" is the original Basic implementation run with my Basic
+interpreter Yabasi_. The column "Basic pcbasic" uses the pcbasic_
+interpreter.
+
+Note that the "Bent Dipole" is bent horizontally (not an inverted V),
+all wire ends are the same height. I have not been able so far to
+reproduce the results of the special segmentation scheme that uses only
+14 segements with the same results as indicated in the article (see then
+entry ``14*`` for the bent dipole). When trying to reproduce it exactly
+the imaginary part is much lower (more capacity). The segmentation
+scheme is also not very good: In mininec adjacent segment should only
+have a factor of 2 in length, not more. The segmentation special scheme
+has a jump of factor 5, maybe this makes it numerically instable so that
+we get much different results with double precision float.
+
+For the bent dipole I've made three more experiments: One with tapering
+from both ends (entry ``14t2``) and two with tapering from one end (entry
+``14t1`` and ``14t1l``). Example ``14t1`` has no limit on segment length
+while entry ``14t1l`` enforces a minimum segment length of 1/200 lambda.
+In all the cases where tapering is from one end, the end with the
+feedpoint has the smallest segment length. None of these experiments
+comes close to the 14 segment experiment in the paper.
 
 Straight Dipole
 ~~~~~~~~~~~~~~~
@@ -322,21 +339,27 @@ Straight Dipole
 Bent Dipole
 ~~~~~~~~~~~
 
-+-----+----------------+----------------+----------------+----------------+
-|Segs | Lewallen       | Python         | Basic Yabasi   | Basic pcbasic  |
-+-----+----------------+----------------+----------------+----------------+
-|  10 | 11.509-76.933j | 11.498-77.045j | 11.498-77.045j | 11.498-77.044j |
-+-----+----------------+----------------+----------------+----------------+
-|  20 | 11.751-53.812j | 11.740-53.929j | 11.740-53.929j | 11.740-53.932j |
-+-----+----------------+----------------+----------------+----------------+
-|  30 | 11.819-46.934j | 11.808-47.068j | 11.808-47.068j | 11.808-47.055j |
-+-----+----------------+----------------+----------------+----------------+
-|  40 | 11.848-43.783j | 11.837-43.893j | 11.837-43.893j | 11.838-43.858j |
-+-----+----------------+----------------+----------------+----------------+
-|  50 | 11.861-41.988j | 11.851-42.107j | 11.851-42.107j |                |
-+-----+----------------+----------------+----------------+----------------+
-| 14* | 11.312-43.119j |                                                  |
-+-----+----------------+--------------------------------------------------+
++-------+----------------+----------------+----------------+----------------+
+|Segs   | Lewallen       | Python         | Basic Yabasi   | Basic pcbasic  |
++-------+----------------+----------------+----------------+----------------+
+|  10   | 11.509-76.933j | 11.498-77.045j | 11.498-77.045j | 11.498-77.044j |
++-------+----------------+----------------+----------------+----------------+
+|  20   | 11.751-53.812j | 11.740-53.929j | 11.740-53.929j | 11.740-53.932j |
++-------+----------------+----------------+----------------+----------------+
+|  30   | 11.819-46.934j | 11.808-47.068j | 11.808-47.068j | 11.808-47.055j |
++-------+----------------+----------------+----------------+----------------+
+|  40   | 11.848-43.783j | 11.837-43.893j | 11.837-43.893j | 11.838-43.858j |
++-------+----------------+----------------+----------------+----------------+
+|  50   | 11.861-41.988j | 11.851-42.107j | 11.851-42.107j |                |
++-------+----------------+----------------+----------------+----------------+
+| 14*   | 11.312-43.119j | 11.104-47.879j |                                 |
++-------+----------------+----------------+---------------------------------+
+| 14t1  |                | 10.859-42.486j |                                 | 
++-----+----------------+----------------+---------------------------------+
+| 14t1l |                | 11.118-46.593j |                                 | 
++-------+----------------+----------------+---------------------------------+
+| 14t2  |                | 11.314-45.659j |                                 | 
++-------+----------------+----------------+---------------------------------+
 
 
 Running the Tests

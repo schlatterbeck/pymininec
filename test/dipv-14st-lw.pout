@@ -1,0 +1,172 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                   ****************************************
+
+FREQUENCY (MHZ): 299.8
+    WAVE LENGTH =  1  METERS
+
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
+ NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
+
+NO. OF WIRES: 8
+
+WIRE NO. 1
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             0             .5                         0
+-.004619      -.001913       .5            .001         0              1
+
+WIRE NO. 2
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.004619      -.001913       .5                         1
+-.013858      -.00574        .5            .001         0              1
+
+WIRE NO. 3
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.013858      -.00574        .5                         2
+-.032335      -.013393       .5            .001         0              1
+
+WIRE NO. 4
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.032335      -.013393       .5                         3
+-.23097       -.09567        .5            .001         0              4
+
+WIRE NO. 5
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             0             .5                        -1
+-.004619       .001913       .5            .001         0              1
+
+WIRE NO. 6
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.004619       .001913       .5                         5
+-.013858       .00574        .5            .001         0              1
+
+WIRE NO. 7
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.013858       .00574        .5                         6
+-.032335       .013393       .5            .001         0              1
+
+WIRE NO. 8
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.032335       .013393       .5                         7
+-.23097        .09567        .5            .001         0              4
+
+                  **** ANTENNA GEOMETRY ****
+
+WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-             -             -                 -          -    -    0   
+
+WIRE NO.  2  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.004619      -.001913       .5            .001          1    0   1
+
+WIRE NO.  3  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.013858      -.00574        .5            .001          2    0   2
+
+WIRE NO.  4  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.032335      -.013393       .5            .001          3    4   3
+-.081994      -.033963       .5            .001          4    4   4
+-.131653      -.054532       .5            .001          4    4   5
+-.181311      -.075101       .5            .001          4    0   6
+
+WIRE NO.  5  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+ 0             0             .5            .001         -1    0   7
+
+WIRE NO.  6  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.004619       .001913       .5            .001          5    0   8
+
+WIRE NO.  7  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.013858       .00574        .5            .001          6    0   9
+
+WIRE NO.  8  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.032335       .013393       .5            .001          7    8  10
+-.081994       .033963       .5            .001          8    8  11
+-.131653       .054532       .5            .001          8    8  12
+-.181311       .075101       .5            .001          8    0  13
+
+NO. OF SOURCES :  1
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  7 , 1 , 0
+NUMBER OF LOADS 0
+
+********************    SOURCE DATA     ********************
+PULSE  7      VOLTAGE = ( 1 , 0 J)
+              CURRENT = ( 4.596693E-03 ,  1.981991E-02 J)
+              IMPEDANCE = ( 11.10424 , -47.879   J)
+              POWER =  2.298346E-03  WATTS
+
+********************    CURRENT DATA    ********************
+
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -4.596693E-03 -1.981991E-02  2.034596E-02 -103.0574 
+J             -4.595649E-03 -1.945161E-02  1.998712E-02 -103.293  
+WIRE NO.  2 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -4.595649E-03 -1.945161E-02  1.998712E-02 -103.293  
+J             -4.582595E-03 -1.915203E-02  1.969265E-02 -103.4564 
+WIRE NO.  3 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -4.582595E-03 -1.915203E-02  1.969265E-02 -103.4564 
+J             -4.512835E-03 -1.854266E-02  1.908392E-02 -103.6785 
+WIRE NO.  4 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -4.512835E-03 -1.854266E-02  1.908392E-02 -103.6785 
+ 4            -4.004283E-03 -1.594533E-02  1.644043E-02 -104.0969 
+ 5            -3.051682E-03 -1.187037E-02  1.225636E-02 -104.4176 
+ 6            -1.724566E-03 -6.574950E-03  6.797359E-03 -104.6972 
+E              0             0             0             0
+WIRE NO.  5 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              4.596693E-03  1.981991E-02  2.034596E-02  76.94263 
+J              4.595649E-03  1.945161E-02  1.998712E-02  76.70702 
+WIRE NO.  6 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              4.595649E-03  1.945161E-02  1.998712E-02  76.70702 
+J              4.582595E-03  1.915203E-02  1.969265E-02  76.54357 
+WIRE NO.  7 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              4.582595E-03  1.915203E-02  1.969265E-02  76.54357 
+J              4.512835E-03  1.854266E-02  1.908392E-02  76.32152 
+WIRE NO.  8 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              4.512835E-03  1.854266E-02  1.908392E-02  76.32152 
+ 11            4.004283E-03  1.594533E-02  1.644043E-02  75.90306 
+ 12            3.051682E-03  1.187037E-02  1.225636E-02  75.58238 
+ 13            1.724566E-03  6.574950E-03  6.797359E-03  75.30277 
+E              0             0             0             0
+
+********************     FAR FIELD      ********************
+
+ZENITH ANGLE : INITIAL,INCREMENT,NUMBER: 0 , 10 , 2
+AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER: 0 , 10 , 2
+
+********************    PATTERN DATA    ********************
+ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
+ ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
+ 0             0            -999          -999          -999     
+ 10            0            -999          -18.79391     -18.79391
+ 0             10           -999          -999          -999     
+ 10            10           -34.1347      -18.92549     -18.79655
