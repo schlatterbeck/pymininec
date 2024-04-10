@@ -1113,7 +1113,7 @@ class Mininec:
                 if k == 1 or not self.media or self.media [0].is_ideal:
                     s2   = self.w * np.sum \
                         (pv.point * kvec * rvrp.real, axis = 2)
-                    s    = np.e ** (1j * s2)
+                    s    = np.exp (1j * s2)
                     sshp = list (s.shape)
                     sshp.insert (-1, 2)
                     ss   = np.reshape (np.repeat (s, 2, axis = 0), sshp)
@@ -1431,7 +1431,7 @@ class Mininec:
             valid = np.logical_and (d, opt > 0)
             # We can use idx0 or idx 1 because we established both
             # pulses have same wire at that point
-            for wire in set (idx0 [valid]):
+            for wire in np.unique (idx0 [valid]):
                 v = np.logical_and (valid, idx0 == wire)
                 a, b = np.where (v)
                 if len (a) < 2:
@@ -1899,7 +1899,7 @@ class Mininec:
             )
         b1 = d * self.w
         # EXP(-J*K*R)/R
-        t34 += np.e ** (-1j * b1) / d
+        t34 += np.exp (-1j * b1) / d
         return t34
     #end def integral_i2_i3
 
@@ -1955,7 +1955,6 @@ class Mininec:
         55.7187703 -0.1465045j
         """
         if n in legendre_cache and a == 0:
-            
             x, w = legendre_cache [n]
             y = (x + .5) * b
             return np.sum (w * self.integral_i2_i3 (y, *args), axis = -1)
@@ -2067,7 +2066,7 @@ class Mininec:
         # the upper integration bound and fast_quad needs a scalar)
         for quad in (8, 4, 2):
             qidx = np.logical_and (rest_idx, gauss_n == quad)
-            for f2val in set (f2):
+            for f2val in np.unique (f2):
                 i = np.logical_and (qidx, f2 == f2val)
                 if i.any ():
                     if len (vecv.shape) == 1:
@@ -2852,11 +2851,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     WIRE NO.  1 :
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
-     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
-     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147 
-     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472  
-     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
-     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
+     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609
+     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147
+     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472
+     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722
+     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092
     E              0             0             0             0
     <BLANKLINE>
     ********************     FAR FIELD      ********************
@@ -2867,13 +2866,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ********************    PATTERN DATA    ********************
     ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
      ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
-     0             0            -999          -999          -999     
+     0             0            -999          -999          -999
      45            0             1.163918     -999           1.163918
      90            0             5.119285     -999           5.119285
-     0             180          -999          -999          -999     
+     0             180          -999          -999          -999
      45            180           1.163918     -999           1.163918
      90            180           5.119285     -999           5.119285
-     0             360          -999          -999          -999     
+     0             360          -999          -999          -999
      45            360           1.163918     -999           1.163918
      90            360           5.119285     -999           5.119285
     <BLANKLINE>
@@ -2891,11 +2890,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     WIRE NO.  1 :
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
-     1             2.851291E-02  1.014723E-03  2.853096E-02  2.038193 
-     2             2.721271E-02  6.814274E-05  2.721279E-02  .143473  
-     3             2.341369E-02 -4.509546E-04  2.341803E-02 -1.103397 
-     4             1.740291E-02 -6.326805E-04  1.741441E-02 -2.082063 
-     5             9.581812E-03 -4.870737E-04  9.594184E-03 -2.91002  
+     1             2.851291E-02  1.014723E-03  2.853096E-02  2.038193
+     2             2.721271E-02  6.814274E-05  2.721279E-02  .143473
+     3             2.341369E-02 -4.509546E-04  2.341803E-02 -1.103397
+     4             1.740291E-02 -6.326805E-04  1.741441E-02 -2.082063
+     5             9.581812E-03 -4.870737E-04  9.594184E-03 -2.91002
     E              0             0             0             0
     <BLANKLINE>
     ********************     FAR FIELD      ********************
@@ -2906,14 +2905,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ********************    PATTERN DATA    ********************
     ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
      ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
-     0             0            -999          -999          -999     
-     45            0             1.16192      -999           1.16192 
+     0             0            -999          -999          -999
+     45            0             1.16192      -999           1.16192
      90            0             5.120395     -999           5.120395
-     0             180          -999          -999          -999     
-     45            180           1.16192      -999           1.16192 
+     0             180          -999          -999          -999
+     45            180           1.16192      -999           1.16192
      90            180           5.120395     -999           5.120395
-     0             360          -999          -999          -999     
-     45            360           1.16192      -999           1.16192 
+     0             360          -999          -999          -999
+     45            360           1.16192      -999           1.16192
      90            360           5.120395     -999           5.120395
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
@@ -2966,11 +2965,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     WIRE NO.  1 :
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
-     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
-     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147 
-     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472  
-     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
-     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
+     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609
+     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147
+     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472
+     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722
+     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092
     E              0             0             0             0
     <BLANKLINE>
     ********************     FAR FIELD      ********************
@@ -3042,11 +3041,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     WIRE NO.  1 :
     PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
      NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
-     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609  
-     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147 
-     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472  
-     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722  
-     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092 
+     1             2.857798E-02  1.660853E-03  2.862620E-02  3.32609
+     2             2.727548E-02  6.861985E-04  2.728411E-02  1.441147
+     3             2.346944E-02  8.170773E-05  2.346959E-02  .199472
+     4             1.744657E-02 -2.362219E-04  1.744817E-02 -.775722
+     5             9.607629E-03 -2.685486E-04  9.611381E-03 -1.601092
     E              0             0             0             0
     <BLANKLINE>
     ********************    NEAR FIELDS     ********************
@@ -3058,7 +3057,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     NEW POWER LEVEL (WATTS) =  100
     <BLANKLINE>
     ********************NEAR ELECTRIC FIELDS********************
-             FIELD POINT: X =  1         Y =  1         Z =  1       
+             FIELD POINT: X =  1         Y =  1         Z =  1
       VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
      COMPONENT     V/M           V/M           V/M           DEG
        X           4.129238     -10.56496      11.34324     -68.65233
@@ -3075,7 +3074,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     NEW POWER LEVEL (WATTS) =  100
     <BLANKLINE>
     ********************NEAR MAGNETIC FIELDS********************
-             FIELD POINT: X =  1         Y =  1         Z =  1       
+             FIELD POINT: X =  1         Y =  1         Z =  1
       VECTOR      REAL          IMAGINARY     MAGNITUDE     PHASE
      COMPONENT     AMPS/M        AMPS/M        AMPS/M        DEG
        X          -.187091      -4.272377E-03  .187139      -178.6918

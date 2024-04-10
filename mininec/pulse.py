@@ -1,8 +1,8 @@
-#!/usr/bin/python3 
+#!/usr/bin/python3
 # Copyright (C) 2024 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
-#   
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -12,19 +12,21 @@
 #
 #   The above copyright notice and this permission notice shall be included in
 #   all copies or substantial portions of the Software.
-#   
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE. 
+# SOFTWARE.
 # ****************************************************************************
 
+import itertools
 import numpy as np
 from functools import cached_property
 from mininec.util import format_float
+
 
 class Pulse_Container:
 
@@ -203,10 +205,26 @@ class Pulse_Container:
         if getattr (self, '_matrix_wires_unconnected', None) is None:
             l = len (self)
             r = np.zeros ((l, l), dtype = bool)
-            for p1 in self:
-                for p2 in self:
-                    if p1.wires_unconnected (p2):
-                        r [p1.idx, p2.idx] = True
+
+            # Collect all wires and corresponding pulses ids
+            wires = {}
+            for p_id, p in enumerate (self):
+                if p.wire.n not in wires:
+                    wires [p.wire.n] = [p.wire, p_id]
+                else:
+                    wires [p.wire.n].append (p_id)
+
+            # Check connectivity between each pair of wires and update unconnected
+            # matrix for pulses
+            for w1_id, w2_id in itertools.combinations (wires, 2):
+                w1, *p1_ids = wires [w1_id]
+                w2, *p2_ids = wires [w2_id]
+                if not w1.is_connected (w2):
+                    ixgrig1 = np.ix_ (p1_ids, p2_ids)
+                    ixgrig2 = np.ix_ (p2_ids, p1_ids)
+                    r [ixgrig1] = True
+                    r [ixgrig2] = True
+
             self._matrix_wires_unconnected = r
         return self._matrix_wires_unconnected
     # end def matrix_wires_unconnected
