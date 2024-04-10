@@ -1113,7 +1113,7 @@ class Mininec:
                 if k == 1 or not self.media or self.media [0].is_ideal:
                     s2   = self.w * np.sum \
                         (pv.point * kvec * rvrp.real, axis = 2)
-                    s    = np.exp(1j * s2)
+                    s    = np.exp (1j * s2)
                     sshp = list (s.shape)
                     sshp.insert (-1, 2)
                     ss   = np.reshape (np.repeat (s, 2, axis = 0), sshp)
@@ -1431,7 +1431,7 @@ class Mininec:
             valid = np.logical_and (d, opt > 0)
             # We can use idx0 or idx 1 because we established both
             # pulses have same wire at that point
-            for wire in np.unique(idx0 [valid]):
+            for wire in np.unique (idx0 [valid]):
                 v = np.logical_and (valid, idx0 == wire)
                 a, b = np.where (v)
                 if len (a) < 2:
@@ -1899,7 +1899,7 @@ class Mininec:
             )
         b1 = d * self.w
         # EXP(-J*K*R)/R
-        t34 += np.exp(-1j * b1) / d
+        t34 += np.exp (-1j * b1) / d
         return t34
     #end def integral_i2_i3
 
@@ -2066,7 +2066,7 @@ class Mininec:
         # the upper integration bound and fast_quad needs a scalar)
         for quad in (8, 4, 2):
             qidx = np.logical_and (rest_idx, gauss_n == quad)
-            for f2val in np.unique(f2):
+            for f2val in np.unique (f2):
                 i = np.logical_and (qidx, f2 == f2val)
                 if i.any ():
                     if len (vecv.shape) == 1:

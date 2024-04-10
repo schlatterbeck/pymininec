@@ -22,15 +22,10 @@
 # SOFTWARE.
 # ****************************************************************************
 
-import collections
 import itertools
 import numpy as np
 from functools import cached_property
 from mininec.util import format_float
-
-
-def wires_connected(w1, w2):
-    return w1.is_connected (w2) or w2.is_connected (w1)
 
 
 class Pulse_Container:
@@ -211,23 +206,24 @@ class Pulse_Container:
             l = len (self)
             r = np.zeros ((l, l), dtype = bool)
 
-            # Collect all wires and wire -> pulses mapping
-            wires = []
-            wire_pulses_map = collections.defaultdict(list)
-            for p_id, p in enumerate(self):
-                if p.wire not in wires:
-                    wires.append(p.wire)
-                w_id = wires.index(p.wire)
-                wire_pulses_map[w_id].append(p_id)
+            # Collect all wires and corresponding pulses ids
+            wires = {}
+            for p_id, p in enumerate (self):
+                if p.wire.n not in wires:
+                    wires [p.wire.n] = [p.wire, p_id]
+                else:
+                    wires [p.wire.n].append (p_id)
 
             # Check connectivity between each pair of wires and update unconnected
             # matrix for pulses
-            for (w1_id, w1), (w2_id, w2) in itertools.combinations(enumerate(wires), 2):
-                if not wires_connected(w1, w2):
-                    ixgrig1 = np.ix_(wire_pulses_map[w1_id], wire_pulses_map[w2_id])
-                    ixgrig2 = np.ix_(wire_pulses_map[w2_id], wire_pulses_map[w1_id])
-                    r[ixgrig1] = True
-                    r[ixgrig2] = True
+            for w1_id, w2_id in itertools.combinations (wires, 2):
+                w1, *p1_ids = wires [w1_id]
+                w2, *p2_ids = wires [w2_id]
+                if not w1.is_connected (w2):
+                    ixgrig1 = np.ix_ (p1_ids, p2_ids)
+                    ixgrig2 = np.ix_ (p2_ids, p1_ids)
+                    r [ixgrig1] = True
+                    r [ixgrig2] = True
 
             self._matrix_wires_unconnected = r
         return self._matrix_wires_unconnected
@@ -334,7 +330,7 @@ class Pulse:
         w1 = self.wire
         w2 = other.wire
         # Well this should really be symmetric, so one should be enough :-)
-        return not wires_connected(w1, w2)
+        return not w1.is_connected (w2) and not w2.is_connected (w1)
     # end def wires_unconnected
 
 # end class Pulse

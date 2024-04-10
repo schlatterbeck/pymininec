@@ -271,7 +271,7 @@ class _Test_Base_With_File:
         assert acc.endswith (' J)')
         exc = [float (x) for x in exc [11:-3].split (',')]
         acc = [float (x) for x in acc [11:-3].split (',')]
-        assert np.allclose(exc, acc)
+        assert np.allclose (exc, acc, atol=1e-12)
         off += 1
         state = 0
         for l_ex, l_ac in zip (ex [off:], ac [off:]):
