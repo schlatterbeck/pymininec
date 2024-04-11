@@ -484,7 +484,7 @@ precision) implementation.
 Running examples in Basic
 -------------------------
 
-The original Basic source code can still be run today.
+The `original Basic source code`_ can still be run today.
 
 Thanks to Rob Hagemans `pcbasic`_ project I had a starting point for
 debugging the initial pymininec implementation. It is written in Python
@@ -605,7 +605,7 @@ v0.2.0: Add short paragraph on new plotting program
 
 v0.1.0: Initial release
 
-.. _`original basic source code`: http://nec-archives.pa3kj.com/mininec3.zip
+.. _`original basic source code`: https://github.com/Kees-PA3KJ/MiniNec
 .. _`unofficial NEC archive`: http://nec-archives.pa3kj.com/
 .. _`Mininec github project`: https://github.com/Kees-PA3KJ/MiniNec
 .. _`MININEC`: https://github.com/schlatterbeck/MiniNec
