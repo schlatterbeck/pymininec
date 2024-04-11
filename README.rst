@@ -288,6 +288,80 @@ value in the original example (which is supposed to be the diameter) as
 the radius. But most examples match better to the values computed by
 KP4MD when doubling the radius.
 
+The Other Edge of The Sword
++++++++++++++++++++++++++++
+
+There are some new tests that check the feedpoint impedance against
+known computations from the literature. In particular an old article by
+Roy Lewallen [8]_ with the same title as this section.
+
+The column "Python" is from pymininec, the column "Basic
+Yabasi" is the original Basic implementation run with my Basic
+interpreter Yabasi_. The column "Basic pcbasic" uses the pcbasic_
+interpreter.
+
+Note that the "Bent Dipole" is bent horizontally (not an inverted V),
+all wire ends are the same height. I have not been able so far to
+reproduce the results of the special segmentation scheme that uses only
+14 segements with the same results as indicated in the article (see then
+entry ``14*`` for the bent dipole). When trying to reproduce it exactly
+the imaginary part is much lower (more capacity). The segmentation
+scheme is also not very good: In mininec adjacent segment should only
+have a factor of 2 in length, not more. The segmentation special scheme
+has a jump of factor 5, maybe this makes it numerically instable so that
+we get much different results with double precision float.
+
+For the bent dipole I've made three more experiments: One with tapering
+from both ends (entry ``14t2``) and two with tapering from one end (entry
+``14t1`` and ``14t1l``). Example ``14t1`` has no limit on segment length
+while entry ``14t1l`` enforces a minimum segment length of 1/200 lambda.
+In all the cases where tapering is from one end, the end with the
+feedpoint has the smallest segment length. None of these experiments
+comes close to the 14 segment experiment in the paper.
+
+Straight Dipole
+~~~~~~~~~~~~~~~
+
++-----+----------------+----------------+----------------+----------------+
+|Segs | Lewallen       | Python         | Basic Yabasi   | Basic pcbasic  |
++-----+----------------+----------------+----------------+----------------+
+|  10 | 74.073+20.292j | 74.074+20.298j | 74.074+20.298j | 74.074+20.300j |
++-----+----------------+----------------+----------------+----------------+
+|  20 | 75.870+21.877j | 75.872+21.897j | 75.872+21.897j | 75.872+21.897j |
++-----+----------------+----------------+----------------+----------------+
+|  30 | 76.573+23.218j | 76.567+23.169j | 76.567+23.169j | 76.572+23.203j |
++-----+----------------+----------------+----------------+----------------+
+|  40 | 76.972+24.053j | 76.972+24.052j | 76.972+24.052j | 76.973+24.068j |
++-----+----------------+----------------+----------------+----------------+
+|  50 | 77.222+24.517j | 77.240+24.647j | 77.240+24.647j |                |
++-----+----------------+----------------+----------------+----------------+
+
+Bent Dipole
+~~~~~~~~~~~
+
++-------+----------------+----------------+----------------+----------------+
+|Segs   | Lewallen       | Python         | Basic Yabasi   | Basic pcbasic  |
++-------+----------------+----------------+----------------+----------------+
+|  10   | 11.509-76.933j | 11.498-77.045j | 11.498-77.045j | 11.498-77.044j |
++-------+----------------+----------------+----------------+----------------+
+|  20   | 11.751-53.812j | 11.740-53.929j | 11.740-53.929j | 11.740-53.932j |
++-------+----------------+----------------+----------------+----------------+
+|  30   | 11.819-46.934j | 11.808-47.068j | 11.808-47.068j | 11.808-47.055j |
++-------+----------------+----------------+----------------+----------------+
+|  40   | 11.848-43.783j | 11.837-43.893j | 11.837-43.893j | 11.838-43.858j |
++-------+----------------+----------------+----------------+----------------+
+|  50   | 11.861-41.988j | 11.851-42.107j | 11.851-42.107j |                |
++-------+----------------+----------------+----------------+----------------+
+| 14*   | 11.312-43.119j | 11.104-47.879j |                                 |
++-------+----------------+----------------+---------------------------------+
+| 14t1  |                | 10.859-42.486j |                                 | 
++-----+----------------+----------------+---------------------------------+
+| 14t1l |                | 11.118-46.593j |                                 | 
++-------+----------------+----------------+---------------------------------+
+| 14t2  |                | 11.314-45.659j |                                 | 
++-------+----------------+----------------+---------------------------------+
+
+
 Running the Tests
 +++++++++++++++++
 
@@ -410,21 +484,40 @@ precision) implementation.
 Running examples in Basic
 -------------------------
 
-The original Basic source code can still be run today, thanks to Rob
-Hagemans `pcbasic`_ project. It is written in Python and can be
-installed with pip. It is also packaged in some Linux distributions,
-e.g. in Debian_.
+The original Basic source code can still be run today.
+
+Thanks to Rob Hagemans `pcbasic`_ project I had a starting point for
+debugging the initial pymininec implementation. It is written in Python
+and can be installed with pip. It is also packaged in some Linux
+distributions, e.g. in Debian_.
+
+In the meanwhile I've written my own Basic interpreter over a weekend
+called Yabasi_ for two reasons:
+
+- pcbasic faithfully reproduces the memory limitations of the time
+- pcbasic does some effort to compute in single precision float numbers
+
+A third reason materialized when I had Yabasi_ working: It is *much*
+faster than pcbasic_.
 
 Since Mininec reads all inputs for an antenna simulation from the
 command-line in Basic, I'm creating input files that contain
 reproduceable command-line input for an antenna simulation. An example
 of such a script is in ``dipole-01.mini``, the suffix ``mini``
-indicating a Mininec file.
+indicating a Mininec file. These can be directly run with Yabasi_ (using
+the ``-i`` option), for running with pcbasic they need to be converted
+to carriage-return line endings. The Makefile has code for this, you can
+run, e.g.::
+
+    make vertical-rad.CR
+
+and a carriage-return version of ``test/vertical-rad.mini`` will be
+created.
 
 Of course the input files only make sense if you actually run them with
 the mininec basic code as this displays all the prompts.
 Note that I had to change the dimensions of some arrays in the Basic
-code to not run into an out-of-memory condition with the Basic
+code to not run into an out-of-memory condition with the pcbasic_ Basic
 interpreter.
 
 You can run `pcbasic`_ with the command-line option ``--input=`` to specify
@@ -433,14 +526,37 @@ return line endings (no newlines). I've described how I'm debugging the
 Basic code using the Python debugger in a `contribution to pcbasic`_,
 this has been moved to the `pcbasic wiki`_.
 
-In the file ``debug-basic.txt`` you can find my notes on how to debug
-mininec using the python debugger. This is more or less a random
-cut&paste buffer.
+For Yabasi_ this debugging is built-in, you can specify the command-line
+option ``-L <line>`` where ``<line>`` is the line number in the Basic
+code where you want to stop. When stopped you can set ::
 
-The `original basic source code`_ can be obtained from the `unofficial
-NEC archive`_ by PA3KJ or from a `Mininec github project`_, I'm using
-the version from the `unofficial NEC archive`_ and have not verified if
-the two links I've given contain the same code.
+ !self.break_lineno = 'all'
+
+to single step through the Basic program. Alternatively you can specify
+another line number you want to stop at.
+
+In the file ``debug-basic.txt`` you can find my notes on how to debug
+mininec using the python debugger with pcbasic. This is more or less a
+random cut&paste buffer.
+
+The `original basic source code`_ used to be at the `unofficial
+NEC archive`_ by PA3KJ or from the `Mininec github project`_ by the same
+author, the `unofficial NEC archive`_ site seems to experience problems
+(empty page) as of this writing.
+
+I have a patched MININEC_ version on github that forks the `Mininec
+github project`_ and does some small fixes that:
+
+- use larger ``DIM`` statements
+- fixes elliptic integral parameters and uses better accuracy for
+  elliptic curve and gaussian quadrature parameters
+- Uses a better accuracy of the hard-coded constand 1/log(10)*10 which
+  is used during far field computation (to get dBi). This makes the
+  MININEC_ results of the far field better match the python
+  implementation.
+
+My MININEC_ version cannot be run with pcbasic_ because the DIM
+statements use too much memory.
 
 Release Notes
 -------------
@@ -492,8 +608,10 @@ v0.1.0: Initial release
 .. _`original basic source code`: http://nec-archives.pa3kj.com/mininec3.zip
 .. _`unofficial NEC archive`: http://nec-archives.pa3kj.com/
 .. _`Mininec github project`: https://github.com/Kees-PA3KJ/MiniNec
+.. _`MININEC`: https://github.com/schlatterbeck/MiniNec
 .. _`numpy`: https://numpy.org/
 .. _`pcbasic`: https://github.com/robhagemans/pcbasic
+.. _Yabasi: https://github.com/schlatterbeck/yabasi
 .. _`Debian`: https://packages.debian.org/stable/python3-pcbasic
 .. _`contribution to pcbasic`: https://github.com/robhagemans/pcbasic/pull/183
 .. _`pcbasic wiki`:
@@ -525,6 +643,8 @@ v0.1.0: Initial release
 .. [7] L. B. Cebik. Antenna Modeling Notes, volume 2. antenneX Online
     Magazine, 2003. Available with antenna models from the `Cebik
     collection`_.
+.. [8] Roy Lewallen. Mininec: The other edge of the sword. QST, pages
+    18–22, February 1991.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf

@@ -1,0 +1,75 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                       04-02-2024              21:05:37
+                   ****************************************
+ 
+FREQUENCY (MHZ): 299.8 
+    WAVE LENGTH =  1  METERS
+ 
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1 
+ NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0 
+ 
+NO. OF WIRES: 2 
+ 
+WIRE NO. 1 
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.2309699     -9.567086E-02  .5                          0 
+ 0             0             .5            .001          0             5 
+ 
+WIRE NO. 2 
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.2309699      9.567086E-02  .5                          0 
+ 0             0             .5            .001         -1             5 
+ 
+                  **** ANTENNA GEOMETRY ****
+ 
+WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.1847759     -7.653669E-02  .5            .001           0    1    1
+-.1385819     -5.740252E-02  .5            .001           1    1    2
+-9.238796E-02 -3.826834E-02  .5            .001           1    1    3
+-4.619397E-02 -1.913417E-02  .5            .001           1    0    4
+ 
+WIRE NO.  2  COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.1847759      7.653669E-02  .5            .001           0    2    5
+-.1385819      5.740252E-02  .5            .001           2    2    6
+-9.238796E-02  3.826834E-02  .5            .001           2    2    7
+-4.619397E-02  1.913417E-02  .5            .001           2    2    8
+ 0             0             .5            .001           2   -1    9
+ 
+NO. OF SOURCES :  1 
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  9 , 1 , 0 
+NUMBER OF LOADS 0 
+ 
+********************    SOURCE DATA     ********************
+PULSE  9      VOLTAGE = ( 1 , 0 J)
+              CURRENT = ( 1.894936E-03 , 1.269683E-02 J)
+              IMPEDANCE = ( 11.49837 ,-77.04373 J)
+              POWER =  9.47468E-04  WATTS
+ 
+********************    CURRENT DATA    ********************
+ 
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0 
+ 1            -7.075957E-04 -4.031256E-03  4.092885E-03 -99.95557 
+ 2            -1.249151E-03 -7.309421E-03  7.41539E-03  -99.69794 
+ 3            -1.64343E-03  -9.917709E-03  1.005295E-02 -99.40879 
+ 4            -1.866853E-03 -1.171683E-02  1.186462E-02 -99.0529 
+J             -1.894936E-03 -1.269683E-02  1.283746E-02 -98.48846 
+ 
+WIRE NO.  2 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0 
+ 5             7.07596E-04   4.031258E-03  4.092888E-03  80.04444 
+ 6             1.249152E-03  7.309424E-03  7.415394E-03  80.30206 
+ 7             1.64343E-03   9.917712E-03  1.005295E-02  80.59121 
+ 8             1.866853E-03  1.171683E-02  1.186462E-02  80.9471 
+J              1.894936E-03  1.269683E-02  1.283746E-02  81.51155 
+

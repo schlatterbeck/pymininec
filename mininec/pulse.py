@@ -76,16 +76,16 @@ class Pulse_Container:
         raise AttributeError (n)
     # end def __getattr__
 
-    # Wire properties
+    # Segment / Wire properties
 
     @cached_property
     def seg_len (self):
-        return np.array ([[w.seg_len for w in p.wires] for p in self])
+        return np.array ([[s.seg_len for s in p.segs] for p in self])
     # end def seg_len
 
     @cached_property
     def dirvec (self):
-        return np.array ([[w.dirvec for w in p.wires] for p in self])
+        return np.array ([[s.dirvec for s in p.segs] for p in self])
     # end def dirvec
 
     def dvecs (self, ds):
@@ -103,7 +103,7 @@ class Pulse_Container:
 
     @cached_property
     def i6 (self):
-        return np.array ([[w.i6 for w in p.wires] for p in self])
+        return np.array ([[s.i6 for s in p.segs] for p in self])
     # end def i6
 
     @cached_property
@@ -115,6 +115,18 @@ class Pulse_Container:
     def same_wire (self):
         return np.array ([(p.wires [0] == p.wires [1]) for p in self])
     # end def same_wire
+
+    @cached_property
+    def same_dir (self):
+        return np.array \
+            ([(p.segs [0].dirvec == p.segs [1].dirvec).all () for p in self])
+    # end def same_dir
+
+    @cached_property
+    def same_len (self):
+        return np.array \
+            ([(p.segs [0].seg_len == p.segs [1].seg_len) for p in self])
+    # end def same_len
 
     @cached_property
     def wire_idx (self):
@@ -259,13 +271,14 @@ class Pulse:
 
     def __init__ \
         ( self, container, point, end1, end2
-        , wire1, wire2, gnd = None, sgn = None
+        , seg1, seg2, gnd = None, sgn = None
         ):
         self.container = container
         self.container.add (self)
         self.point   = point
         self.ends    = [end1, end2]
-        self.wires   = [wire1, wire2]
+        self.wires   = [seg1.wire, seg2.wire]
+        self.segs    = [seg1, seg2]
         # The original implementation uses the sign of the wire index
         # for marking a ground connection *and* for marking a direction
         # reversal of a wire (when connected end1-end1 or end2-end2).

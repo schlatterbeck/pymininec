@@ -215,6 +215,47 @@ class _Test_Base_With_File:
         return m
     # end def t_antenna
 
+    def compare_currents (self, ex, ac):
+        """ This is used when the CURRENT line in the feed pulse is
+            slightly off on different architectures. In addition the
+            individual CURRENT DATA lines are also compared
+            approximately. We get lists of lines already split.
+        """
+        off = ex.index (self.source_data) + 2
+        assert ex [:off] == ac [:off]
+        exc = ex [off].strip ()
+        acc = ac [off].strip ()
+        assert acc.startswith ('CURRENT = (')
+        assert acc.endswith (' J)')
+        exc = [float (x) for x in exc [11:-3].split (',')]
+        acc = [float (x) for x in acc [11:-3].split (',')]
+        assert np.allclose (exc, acc, atol=1e-12)
+        off += 1
+        state = 0
+        for l_ex, l_ac in zip (ex [off:], ac [off:]):
+            if state == 0 or state == 2:
+                assert l_ex == l_ac
+            if '(DEGREES)' in l_ex:
+                state = 1
+                continue
+            if state == 1:
+                sp_ex = l_ex.strip ().split ()
+                sp_ac = l_ac.strip ().split ()
+                if len (sp_ex) != 5:
+                    state = 2
+                    assert l_ex == l_ac
+                    continue
+                assert sp_ex [0] == sp_ac [0]
+                num_ex = [float (x) for x in sp_ex [1:]]
+                num_ac = [float (x) for x in sp_ac [1:]]
+                for a, b in zip (num_ex [:-1], num_ac [:-1]):
+                    assert round (abs (a - b), 11) == 0
+                assert round (abs (num_ex [-1] - num_ac [-1]), 10) == 0
+                if sp_ex [0] == 'E':
+                    state = 2
+                    continue
+    # end def compare_currents
+
     def compare_far_field_data \
         (self, m, may_fail_last_digit = False, do_currents = False):
         """ dB values below -200 contain large rounding errors.
@@ -257,46 +298,17 @@ class _Test_Base_With_File:
                     assert aff < -200
     # end def compare_far_field_data
 
-    def compare_currents (self, ex, ac):
-        """ This is used when the CURRENT line in the feed pulse is
-            slightly off on different architectures. In addition the
-            individual CURRENT DATA lines are also compared
-            approximately. We get lists of lines already split.
+    def compare_impedance (self, m, impedance):
+        """ Compare feed point impedance.
+            Note that we round to 5 significant digits.
         """
-        off = ex.index (self.source_data) + 2
-        assert ex [:off] == ac [:off]
-        exc = ex [off].strip ()
-        acc = ac [off].strip ()
-        assert acc.startswith ('CURRENT = (')
-        assert acc.endswith (' J)')
-        exc = [float (x) for x in exc [11:-3].split (',')]
-        acc = [float (x) for x in acc [11:-3].split (',')]
-        assert np.allclose (exc, acc, atol=1e-12)
-        off += 1
-        state = 0
-        for l_ex, l_ac in zip (ex [off:], ac [off:]):
-            if state == 0 or state == 2:
-                assert l_ex == l_ac
-            if '(DEGREES)' in l_ex:
-                state = 1
-                continue
-            if state == 1:
-                sp_ex = l_ex.strip ().split ()
-                sp_ac = l_ac.strip ().split ()
-                if len (sp_ex) != 5:
-                    state = 2
-                    assert l_ex == l_ac
-                    continue
-                assert sp_ex [0] == sp_ac [0]
-                num_ex = [float (x) for x in sp_ex [1:]]
-                num_ac = [float (x) for x in sp_ac [1:]]
-                for a, b in zip (num_ex [:-1], num_ac [:-1]):
-                    assert round (abs (a - b), 11) == 0
-                assert round (abs (num_ex [-1] - num_ac [-1]), 10) == 0
-                if sp_ex [0] == 'E':
-                    state = 2
-                    continue
-    # end def compare_currents
+        assert len (m.sources) == 1
+        imp = m.sources [0].impedance
+        r = 4 - int (np.log (abs (impedance.real)) / np.log (10))
+        assert round (impedance.real, r) == round (imp.real, r)
+        r = 4 - int (np.log (abs (impedance.imag)) / np.log (10))
+        assert round (impedance.imag, r) == round (imp.imag, r)
+    # end def compare_impedance
 
     def compare_near_field_data (self, m, opts = None):
         """ Near field data below absolute values of 1e-15 may be
@@ -333,7 +345,8 @@ class _Test_Base_With_File:
                 assert e == a
     # end def compare_near_field_data
 
-    def setup_generic_file (self, basename, azi = None, ele = None):
+    def setup_generic_file \
+        (self, basename, azi = None, ele = None, no_ff = False):
         path = os.path.join ('test', basename)
         pym  = path + '.pym'
         args = []
@@ -346,10 +359,12 @@ class _Test_Base_With_File:
         args = args.split ()
         m    = main (args, return_mininec = True)
         self.simple_setup (basename + '.pout')
-        elevation = ele or Angle (0, 10, 10)
-        azimuth   = azi or Angle (0, 10, 37)
+        if not no_ff:
+            elevation = ele or Angle (0, 10, 10)
+            azimuth   = azi or Angle (0, 10, 37)
         m.compute ()
-        m.compute_far_field (elevation, azimuth)
+        if not no_ff:
+            m.compute_far_field (elevation, azimuth)
         return m
     # end def setup_generic_file
 
@@ -743,6 +758,83 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         assert self.expected_output == out
     # end def test_inve802B
 
+    # The following tests *only* test the feed point impedance
+
+    def test_dip_10s (self):
+        m = self.setup_generic_file ('dip-10s', no_ff = True)
+        self.compare_impedance (m, 74.074+20.298j)
+    # end def test_dip_10s
+
+    def test_dip_20s (self):
+        m = self.setup_generic_file ('dip-20s', no_ff = True)
+        self.compare_impedance (m, 75.872+21.897j)
+    # end def test_dip_20s
+
+    def test_dip_30s (self):
+        m = self.setup_generic_file ('dip-30s', no_ff = True)
+        self.compare_impedance (m, 76.567+23.169j)
+    # end def test_dip_30s
+
+    def test_dip_40s (self):
+        m = self.setup_generic_file ('dip-40s', no_ff = True)
+        self.compare_impedance (m, 76.972+24.052j)
+    # end def test_dip_40s
+
+    def test_dip_50s (self):
+        m = self.setup_generic_file ('dip-50s', no_ff = True)
+        self.compare_impedance (m, 77.240+24.647j)
+    # end def test_dip_50s
+
+    def test_dipv_10s (self):
+        m = self.setup_generic_file ('dipv-10s', no_ff = True)
+        self.compare_impedance (m, 11.498-77.045j)
+    # end def test_dipv_10s
+
+    def test_dipv_20s (self):
+        m = self.setup_generic_file ('dipv-20s', no_ff = True)
+        self.compare_impedance (m, 11.740-53.929j)
+    # end def test_dipv_20s
+
+    def test_dipv_30s (self):
+        m = self.setup_generic_file ('dipv-30s', no_ff = True)
+        self.compare_impedance (m, 11.808-47.068j)
+    # end def test_dipv_30s
+
+    def test_dipv_40s (self):
+        m = self.setup_generic_file ('dipv-40s', no_ff = True)
+        self.compare_impedance (m, 11.837-43.893j)
+    # end def test_dipv_40s
+
+    def test_dipv_50s (self):
+        m = self.setup_generic_file ('dipv-50s', no_ff = True)
+        self.compare_impedance (m, 11.851-42.107j)
+    # end def test_dipv_50s
+
+    def test_dipv_14st_t1s (self):
+        m = self.setup_generic_file ('dipv-14st-t1s', no_ff = True)
+        self.compare_impedance (m, 10.859-42.486j)
+    # end def test_dipv_14st_t1s
+
+    def test_dipv_14st_t1sl (self):
+        m = self.setup_generic_file ('dipv-14st-t1sl', no_ff = True)
+        self.compare_impedance (m, 11.118-46.593j)
+    # end def test_dipv_14st_t1sl
+
+    def test_dipv_14st_t2s (self):
+        m = self.setup_generic_file ('dipv-14st-t2s', no_ff = True)
+        self.compare_impedance (m, 11.314-45.659j)
+    # end def test_dipv_14st_t2s
+
+    def test_dipv_14st_t2w (self):
+        m = self.setup_generic_file ('dipv-14st-t2w', no_ff = True)
+        self.compare_impedance (m, 11.314-45.659j)
+    # end def test_dipv_14st_t2w
+
+    def test_dipv_14st_lw (self):
+        m = self.setup_generic_file ('dipv-14st-lw', no_ff = True)
+        self.compare_impedance (m, 11.104-47.879j)
+    # end def test_dipv_14st_lw
+
 # end class Test_Case_Known_Structure
 
 class Test_Doctest:
@@ -764,7 +856,7 @@ class Test_Doctest:
     # end def run_test
 
     def test_mininec (self):
-        num_tests = 382
+        num_tests = 383
         self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
 
@@ -772,5 +864,10 @@ class Test_Doctest:
         num_tests = 1
         self.run_test (mininec.util, num_tests)
     # end def test_util
+
+    def test_taper (self):
+        num_tests = 38
+        self.run_test (mininec.taper, num_tests)
+    # end def test_taper
 
 # end class Test_Doctest

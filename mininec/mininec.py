@@ -28,11 +28,13 @@ import sys
 import copy
 import time
 import numpy as np
-from datetime import datetime
-from scipy.special import ellipk
+from datetime        import datetime
+from scipy.special   import ellipk
 from scipy.integrate import fixed_quad
-from mininec.util  import format_float
-from mininec.pulse import Pulse_Container, Pulse
+from mininec.util    import format_float
+from mininec.pulse   import Pulse_Container, Pulse
+from mininec.segment import Segment
+from mininec.taper   import taper1, taper2
 
 legendre_cache = {}
 try:
@@ -587,36 +589,22 @@ class Wire:
         self.p2         = np.array ([x2, y2, z2])
         self.endpoints  = np.array ([self.p1, self.p2])
         self.pulses     = []
+        self._segtype   = 0
+        self.taper_min  = None
+        self.taper_max  = None
         self.r = r
         if r <= 0:
             raise ValueError ("Radius must be >0")
-        diff = self.p2 - self.p1
-        if (diff == 0).all ():
+        self.diff = self.p2 - self.p1
+        if (self.diff == 0).all ():
             raise ValueError ("Zero length wire: %s %s" % (self.p1, self.p2))
-        self.wire_len = np.linalg.norm (diff)
-        self.seg_len  = self.wire_len / self.n_segments
-        # Original comment: compute direction cosines
-        # Unit vector in wire direction
-        self.dirvec   = diff / self.wire_len
+        self.wire_len = np.linalg.norm (self.diff)
         self.end_segs = [None, None]
         # Links to previous/next connected wire (at start/end)
         # conn [0] contains wires that link to our first end
         # while conn [1] contains wires that link to our second end.
         self.conn = (Connected_Wires (), Connected_Wires ())
-        self.n = None
-        # This is Integral I1 in the paper(s), in the implementation
-        # used in Basic this boils down to only wire-dependent
-        # Parameters. So we can avoid re-computing this for each
-        # combination of segments.
-        # My original note was:
-        # Hmm, dividing by f2 here removes scale = (p3-p2) from logarithm
-        # So i6 depends only on wire/seg parameters?!
-        # Moved to wire. Original formula was:
-        # i6 = (1 - np.log (s4 / f2 / 8 / wire.r)) / np.pi / wire.r
-        # But s4 / f2 reduces to wire.seg_len / 2
-        # See above, i6 is now passed as a parameter which is set to
-        # 0 if not using the exact kernel.
-        self.i6 = (1 + np.log (16 * r / self.seg_len)) / np.pi / r
+        self.n = None # index into parent.geo
     # end def __init__
 
     @property
@@ -628,6 +616,23 @@ class Wire:
     def idx_2 (self):
         return self.idx (1)
     # end def idx_2
+
+    @property
+    def segtype (self):
+        return self._segtype
+    # end def segtype
+
+    @segtype.setter
+    def segtype (self, stype):
+        """ Segmentation type:
+            - 0 for equal segment lengths
+            - 1 for tapered segmentation from end 1
+            - 2 for tapered segmentation from end 2
+            - 3 for tapered segmentation from *both* ends
+        """
+        assert 0 <= stype <= 3
+        self._segtype = stype
+    # end def segtype
 
     def compute_ground (self, n, media):
         self.n = n
@@ -667,6 +672,7 @@ class Wire:
 
             Also compute pulses.
         """
+        self.compute_segments ()
 
         # This rolls the end-matching computation of 4
         # explicitly-programmed cases in the Basic program lines
@@ -692,57 +698,112 @@ class Wire:
             self.end_segs [1] = None
         # inversion of Z component
         invz = np.array ([1, 1, -1])
-        # First segment start
-        seg  = np.copy (self.p1)
-        inc  = self.dirvec * self.seg_len
-        pu   = parent.pulses
+
+        pu = parent.pulses
         # Connection to other wire(s) at end 1
+        seg0 = self.segments [0]
         if self.idx_1 != 0 and abs (self.idx_1) - 1 != self.n:
             assert not self.is_ground [0]
             other = parent.geo [abs (self.idx_1) - 1]
             sgn   = [np.sign (self.idx_1), 1]
-            oinc  = other.dirvec * other.seg_len * sgn [0]
-            prev  = self.p1 - oinc
-            p = Pulse (pu, self.p1, prev, seg + inc, other, self, sgn = sgn)
+            if sgn [0] < 0:
+                oseg = other.segments [0]
+            else:
+                oseg = other.segments [-1]
+            oinc = oseg.dirvec * oseg.seg_len * sgn [0]
+            prev = self.p1 - oinc
+            p = Pulse (pu, self.p1, prev, seg0.p2, oseg, seg0, sgn = sgn)
             if self.n_segments == 1 and self.idx_2 == 0:
                 p.c_per [1] = 0
             self.pulses.append (p)
         elif self.is_ground [0]:
-            s = seg + inc
-            p = Pulse (pu, self.p1, s * invz, s, self, self, gnd = 0)
+            s = seg0.p2
+            p = Pulse (pu, self.p1, s * invz, s, seg0, seg0, gnd = 0)
             self.pulses.append (p)
-        s0 = seg
-        s1 = seg + self.dirvec * self.seg_len
-        for i in range (self.n_segments - 1):
-            s2 = seg + (i + 2) * self.dirvec * self.seg_len
-            p  = Pulse (pu, s1, s0, s2, self, self)
-            s0 = s1
-            s1 = s2
+        for i, seg in enumerate (self.segments [:-1]):
+            nseg = self.segments [i + 1]
+            p = Pulse (pu, seg.p2, seg.p1, nseg.p2, seg, nseg)
             self.pulses.append (p)
             if i == 0 and self.idx_1 == 0:
                 p.c_per [0] = 0
             if i == self.n_segments - 2 and self.idx_2 == 0:
                 p.c_per [1] = 0
-        # Second endpoint is slightly off in original Basic computation
-        # because it is computed from the first endpoint
-        p2  = seg + (self.n_segments) * self.dirvec * self.seg_len
-        seg = seg + (self.n_segments - 1) * self.dirvec * self.seg_len
         # Connection to other wire(s) at end 2
+        lseg = self.segments [-1]
+        p1   = lseg.p1
+        p2   = lseg.p2
         if self.idx_2 != 0 and abs (self.idx_2) - 1 != self.n:
             assert not self.is_ground [1]
             other = parent.geo [abs (self.idx_2) - 1]
             sgn   = [1, np.sign (self.idx_2)]
-            oinc  = other.dirvec * other.seg_len * sgn [1]
-            next  = p2 + oinc
-            p = Pulse (pu, p2, seg, next, self, other, sgn = sgn)
+            if sgn [1] < 0:
+                oseg = other.segments [-1]
+            else:
+                oseg = other.segments [0]
+            oinc = oseg.dirvec * oseg.seg_len * sgn [1]
+            p3   = p2 + oinc
+            p = Pulse (pu, p2, p1, p3, lseg, oseg, sgn = sgn)
             if self.n_segments == 1 and self.idx_1 == 0:
                 p.c_per [0] = 0
             self.pulses.append (p)
         elif self.is_ground [1]:
-            next = p2 - self.dirvec * self.seg_len * invz
-            p = Pulse (pu, self.p2, seg, next, self, self, gnd = 1)
+            end2 = p2 - lseg.dirvec * lseg.seg_len * invz
+            p = Pulse (pu, self.p2, p1, end2, lseg, lseg, gnd = 1)
             self.pulses.append (p)
     # end def compute_connections
+
+    def compute_equal_segments (self):
+        """ Compute segments with equal segment length
+            Second endpoint is slightly off in original Basic computation
+            because it is computed from the first endpoint.
+        """
+        # Original comment: compute direction cosines
+        # Unit vector in wire direction
+        dirvec  = self.diff / self.wire_len
+        seg_len = self.wire_len / self.n_segments
+        # First segment start
+        seg     = np.copy (self.p1)
+        s0      = seg
+        for i in range (self.n_segments):
+            s1 = seg + (i + 1) * dirvec * seg_len
+            self.segments.append (Segment (s0, s1, self))
+            s0 = s1
+            # Avoid rounding errors, these can have influence on the
+            # currents computed, even if slightly off!
+            self.segments [-1].seg_len = seg_len
+            self.segments [-1].dirvec  = dirvec
+    # end def compute_equal_segments
+
+    def compute_segments (self):
+        self.segments = []
+        if self.segtype == 0:
+            self.compute_equal_segments ()
+        elif self.segtype == 1 or self.segtype == 2:
+            self.compute_taper1_segments ()
+        else:
+            self.compute_taper2_segments ()
+    # end def compute_segments
+
+    def compute_taper1_segments (self):
+        assert 0 <= self.segtype - 1 <= 1
+        d = dict (end = self.segtype - 1)
+        if self.taper_max is not None:
+            d.update (max_t = self.taper_max)
+        if self.taper_min is not None:
+            d.update (min_t = self.taper_min)
+        for p1, p2 in taper1 (self.p1, self.p2, self.n_segments, self.r, **d):
+            self.segments.append (Segment (p1, p2, self))
+    # end def compute_taper1_segments
+
+    def compute_taper2_segments (self):
+        d = {}
+        if self.taper_max is not None:
+            d.update (max_t = self.taper_max)
+        if self.taper_min is not None:
+            d.update (min_t = self.taper_min)
+        for p1, p2 in taper2 (self.p1, self.p2, self.n_segments, self.r, **d):
+            self.segments.append (Segment (p1, p2, self))
+    # end def compute_taper2_segments
 
     def connections (self):
         return self.conn [0].wires.union (self.conn [1].wires)
@@ -1384,7 +1445,11 @@ class Mininec:
         self.Z = np.zeros ((n, n), dtype=complex)
 
         # Independent of k
-        same         = np.logical_and (*self.pulses.matrix_same_wire)
+        same_wire    = np.logical_and (*self.pulses.matrix_same_wire)
+        same_len     = np.logical_and (*self.pulses.matrix_same_len)
+        same_dir     = np.logical_and (*self.pulses.matrix_same_dir)
+        same_seg     = np.logical_and (same_len, same_dir)
+        same         = np.logical_and (same_wire, same_seg)
         idx0, idx1   = self.pulses.matrix_wire_idx_0
         gs           = self.pulses.matrix_gnd_sgn [1]
         sg           = self.pulses.matrix_sign [1]
@@ -1428,7 +1493,7 @@ class Mininec:
                 d = np.zeros ((n, n), dtype = bool)
                 d [diag_i [:-k], diag_j [k:]] = True
             valid = np.logical_and (d, opt > 0)
-            # We can use idx0 or idx 1 because we established both
+            # We can use idx0 or idx1 because we established both
             # pulses have same wire at that point
             for wire in np.unique (idx0 [valid]):
                 v = np.logical_and (valid, idx0 == wire)
@@ -1453,7 +1518,7 @@ class Mininec:
             kvec       = np.array ([1, 1, k])
             f8         = opt if k >= 0 else zero
             # These are elements not computed but copied from other triu
-            # Note tht this happens only in the above-ground part (k > 0)
+            # Note that this happens only in the above-ground part (k > 0)
             copy       = np.logical_and (triu, f8 > 0)
             # And these must be computed
             compu      = np.logical_and (np.logical_not (copy.T), ng)
@@ -1540,10 +1605,11 @@ class Mininec:
         >>> s = Excitation (1, 0)
         >>> m = Mininec (7, w)
         >>> m.register_source (s, 4)
+        >>> w [0].compute_segments ()
 
         >>> nf66 = 0.4792338 -0.1544592j
         >>> nf75 = 0.3218219 -0.1519149j
-        >>> ex   = (nf66 + nf75) * w [0].dirvec
+        >>> ex   = (nf66 + nf75) * w [0].segments [0].dirvec
         >>> vec0 = np.array ([0, -1, -1])
         >>> r    = m.nf_helper (1, vec0, 0)
         >>> assert r [1] == 0 and r [2] == 0
@@ -2050,7 +2116,7 @@ class Mininec:
         # gauss_n order gaussian quadrature
         gauss_n = np.ones (r.shape) * 8
         # i6 is 0 if not using exact kernel
-        i6 *= exact
+        i6 = i6 * exact
         retval  = np.zeros (r.shape, dtype = complex)
         srm_idx = np.logical_and (exact, r <= self.srm)
         fvs_f   = 1 if fvs != 1 else 2
@@ -3474,6 +3540,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = 0
         )
     cmd.add_argument \
+        ( '--taper-wire'
+        , help    = "Taper a wire from end 1, 2 or both (3) and "
+                    "optionally set min and max segment length, gets "
+                    "2-4 parameters: wire number (1-based), taper (1-3) "
+                    "and optionally min and max segment length"
+
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
         ( '--theta'
         , help    = "Theta angle: start, increment, count"
         , default = '0,10,10'
@@ -3518,6 +3594,29 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ("Invalid wire %d: %s" % (n + 1, str (err)), file = f_err)
             return 23
         wires.append (Wire (seg, *r))
+    for t in args.taper_wire:
+        tparam = t.split (',')
+        taper_min = taper_max = None
+        if not 2 <= len (tparam) <= 4:
+            print ("Invalid taper option: %s, invalid number of parameters" % t)
+            return 23
+        try:
+            widx, taper = (int (x) for x in tparam [:2])
+            if len (tparam) > 2:
+                taper_min = float (tparam [2])
+            if len (tparam) > 3:
+                taper_max = float (tparam [3])
+        except ValueError as err:
+            print ("Invalid taper option: %s, %s" % (t, err))
+            return 23
+        if not 1 <= widx <= len (wires):
+            print ("Invalid taper option: unknown wire index %s" % widx)
+        if not 0 <= taper <= 3:
+            print ("Invalid taper option: unknown taper %s" % taper)
+        wire = wires [widx - 1]
+        wire.segtype = taper
+        wire.taper_min = taper_min
+        wire.taper_max = taper_max
     if len (args.excitation_segment) != len (args.excitation_voltage):
         print \
             ("Number of excitation segments must match voltages", file = f_err)
