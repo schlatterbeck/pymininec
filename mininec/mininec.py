@@ -949,7 +949,6 @@ class Mininec:
         self.f          = f
         self.media      = media
         self.loads      = []
-        self.loadidx    = set ()
         self.check_ground ()
         self.sources    = []
         self.geo        = geo
@@ -2134,29 +2133,39 @@ class Mininec:
                 for p in wire.pulse_idx_iter ():
                     load.add_pulse (p)
             # Avoid adding same load several times
-            if load.n not in self.loadidx:
+            if load.n is None:
+                load.n = len (self.loads)
                 self.loads.append (load)
-                self.loadidx.add (load.n)
         else:
             if pulse < 0:
                 raise ValueError ("Pulse index must be >= 0")
             if wire_idx is not None:
+                err = 'Invalid pulse %d for wire %d' % (pulse, wire_idx)
                 if wire_idx >= len (self.geo):
                     raise ValueError ('Invalid wire index %d' % (wire_idx))
                 w = self.geo [wire_idx]
-                p = w.end_segs [0] + pulse
-                if p > w.end_segs [1]:
-                    raise ValueError \
-                        ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
+                if w.end_segs [0] is None or w.end_segs [1] is None:
+                    if w.end_segs [0] is None and w.end_segs [1] is None:
+                        raise ValueError (err)
+                    if pulse > 0:
+                        raise ValueError (err)
+                    if w.end_segs [0] is None:
+                        p = w.end_segs [1]
+                    else:
+                        p = w.end_segs [0]
+                else:
+                    p = w.end_segs [0] + pulse
+                    if p > w.end_segs [1]:
+                        raise ValueError (err)
             elif pulse >= len (self.pulses):
                 raise ValueError ('Invalid pulse %d' % pulse)
             else:
                 p = pulse
             load.add_pulse (p)
             # Avoid adding same load several times
-            if load.n not in self.loadidx:
+            if load.n is None:
+                load.n = len (self.loads)
                 self.loads.append (load)
-                self.loadidx.add (load.n)
     # end def register_load
 
     def register_source (self, source, pulse, wire_idx = None):
