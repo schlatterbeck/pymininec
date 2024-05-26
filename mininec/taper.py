@@ -59,6 +59,28 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
     (2.3, 2.7)
     (2.7, 2.9)
     (2.9, 3)
+    >>> p (taper2 (0, 10, 10, 4e-4, 0.32, 4), '\\n')
+    (0, 0.32)
+    (0.32, 0.96)
+    (0.96, 2.24)
+    (2.24, 3.62)
+    (3.62, 5)
+    (5, 6.38)
+    (6.38, 7.76)
+    (7.76, 9.04)
+    (9.04, 9.68)
+    (9.68, 10)
+    >>> p (taper2 (0, 0.25, 10, 1e-5, 0.008, 0.1), '\\n')
+    (0, 0.008)
+    (0.008, 0.024)
+    (0.024, 0.056)
+    (0.056, 0.09)
+    (0.09, 0.125)
+    (0.125, 0.16)
+    (0.16, 0.194)
+    (0.194, 0.226)
+    (0.226, 0.242)
+    (0.242, 0.25)
     >>> p1 = np.ones (3)
     >>> p2 = np.array ([1.0, 2.0, 2.0]) + p1
     >>> p (taper2 (p1, p2, 5, 0.12), '\\n')
@@ -101,7 +123,7 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
     if minl < min_t:
         minl = min_t
     eps  = minl / 10
-    if max_t is not None and maxl < minl:
+    if max_t is not None and maxl < l / npieces:
         d = 1 if n & 1 else 2
         # m is minl, x is the length of the constant-length part,
         # ideally max_t
@@ -113,16 +135,23 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
         # (l - (n - k) * max_t) / (2 * ((1 << (k // 2)) - 1)) <= m
         for k in range (n - d, 0, -2):
             nminl = (l - (n - k) * max_t) / (2 * ((1 << (k // 2)) - 1))
+            assert nminl > 0
+            # The length of one equal-sized middle part:
             x = (l - 2 * ((1 << (k // 2)) - 1) * nminl) / (n - k)
             assert x - eps <= max_t
+            # The last (largest) part before the equal sized middle parts
             last = (1 << (k // 2 - 1)) * nminl
+            # The length of the whole tapered part
             vlen = 2 * ((1 << (k // 2)) - 1) * nminl
             if last <= x <= 2 * last and (n - k) * x + vlen + eps >= l:
                 break
+            # We've already subtracted too much, should not happen
+            assert x <= 2 * last
         else:
             assert 0
         assert nminl > maxl
-        minl = nminl
+        if nminl > minl:
+            minl = nminl
     minc  = lv * (minl / l)
     state = 0 # 0: increase, 1: steady, 2: decrease
     p = p1
@@ -165,7 +194,17 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     (0, 8.5), (8.5, 17), (17, 25), (25, 29), (29, 31)
     >>> p (taper1 (0.0, 31.0, 5, 0.001, end = 1))
     (0, 16), (16, 24), (24, 28), (28, 30), (30, 31)
-    >>> p (taper1 (0, 0.25, 10, 1e-5, 0.008, 0.1, 2))
+    >>> p (taper1 (0, 0.25, 10, 1e-5, 0.008, 0.1, 1), '\\n')
+    (0, 0.028)
+    (0.028, 0.056)
+    (0.056, 0.085)
+    (0.085, 0.113)
+    (0.113, 0.141)
+    (0.141, 0.169)
+    (0.169, 0.198)
+    (0.198, 0.226)
+    (0.226, 0.242)
+    (0.242, 0.25)
     >>> p1 = np.ones (3)
     >>> p2 = np.array ([1, 2, 2]) * 31 + p1
     >>> p (taper1 (p1, p2, 5, 0.001), '\\n')
@@ -188,6 +227,22 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     # So we're using about the same maximum segment length but this will
     # start with the shortest segment about 1/100 (not 1/200) and
     # doubles 4 times not 3.
+    >>> p (taper1 (0, .25, 7, 0.001), '\\n')
+    (0, 0.003)
+    (0.003, 0.007)
+    (0.007, 0.018)
+    (0.018, 0.038)
+    (0.038, 0.078)
+    (0.078, 0.158)
+    (0.158, 0.25)
+    >>> p (taper1 (0, .25, 7, 0.001, end = 2), '\\n')
+    (0, 0.092)
+    (0.092, 0.172)
+    (0.172, 0.212)
+    (0.212, 0.232)
+    (0.232, 0.242)
+    (0.242, 0.247)
+    (0.247, 0.25)
     >>> p (taper1 (0, 0.5, 7, 0.001, min_t = 1 / 200), '\\n')
     (0, 0.005)
     (0.005, 0.015)
@@ -215,7 +270,8 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     (0.383, 0.5)
     """
     if end:
-        for x1, x2 in reversed (list (taper1 (p2, p1, n, r, end = 0))):
+        tp = list (taper1 (p2, p1, n, r, min_t, max_t, 0))
+        for x1, x2 in reversed (tp):
             yield (x2, x1)
         return
 
@@ -253,7 +309,8 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
         else:
             assert 0
         assert nminl > maxl
-        minl = nminl
+        if nminl > minl:
+            minl = nminl
     minc  = lv * (minl / l)
     state = 0 # 0: increase, 1: steady
     p = p1
@@ -267,9 +324,12 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
             state = 1
         if state == 1:
             inc = inc1
+        mt = max_t or l
         if i == (n - 1):
+            assert min_t - eps <= np.linalg.norm (p2 - p) <= mt + eps
             yield (p, p2)
         else:
+            assert min_t - eps <= np.linalg.norm (p + inc - p) <= mt + eps
             yield (p, p + inc)
         p = p + inc
 # end def taper1
