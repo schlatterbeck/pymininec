@@ -2,6 +2,23 @@
 
 import numpy as np
 
+# Helper function for printing tapers
+def _fmt (x):
+    return ('%.3f' % x).rstrip ('0').rstrip ('.')
+# end def _fmt
+
+def _taper_fmt (x):
+    if np.isscalar (x):
+        return _fmt (x)
+    return '(' + ', '.join (('%s' % _fmt (a)) for a in x) + ')'
+# end def _taper_fmt
+
+def taper_print (taper, dlm = ', '):
+    l = list (taper)
+    fmt = _taper_fmt
+    print (dlm.join ('(%s, %s)' % (fmt (a), fmt (b)) for a, b in l))
+# end def taper_print
+
 # Taper something into power-of-two segments
 # The 'something' can be two points (wire start / wire end) or just
 # numbers (dimension 1). It also can handle more than 3 dimensions.
@@ -10,15 +27,7 @@ import numpy as np
 
 def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
     """ For now taper from both ends
-    >>> def _fmt (x):
-    ...     return ('%.3f' % x).rstrip ('0').rstrip ('.')
-    >>> def fmt (x):
-    ...     if np.isscalar (x):
-    ...         return _fmt (x)
-    ...     return '(' + ', '.join (('%s' % _fmt (a)) for a in x) + ')'
-    >>> def p (x, dlm = ', '):
-    ...     l = list (x)
-    ...     print (dlm.join ('(%s, %s)' % (fmt (a), fmt (b)) for a, b in l))
+    >>> p = taper_print
     >>> p (taper2 (0.0, 1.0, 5, 0.001))
     (0, 0.1), (0.1, 0.3), (0.3, 0.7), (0.7, 0.9), (0.9, 1)
     >>> p (taper2 (0.0, 1.0, 5, 0.001, max_t = 0.3))
@@ -141,15 +150,7 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
 
 def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     """ Taper single end, 0=start, 1=end
-    >>> def _fmt (x):
-    ...     return ('%.3f' % x).rstrip ('0').rstrip ('.')
-    >>> def fmt (x):
-    ...     if np.isscalar (x):
-    ...         return _fmt (x)
-    ...     return '(' + ', '.join (('%s' % _fmt (a)) for a in x) + ')'
-    >>> def p (x, dlm = ', '):
-    ...     l = list (x)
-    ...     print (dlm.join ('(%s, %s)' % (fmt (a), fmt (b)) for a, b in l))
+    >>> p = taper_print
     >>> p (taper1 (0.0, 31.0, 5, 0.001, end = 0))
     (0, 1), (1, 3), (3, 7), (7, 15), (15, 31)
     >>> p (taper1 (0.0, 31.0, 5, 0.001, max_t = 7))
@@ -164,6 +165,7 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     (0, 8.5), (8.5, 17), (17, 25), (25, 29), (29, 31)
     >>> p (taper1 (0.0, 31.0, 5, 0.001, end = 1))
     (0, 16), (16, 24), (24, 28), (28, 30), (30, 31)
+    >>> p (taper1 (0, 0.25, 10, 1e-5, 0.008, 0.1, 2))
     >>> p1 = np.ones (3)
     >>> p2 = np.array ([1, 2, 2]) * 31 + p1
     >>> p (taper1 (p1, p2, 5, 0.001), '\\n')
