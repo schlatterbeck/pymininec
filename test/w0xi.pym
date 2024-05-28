@@ -1,0 +1,21 @@
+# A 20- & 30-  or  20- & 39-Meter Trap Antenna
+# By Phil Anderson, WØXI
+# Modified for resonance on 20m and 30m, maybe modification needed due
+# to Mininec...
+# for 20m and 30m
+# -f 10.125
+#--frequency-steps=2
+#--frequency-increment=3.925
+-f 14.05
+-w 32,0,0,0,0,0,5.35,0.0015
+-w 8,0,0,5.35,0,0,6.864,0.0015
+--excitation-segment=1
+--medium=20,0.0303,0,5.05968
+--boundary=circular
+--radial-count=16
+--radial-radius=0.001
+--medium=20,0.0303,0
+--trap-load=1,1.457e-06,8.8e-11
+--attach-load=1,32
+--theta=0,10,10
+--phi=0,10,37
