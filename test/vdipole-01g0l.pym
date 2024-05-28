@@ -1,4 +1,8 @@
--f 28.074 -w 10,0,0,7.33,0,0,12.7,0.01
+-f 28.074
+-w 10,0,0,7.33,0,0,12.7,0.01
+--excitation-segment=5
 --medium=0,0,0
---theta=0,10,10 --phi=0,10,37
---load=2e-6 --attach-load=1,all
+--load=2e-06
+--attach-load=1,all
+--theta=0,10,10
+--phi=0,10,37

@@ -345,12 +345,15 @@ class _Test_Base_With_File:
                 assert e == a
     # end def compare_near_field_data
 
-    def setup_generic_file \
-        (self, basename, azi = None, ele = None, no_ff = False):
+    def pym_path (self, basename, ext = '.pym'):
         path = os.path.join ('test', basename)
-        pym  = path + '.pym'
+        return path + ext
+    # end def pym_path
+
+    def setup_generic_file \
+        (self, basename, azi = None, ele = None, no_ff = False, compute = True):
         args = []
-        with open (pym, 'r') as f:
+        with open (self.pym_path (basename), 'r') as f:
             for line in f:
                 if line.startswith ('#'):
                     continue
@@ -358,13 +361,14 @@ class _Test_Base_With_File:
         args = ' '.join (args)
         args = args.split ()
         m    = main (args, return_mininec = True)
-        self.simple_setup (basename + '.pout')
-        if not no_ff:
-            elevation = ele or Angle (0, 10, 10)
-            azimuth   = azi or Angle (0, 10, 37)
-        m.compute ()
-        if not no_ff:
-            m.compute_far_field (elevation, azimuth)
+        if compute:
+            self.simple_setup (basename + '.pout')
+            if not no_ff:
+                elevation = ele or Angle (0, 10, 10)
+                azimuth   = azi or Angle (0, 10, 37)
+            m.compute ()
+            if not no_ff:
+                m.compute_far_field (elevation, azimuth)
         return m
     # end def setup_generic_file
 
@@ -835,7 +839,614 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_impedance (m, 11.104-47.879j)
     # end def test_dipv_14st_lw
 
+    def test_w0xi (self):
+        m = self.setup_generic_file ('w0xi')
+        self.compare_far_field_data (m)
+    # end def test_w0xi
+
 # end class Test_Case_Known_Structure
+
+class Test_Case_Cmdline (_Test_Base_With_File):
+    """ Test creation of command-line parameters (round-tripping).
+        These are useful when programmatically using mininec to output a
+        parameter file that can be used to reproduce a result (e.g. from
+        an optimizer).
+    """
+
+    def pym_iter (self, pym):
+        for l in pym:
+            if l.startswith ('#'):
+                continue
+            # frequency-steps and frequency-increment are currently not
+            # part of the mininec object, they're handled in the main
+            # function
+            if l.startswith ('--frequency-steps'):
+                continue
+            if l.startswith ('--n-f'):
+                continue
+            if l.startswith ('--frequency-increment'):
+                continue
+            if l.startswith ('--f-inc'):
+                continue
+            yield l
+    # end def pym_iter
+
+    def pym_compare (self, basename, cmd):
+        eps = 1e-8
+        with open (self.pym_path (basename), 'r') as f:
+            itr = self.pym_iter (f)
+            for ln, (a, b) in enumerate (zip (itr, cmd.split ('\n'))):
+                la = a = a.strip ()
+                lb = b = b.strip ()
+                if a.startswith ('-w'):
+                    a = a [2:].strip ()
+                    b = b [2:].strip ()
+                    a = [float (x) for x in a.split (',')]
+                    b = [float (x) for x in b.split (',')]
+                    a = np.array (a)
+                    b = np.array (b)
+                    cmp = (abs (a - b) > eps).any ()
+                else:
+                    cmp = a != b
+                if cmp:
+                    raise ValueError \
+                        ( 'Comparison failed in line %d\n%s\n%s'
+                        % (ln + 1, la, lb)
+                        )
+    # end def pym_compare
+
+    def test_12_el (self):
+        bn  = '12-el'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 5, 73)
+        zen = Angle (0, 5, 37)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_12_el
+
+    def test_dip_10s (self):
+        bn  = 'dip-10s'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 1)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dip_10s
+
+    def test_dip_50s (self):
+        bn  = 'dip-50s'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 1)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dip_50s
+
+    def test_dipole_001 (self):
+        bn  = 'dipole-001'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_dipole_001
+
+    def test_dipole_01_near (self):
+        bn  = 'dipole-01-near'
+        m   = self.setup_generic_file (bn, compute = False)
+        nf  = [-2, -2, 0, 1, 1, 1, 5, 5, 5]
+        cmd = m.as_cmdline (near = nf, pwr_nf = 100)
+        self.pym_compare (bn, cmd)
+    # end def test_dipole_01_near
+
+    def test_dipole_01 (self):
+        bn  = 'dipole-01'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_dipole_01
+
+    def test_dipv_10s (self):
+        bn  = 'dipv-10s'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_10s
+
+    def test_dipv_50s (self):
+        bn  = 'dipv-50s'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_50s
+
+    def test_dipv_14st_lw (self):
+        bn  = 'dipv-14st-lw'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_14st_lw
+
+    def test_dipv_14st_t1s (self):
+        bn  = 'dipv-14st-t1s'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_14st_t1s
+
+    def test_dipv_14st_t1sl (self):
+        bn  = 'dipv-14st-t1sl'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_14st_t1sl
+
+    def test_dipv_14st_t2s (self):
+        bn  = 'dipv-14st-t2s'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_14st_t2s
+
+    def test_dipv_14st_t2w (self):
+        bn  = 'dipv-14st-t2w'
+        m   = self.setup_generic_file (bn, compute = False)
+        ang = Angle (0, 10, 2)
+        cmd = m.as_cmdline (azi = ang, zen = ang)
+        self.pym_compare (bn, cmd)
+    # end def test_dipv_14st_t2w
+
+    def test_folded_18 (self):
+        bn  = 'folded-18'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_folded_18
+
+    def test_hloop40_14 (self):
+        bn  = 'hloop40-14'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_hloop40_14
+
+    def test_hloop40_7 (self):
+        bn  = 'hloop40-7'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_hloop40_7
+
+    def test_inve802B (self):
+        bn  = 'inve802B'
+        m   = self.setup_generic_file (bn, compute = False)
+        zen = Angle (0, 11,  9)
+        azi = Angle (0, 10, 37)
+        cmd = m.as_cmdline (azi = azi, zen = zen, load_by_wire = True)
+        self.pym_compare (bn, cmd)
+    # end def test_inve802B
+
+    def test_inverted_v (self):
+        bn  = 'inverted-v'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 5, 73)
+        zen = Angle (0, 5, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_inverted_v
+
+    def test_inverted_v_thick (self):
+        bn  = 'inverted-v-thick'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 5, 73)
+        zen = Angle (0, 5, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_inverted_v_thick
+
+    def test_inv_l (self):
+        bn  = 'inv-l'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 5, 73)
+        zen = Angle (0, 5, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_inv_l
+
+    def test_lzh20 (self):
+        bn  = 'lzh20'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_lzh20
+
+    def test_t_ant (self):
+        bn  = 't-ant'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 90,  2)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_t_ant
+
+    def test_t_ant_thin (self):
+        bn  = 't-ant-thin'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 90,  2)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_t_ant_thin
+
+    def test_vdipole_001g0 (self):
+        bn  = 'vdipole-001g0'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vdipole_001g0
+
+    def test_vdipole_01 (self):
+        bn  = 'vdipole-01'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vdipole_01
+
+    def test_vdipole_01g0 (self):
+        bn  = 'vdipole-01g0'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vdipole_01g0
+
+    def test_vdipole_01g0l (self):
+        bn  = 'vdipole-01g0l'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vdipole_01g0l
+
+    def test_vdipole_01gavg (self):
+        bn  = 'vdipole-01gavg'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vdipole_01gavg
+
+    def test_vertical_ig (self):
+        bn  = 'vertical-ig'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0,  5, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_ig
+
+    def test_vertical_ig_ffabs (self):
+        bn  = 'vertical-ig-ffabs'
+        m   = self.setup_generic_file (bn, compute = False)
+        opt = ('far-field-absolute',)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0,  5, 19)
+        cmd = m.as_cmdline \
+            (azi = azi, zen = zen, pwr_ff = 100, ff_dist = 1e3, opt = opt)
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_ig_ffabs
+
+    def test_vertical_ig_near (self):
+        bn  = 'vertical-ig-near'
+        m   = self.setup_generic_file (bn, compute = False)
+        nf  = [-1, -1, 0, 1, 1, 1, 3, 3, 2]
+        cmd = m.as_cmdline (near = nf)
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_ig_near
+
+    def test_vertical_ig_ud (self):
+        bn  = 'vertical-ig-ud'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0,  5, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_ig_ud
+
+    def test_vertical_rad (self):
+        bn  = 'vertical-rad'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0,  5, 19)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_rad
+
+    def test_vloop20 (self):
+        bn  = 'vloop20'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vloop20
+
+    def test_vloop20_t45 (self):
+        bn  = 'vloop20-t45'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vloop20_t45
+
+    def test_w0xi (self):
+        bn  = 'w0xi'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_w0xi
+
+# end class Test_Case_Cmdline
+
+class Test_Case_Basic_Input_File (_Test_Base_With_File):
+    """ This tests creation of inputs for the old Basic implementation.
+    """
+
+    def mini_compare (self, basename, mini):
+        with open (self.pym_path (basename, '.mini')) as f:
+            for ln, (la, lb) in enumerate (zip (f, mini.split ('\n'))):
+                la = la.strip ()
+                lb = lb.strip ()
+                if ',' in la:
+                    la = ', '.join (x.strip () for x in la.split (','))
+                if la != lb:
+                    raise ValueError \
+                        ( 'Comparison failed in line %d\n%s\n%s'
+                        % (ln + 1, la, lb)
+                        )
+    # end def mini_compare
+
+    def test_dip_10s (self):
+        bn   = 'dip-10s'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ('D10.OUT')
+        self.mini_compare (bn, mini)
+    # end def test_dip_10s
+
+    def test_dip_50s (self):
+        bn   = 'dip-50s'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ('D50.OUT')
+        self.mini_compare (bn, mini)
+    # end def test_dip_50s
+
+    def test_dipole_001 (self):
+        bn   = 'dipole-001'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 19)
+        mini = m.as_basic_input ('DP001.OUT', azi, zen, gainfile = 'DP001.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_dipole_001
+
+    def test_dipole_01_near (self):
+        bn   = 'dipole-01-near'
+        m    = self.setup_generic_file (bn, compute = False)
+        nf   = [-2, -2, 0, 1, 1, 1, 5, 5, 5]
+        mini = m.as_basic_input ('DIPOLE01.OUT', near = nf, pwr_nf = 100)
+        self.mini_compare (bn, mini)
+    # end def test_dipole_01_near
+
+    def test_dipole_01 (self):
+        bn   = 'dipole-01'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 19)
+        mini = m.as_basic_input \
+            ('DIPOLE01.OUT', azi, zen, gainfile = 'DIPOLE01.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_dipole_01
+
+    def test_dipv_10s (self):
+        bn   = 'dipv-10s'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ('D10V.OUT')
+        self.mini_compare (bn, mini)
+    # end def test_dipv_10s
+
+    def test_dipv_50s (self):
+        bn   = 'dipv-50s'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ('D50V.OUT')
+        self.mini_compare (bn, mini)
+    # end def test_dipv_50s
+
+    def test_folded_18 (self):
+        bn   = 'folded-18'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 19)
+        mini  = m.as_basic_input \
+            ('FDP18.OUT', azi = azi, zen = zen, gainfile = 'FDP18.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_folded_18
+
+    def test_inv_l (self):
+        bn   = 'inv-l'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 5, 73)
+        zen  = Angle (0, 5, 19)
+        mini = m.as_basic_input \
+            ('INVL.OUT', azi = azi, zen = zen, gainfile = 'INVL.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_inv_l
+
+    def test_lzh20 (self):
+        bn   = 'lzh20'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('LZH20.OUT', azi = azi, zen = zen, gainfile = 'LZH20.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_lzh20
+
+    def test_t_ant (self):
+        bn   = 't-ant'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 90,  2)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('TANT.OUT', azi = azi, zen = zen, gainfile = 'TANT.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_t_ant
+
+    def test_t_ant_thin (self):
+        bn   = 't-ant-thin'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 90,  2)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('TANT.OUT', azi = azi, zen = zen, gainfile = 'TANT.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_t_ant_thin
+
+    def test_vdipole_001g0 (self):
+        bn   = 'vdipole-001g0'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VDI001G0.OUT', azi = azi, zen = zen, gainfile = 'VDI001G0.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_001g0
+
+    def test_vdipole_01 (self):
+        bn   = 'vdipole-01'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 19)
+        mini = m.as_basic_input \
+            ('VDIP01.OUT', azi = azi, zen = zen, gainfile = 'VDIP01.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_01
+
+    def test_vdipole_01g0 (self):
+        bn   = 'vdipole-01g0'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_01g0
+
+    def test_vdipole_01g0l (self):
+        bn   = 'vdipole-01g0l'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_01g0l
+
+    def test_vdipole_01gavg (self):
+        bn   = 'vdipole-01gavg'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VD01GA.OUT', azi = azi, zen = zen, gainfile = 'VD01GA.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_01gavg
+
+    def test_vertical_ig (self):
+        bn   = 'vertical-ig'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0,  5, 19)
+        mini = m.as_basic_input \
+            ('VERTIG.OUT', azi = azi, zen = zen, gainfile = 'VERTIG.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vertical_ig
+
+    def test_vertical_ig_ffabs (self):
+        bn   = 'vertical-ig-ffabs'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0,  5, 19)
+        mini= m.as_basic_input \
+            ( 'VERTIG.OUT'
+            , azi = azi, zen = zen
+            , pwr_ff = 100, ff_dist = 1e3, ff_abs = True
+            , gainfile = 'VERTIG.GNN'
+            )
+        self.mini_compare (bn, mini)
+    # end def test_vertical_ig_ffabs
+
+    def test_vertical_ig_near (self):
+        bn   = 'vertical-ig-near'
+        m    = self.setup_generic_file (bn, compute = False)
+        nf   = [-1, -1, 0, 1, 1, 1, 3, 3, 2]
+        mini = m.as_basic_input ('VERTIG.OUT', near = nf)
+        self.mini_compare (bn, mini)
+    # end def test_vertical_ig_near
+
+    def test_vertical_ig_ud (self):
+        bn   = 'vertical-ig-ud'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0,  5, 19)
+        mini = m.as_basic_input \
+            ('VERTIGUD.OUT', azi = azi, zen = zen, gainfile = 'VERTIGUD.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vertical_ig_ud
+
+    def test_vertical_rad (self):
+        bn   = 'vertical-rad'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0,  5, 19)
+        mini = m.as_basic_input \
+            ('VERTRAD.OUT', azi = azi, zen = zen, gainfile = 'VERTRAD.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vertical_rad
+
+    def test_w0xi (self):
+        bn   = 'w0xi'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input (azi = azi, zen = zen)
+        self.mini_compare (bn, mini)
+    # end def test_w0xi
+
+# end class Test_Case_Basic_Input_File
 
 class Test_Doctest:
 
@@ -866,7 +1477,7 @@ class Test_Doctest:
     # end def test_util
 
     def test_taper (self):
-        num_tests = 38
+        num_tests = 39
         self.run_test (mininec.taper, num_tests)
     # end def test_taper
 

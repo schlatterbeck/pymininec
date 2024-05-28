@@ -279,6 +279,7 @@ class Pulse:
         self.ends    = [end1, end2]
         self.wires   = [seg1.wire, seg2.wire]
         self.segs    = [seg1, seg2]
+        self.n       = None # Index into the pulses of wire
         # The original implementation uses the sign of the wire index
         # for marking a ground connection *and* for marking a direction
         # reversal of a wire (when connected end1-end1 or end2-end2).

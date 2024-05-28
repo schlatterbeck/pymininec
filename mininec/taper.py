@@ -19,6 +19,9 @@ def taper_print (taper, dlm = ', '):
     print (dlm.join ('(%s, %s)' % (fmt (a), fmt (b)) for a, b in l))
 # end def taper_print
 
+class Taper_Error (ValueError):
+    pass
+
 # Taper something into power-of-two segments
 # The 'something' can be two points (wire start / wire end) or just
 # numbers (dimension 1). It also can handle more than 3 dimensions.
@@ -108,7 +111,8 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
     uv = lv / l
     min_t = max (2.5 * r, min_t)
     assert n > 1
-    assert l / n >= min_t
+    if l / n < min_t:
+        raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t))
     assert max_t is None or min_t <= max_t
     assert max_t is None or l / n <= max_t
     if n & 1:
@@ -280,7 +284,8 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     uv = lv / l
     min_t = max (2.5 * r, min_t)
     assert n > 1
-    assert l / n >= min_t
+    if l / n < min_t:
+        raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t))
     assert max_t is None or min_t <= max_t
     assert max_t is None or l / n <= max_t
     npieces = (1 << n) - 1

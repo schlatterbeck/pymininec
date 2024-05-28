@@ -34,7 +34,7 @@ from scipy.integrate import fixed_quad
 from mininec.util    import format_float
 from mininec.pulse   import Pulse_Container, Pulse
 from mininec.segment import Segment
-from mininec.taper   import taper1, taper2
+from mininec.taper   import taper1, taper2, Taper_Error
 
 legendre_cache = {}
 try:
@@ -178,6 +178,23 @@ class Excitation:
         return self.voltage / self.current
     # end def impedance
 
+    def as_basic_input (self):
+        """ Output in the input format of original Basic implementation.
+        """
+        r = []
+        # PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):
+        r.append ('%d, %g, %g' % (self.idx + 1, self.magnitude, self.phase))
+        return '\n'.join (r)
+    # end def as_basic_input
+
+    def as_cmdline (self):
+        r = []
+        if self.voltage != 1+0j:
+            r.append ('--excitation-voltage=%g' % self.voltage)
+        r.append ('--excitation-segment=%d' % (self.idx + 1))
+        return '\n'.join (r)
+    # end def as_cmdline
+
     def as_mininec (self):
         r = []
         r.append \
@@ -295,6 +312,44 @@ class _Load:
         self.pulses.append (pulse)
     # end def add_pulse
 
+    def as_cmdline (self, parent, by_wire = False):
+        """ This needs to output the actual load, done by the subclass.
+            But we can output the load attachments here.
+        """
+        r = []
+        # Optimize: Check if we can issue an attach statement to *all*
+        # of a wire or to *all* pulses
+        pulsecount_by_wire = {}
+        wires = set ()
+        wires_all = set ()
+        for p in self.pulses:
+            pulse = parent.pulses [p]
+            if pulse.wire.n not in pulsecount_by_wire:
+                pulsecount_by_wire [pulse.wire.n] = 0
+            pulsecount_by_wire [pulse.wire.n] += 1
+            wires.add (pulse.wire)
+        for w in wires:
+            if pulsecount_by_wire [w.n] == len (w.pulses):
+                wires_all.add (w)
+        if len (wires_all) == len (parent.geo):
+            r.append ('--attach-load=%d,all' % (self.n + 1))
+        elif wires_all:
+            for w in wires_all:
+                r.append ('--attach-load=%d,all,%d' % (self.n + 1, w.n + 1))
+        for p in self.pulses:
+            pulse = parent.pulses [p]
+            if pulse.wire in wires_all:
+                continue
+            if by_wire:
+                r.append \
+                    ( '--attach-load=%d,%d,%d'
+                    % (self.n + 1, pulse.n + 1, pulse.wire.n + 1)
+                    )
+            else:
+                r.append ('--attach-load=%d,%d' % (self.n + 1, p + 1))
+        return '\n'.join (r)
+    # end def as_cmdline
+
     def impedance (self, f):
         """ Get impedance for a certain frequency
             This probably needs reimplementation in different derived
@@ -314,6 +369,28 @@ class Impedance_Load (_Load):
         self._impedance = impedance
         super ().__init__ ()
     # end def __init__
+
+    def as_basic_input (self, is_s = False):
+        r = []
+        if is_s:
+            raise NotImplementedError \
+                ('Output of Impedance load as S-parameters not yet implemented')
+        for p in self. pulses:
+            # PULSE NO.,RESISTANCE,REACTANCE:
+            z = self._impedance
+            r.append ('%d, %g, %g' % (p + 1, z.real, z.imag))
+        return '\n'.join (r)
+    # end def as_basic_input
+
+    def as_cmdline (self, parent, by_wire = False):
+        r = []
+        ld = '--load=%g' % self._impedance.real
+        if self._impedance.imag:
+            ld += '+%gj' % self._impedance.imag
+        r.append (ld)
+        r.append (super ().as_cmdline (parent, by_wire))
+        return '\n'.join (r)
+    # end def as_cmdline
 
 # end class Impedance_Load
 
@@ -339,6 +416,15 @@ class Series_RLC_Load (_Load):
         self.l = L
         self.c = C
     # end def __init__
+
+    def as_cmdline (self, parent, by_wire = False):
+        r  = []
+        ld = (self.r, self.l, self.c)
+        s  = ','.join ('%g' if x else '' for x in ld)
+        r.append ('--rlc-load=' + s % tuple (x for x in ld if x))
+        r.append (super ().as_cmdline (parent, by_wire))
+        return '\n'.join (r)
+    # end def as_cmdline
 
     def impedance (self, f):
         """ Impedance for given frequency
@@ -391,10 +477,33 @@ class Laplace_Load (_Load):
         self.b = np.zeros (m)
         self.a [:len (a)] = a
         self.b [:len (b)] = b
+        self.degree = max (len (self.a), len (self.b)) - 1
         if not len (a):
             raise ValueError ("At least one denominator parameter required")
         super ().__init__ ()
     # end def __init__
+
+    def as_basic_input (self, is_s):
+        r = []
+        assert is_s
+        for p in self.pulses:
+            # PULSE NO., ORDER OF S-PARAMETER FUNCTION:
+            r.append ('%d, %d' % (p + 1, self.degree))
+            for d in range (self.degree + 1):
+                # Factor, L, C are in µH, µF
+                f = 10 ** (6 * d)
+                # NUMERATOR, DENOMINATOR COEFFICIENTS OF S^[d]:
+                r.append ('%g, %g' % (self.b [d] * f, self.a [d] * f))
+        return '\n'.join (r)
+    # end def as_basic_input
+
+    def as_cmdline (self, parent, by_wire = False):
+        r = []
+        r.append ('--laplace-load-b=%s' % ','.join ('%.8g' % b for b in self.b))
+        r.append ('--laplace-load-a=%s' % ','.join ('%.8g' % a for a in self.a))
+        r.append (super ().as_cmdline (parent, by_wire))
+        return '\n'.join (r)
+    # end def as_cmdline
 
     def impedance (self, f):
         """ We multiply by s^^k for k in 0..n-1 for all n parameters
@@ -444,8 +553,18 @@ class Trap_Load (Laplace_Load):
     """
 
     def __init__ (self, R, L, C):
+        self.r = R
+        self.l = L
+        self.c = C
         super ().__init__ (a = (1, R*C, L*C), b = (R, L))
     # end def __init__
+
+    def as_cmdline (self, parent, by_wire = False):
+        r = []
+        r.append ('--trap-load=%g,%g,%g' % (self.r, self.l, self.c))
+        r.append (_Load.as_cmdline (self, parent, by_wire))
+        return '\n'.join (r)
+    # end def as_cmdline
 
 # end class Trap_Load
 
@@ -503,6 +622,53 @@ class Medium:
                 raise ValueError \
                     ("Non-ideal ground must have non-zero ground parameters")
     # end def __init__
+
+    def as_basic_input (self):
+        """ Output in the input format of original Basic implementation.
+        """
+        r = []
+        # Question is only asked on the first media and only if there is
+        # more than one.
+        if not self.prev and self.next:
+            # TYPE OF BOUNDARY (1-LINEAR, 2-CIRCULAR):
+            if self.boundary == 'circular':
+                r.append ('2')
+            else:
+                r.append ('1')
+        # RELATIVE DIELECTRIC CONSTANT, CONDUCTIVITY:
+        r.append ('%g, %g' % (self.permittivity, self.conductivity))
+        if self.prev:
+            # HEIGHT OF MEDIA:
+            r.append ('%g' % self.height)
+        elif self.next:
+            # NUMBER OF RADIAL WIRES IN GROUND SCREEN:
+            r.append (str (self.nradials))
+            if self.nradials:
+                # RADIUS OF RADIAL WIRES:
+                r.append ('%g' % self.radius)
+        if self.next:
+            # X OR R COORDINATE OF NEXT MEDIA INTERFACE:
+            r.append ('%g' % self.coord)
+        return '\n'.join (r)
+    # end def as_basic_input
+
+    def as_cmdline (self):
+        r = []
+        v = '--medium=%g,%g,%g' % \
+            (self.permittivity, self.conductivity, self.height)
+        if self.next:
+            v += ',%g' % self.coord
+        r.append (v)
+        if not self.prev:
+            if self.next:
+                r.append ('--boundary=%s' % self.boundary)
+            if self.nradials:
+                r.append ('--radial-count=%d' % self.nradials)
+                r.append ('--radial-radius=%g' % self.radius)
+                # FIXME, seems the radial distance is currently ignored
+                # Need to look at original Basic code..
+        return '\n'.join (r)
+    # end def as_cmdline
 
     def as_mininec (self):
         r = []
@@ -618,6 +784,17 @@ class Wire:
     # end def idx_2
 
     @property
+    def n_emulated_wires (self):
+        """ If we have non-equal segmentation we return the number of
+            segments (emulated in the Basic implementation as
+            single-segment wires). Otherwise we return 1.
+        """
+        if self.segtype == 0:
+            return 1
+        return self.n_segments
+    # end def n_emulated_wires
+
+    @property
     def segtype (self):
         return self._segtype
     # end def segtype
@@ -633,6 +810,66 @@ class Wire:
         assert 0 <= stype <= 3
         self._segtype = stype
     # end def segtype
+
+    def as_basic_input (self):
+        """ Output in the input format of original Basic implementation.
+            If we emulate several wires we iterate over all segments
+            here.
+        """
+        r = []
+        if self.segtype == 0:
+            # NO. OF SEGMENTS:
+            r.append (str (self.n_segments))
+            # END ONE COORDINATES (X,Y,Z):
+            r.append ('%.15g, %.15g, %.15g' % tuple (self.p1))
+            # END TWO COORDINATES (X,Y,Z):
+            r.append ('%.15g, %.15g, %.15g' % tuple (self.p2))
+            # RADIUS:
+            r.append ('%.8g' % self.r)
+            # CHANGE WIRE NO.  x  (Y/N):
+            r.append ('N')
+        else:
+            # NO. OF SEGMENTS:
+            r.append ('1')
+            # END ONE COORDINATES (X,Y,Z):
+            r.append ('%.15g, %.15g, %.15g' % tuple (self.p1))
+            # END TWO COORDINATES (X,Y,Z):
+            r.append ('%.15g, %.15g, %.15g' % tuple (self.segments [0].p2))
+            # RADIUS:
+            r.append ('%.8g' % self.r)
+            # CHANGE WIRE NO.  x  (Y/N):
+            r.append ('N')
+            for s in self.segments [1:]:
+                # NO. OF SEGMENTS:
+                r.append ('1')
+                # END ONE COORDINATES (X,Y,Z):
+                r.append ('%.15g, %.15g, %.15g' % tuple (s.p1))
+                # END TWO COORDINATES (X,Y,Z):
+                r.append ('%.15g, %.15g, %.15g' % tuple (s.p2))
+                # RADIUS:
+                r.append ('%.8g' % self.r)
+                # CHANGE WIRE NO.  x  (Y/N):
+                r.append ('N')
+        return '\n'.join (r)
+    # end def as_basic_input
+
+    def as_cmdline (self):
+        r = []
+        r.append \
+            ( '-w %d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g'
+            % ((self.n_segments,) + tuple (self.endpoints.flat) + (self.r,))
+            )
+        if self.segtype:
+            tpr = '--taper=%d,%d' % (self.n + 1, self.segtype)
+            if self.taper_min or self.taper_max:
+                if self.taper_max is not None:
+                    mn   = self.taper_min or 0
+                    tpr += ',%.11g,%.11g' % (mn, self.taper_max)
+                else:
+                    tpr += ',%.11g' % self.taper_min
+            r.append (tpr)
+        return '\n'.join (r)
+    # end def as_cmdline
 
     def compute_ground (self, n, media):
         self.n = n
@@ -699,6 +936,7 @@ class Wire:
         # inversion of Z component
         invz = np.array ([1, 1, -1])
 
+        pc = 0
         pu = parent.pulses
         # Connection to other wire(s) at end 1
         seg0 = self.segments [0]
@@ -715,14 +953,20 @@ class Wire:
             p = Pulse (pu, self.p1, prev, seg0.p2, oseg, seg0, sgn = sgn)
             if self.n_segments == 1 and self.idx_2 == 0:
                 p.c_per [1] = 0
+            p.n = pc
+            pc += 1
             self.pulses.append (p)
         elif self.is_ground [0]:
             s = seg0.p2
             p = Pulse (pu, self.p1, s * invz, s, seg0, seg0, gnd = 0)
+            p.n = pc
+            pc += 1
             self.pulses.append (p)
         for i, seg in enumerate (self.segments [:-1]):
             nseg = self.segments [i + 1]
             p = Pulse (pu, seg.p2, seg.p1, nseg.p2, seg, nseg)
+            p.n = pc
+            pc += 1
             self.pulses.append (p)
             if i == 0 and self.idx_1 == 0:
                 p.c_per [0] = 0
@@ -745,10 +989,14 @@ class Wire:
             p = Pulse (pu, p2, p1, p3, lseg, oseg, sgn = sgn)
             if self.n_segments == 1 and self.idx_1 == 0:
                 p.c_per [0] = 0
+            p.n = pc
+            pc += 1
             self.pulses.append (p)
         elif self.is_ground [1]:
             end2 = p2 - lseg.dirvec * lseg.seg_len * invz
             p = Pulse (pu, self.p2, p1, end2, lseg, lseg, gnd = 1)
+            p.n = pc
+            pc += 1
             self.pulses.append (p)
     # end def compute_connections
 
@@ -775,13 +1023,33 @@ class Wire:
     # end def compute_equal_segments
 
     def compute_segments (self):
+        """ Silently ignore tapering if segment size is too short.
+            If tapering fails we use equal-sized segments.
+            In the future we may want to issue a warning in that case,
+            because even for equally spaced segments the segment size is
+            shorter than the user specified.
+        """
         self.segments = []
         if self.segtype == 0:
             self.compute_equal_segments ()
         elif self.segtype == 1 or self.segtype == 2:
-            self.compute_taper1_segments ()
+            try:
+                self.compute_taper1_segments ()
+            except Taper_Error:
+                # We may want to issue a warning here, maybe when there
+                # is a warning framework
+                assert len (self.segments) == 0
+                self.segtype = 0
+                self.compute_equal_segments ()
         else:
-            self.compute_taper2_segments ()
+            try:
+                self.compute_taper2_segments ()
+            except Taper_Error:
+                # We may want to issue a warning here, maybe when there
+                # is a warning framework
+                assert len (self.segments) == 0
+                self.segtype = 0
+                self.compute_equal_segments ()
     # end def compute_segments
 
     def compute_taper1_segments (self):
@@ -1045,6 +1313,166 @@ class Mininec:
         self.rhs      = None
         self.Z        = None
     # end def f
+
+    def as_basic_input \
+        ( self
+        , filename = 'MININEC.OUT'
+        , azi = None, zen = None
+        , near = None, pwr_nf = None
+        , pwr_ff = None, ff_dist = None, ff_abs = False
+        , gainfile = None
+        ):
+        """ Output in the input format of original Basic implementation.
+            Used for cross-evaluation.
+            Note: The output is returned as a string. The filename in
+            the arguments is the filename the Basic code will write its
+            output to.
+            The original Basic implemetation issues prompts and expects
+            inputs, to make some sense of the generated input we
+            document the prompt from the Basic implementation as
+            comments.
+        """
+        r = []
+        # OUTPUT TO CONSOLE, PRINTER, OR DISK (C/P/D):
+        r.append ('D')
+        # FILENAME (NAME.OUT):
+        r.append (filename)
+        # FREQUENCY (MHZ):
+        r.append ('%.12g' % self.f)
+        # ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE):
+        if self.media:
+            r.append ('-1')
+            # NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):
+            if len (self.media) == 1 and self.media [0].is_ideal:
+                r.append ('0')
+            else:
+                r.append (str (len (self.media)))
+                for m in self.media:
+                    r.append (m.as_basic_input ())
+        else:
+            r.append ('+1')
+        # NO. OF WIRES:
+        # The original mininec code only supports straight wires with
+        # equal segmentation. We ask each geometry object about the
+        # number of emulated wires.
+        nw = sum (w.n_emulated_wires for w in self.geo)
+        r.append (str (nw))
+        for w in self.geo:
+            r.append (w.as_basic_input ())
+        # CHANGE GEOMETRY (Y/N):
+        r.append ('N')
+        # NO. OF SOURCES:
+        r.append (str (len (self.sources)))
+        for s in self.sources:
+            r.append (s.as_basic_input ())
+        # NUMBER OF LOADS:
+        lsum = 0
+        is_s = False
+        for l in self.loads:
+            lsum += len (l.pulses)
+            if not isinstance (l, Impedance_Load):
+                is_s = True
+        r.append (str (lsum))
+        if lsum:
+            # S-PARAMETER (S=jw) IMPEDANCE LOAD (Y/N):
+            r.append ('Y' if is_s else 'N')
+        for l in self.loads:
+            r.append (l.as_basic_input (is_s))
+        # C - COMPUTE/DISPLAY CURRENTS
+        r.append ('C')
+        # SAVE CURRENTS TO A FILE (Y/N):
+        r.append ('N')
+        if azi and zen:
+            # P - COMPUTE FAR-FIELD PATTERNS
+            r.append ('P')
+            # CALCULATE PATTERN IN DBI OR VOLTS/METER (D/V):
+            r.append ('V' if ff_abs else 'D')
+            if ff_abs:
+                # CHANGE POWER LEVEL (Y/N):
+                if pwr_ff is not None:
+                    r.append ('Y')
+                    # NEW POWER LEVEL (WATTS):
+                    r.append ('%g' % pwr_ff)
+                    # CHANGE POWER LEVEL (Y/N):
+                    r.append ('N')
+                else:
+                    r.append ('N')
+                # RADIAL DISTANCE (METERS):
+                assert ff_dist is not None
+                r.append ('%g' % ff_dist)
+            # ZENITH ANGLE : INITIAL,INCREMENT,NUMBER:
+            r.append ('%g, %g, %g' % (zen.initial, zen.inc, zen.number))
+            # AZIMUTH ANGLE: INITIAL,INCREMENT,NUMBER:
+            r.append ('%g, %g, %g' % (azi.initial, azi.inc, azi.number))
+            # FILE PATTERN (Y/N):
+            if gainfile:
+                r.append ('Y')
+                r.append (gainfile)
+            else:
+                r.append ('N')
+        if near:
+            near = np.reshape (np.array (list (near)), (3, 3)).T
+            for fieldtype in 'EH':
+                # N - COMPUTE NEAR-FIELDS
+                r.append ('N')
+                # ELECTRIC OR MAGNETIC NEAR FIELDS (E/H):
+                r.append (fieldtype)
+                for ini, inc, n in near:
+                    # X-COORDINATE (M): INITIAL,INCREMENT,NUMBER:
+                    # Y-COORDINATE (M): INITIAL,INCREMENT,NUMBER:
+                    # Z-COORDINATE (M): INITIAL,INCREMENT,NUMBER:
+                    r.append ('%g, %g, %d' % (ini, inc, n))
+                # CHANGE POWER LEVEL (Y/N):
+                if pwr_nf is not None:
+                    r.append ('Y')
+                    # NEW POWER LEVEL (WATTS):
+                    r.append ('%g' % pwr_nf)
+                    # CHANGE POWER LEVEL (Y/N):
+                    r.append ('N')
+                else:
+                    r.append ('N')
+                # SAVE TO A FILE (Y/N):
+                r.append ('N')
+        # Q - QUIT
+        r.append ('Q')
+        return '\n'.join (r)
+    # end def as_basic_input
+
+    def as_cmdline \
+        ( self
+        , azi = None, zen = None
+        , near = None, pwr_nf = None
+        , pwr_ff = None, ff_dist = None
+        , load_by_wire = False
+        , opt = ()
+        ):
+        r = []
+        r.append ('-f %.8g' % self.f)
+        for w in self.geo:
+            r.append (w.as_cmdline ())
+        for s in self.sources:
+            r.append (s.as_cmdline ())
+        for g in (self.media or ()):
+            r.append (g.as_cmdline ())
+        for l in self.loads:
+            r.append (l.as_cmdline (self, by_wire = load_by_wire))
+        if zen is not None:
+            r.append ('--theta=%g,%g,%d' % (zen.initial, zen.inc, zen.number))
+        if azi is not None:
+            r.append ('--phi=%g,%g,%d' % (azi.initial, azi.inc, azi.number))
+        if near is not None:
+            r.append ('--near-field=%s' % ','.join ('%g' % x for x in near))
+        if pwr_ff is not None:
+            r.append ('--ff-power=%g' % pwr_ff)
+        if pwr_nf is not None:
+            r.append ('--nf-power=%g' % pwr_nf)
+        if ff_dist is not None:
+            r.append ('--ff-distance=%g' % ff_dist)
+        for p in opt:
+            r.append ('--option=%s' % p)
+        r.append ('')
+        return '\n'.join (r)
+    # end def as_cmdline
 
     def check_ground (self):
         if not self.media and self.media is not None:
@@ -3506,16 +3934,28 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , help    = "Power used for near-field computation"
         , type    = float
         )
-    allowed_options = ['far-field', 'near-field', 'far-field-absolute']
+    allowed_options = ['far-field', 'near-field', 'far-field-absolute', 'none']
     cmd.add_argument \
         ( '--option'
         , help    = "Computation/printing options, option can be repeated, "
                     "use one or several of %s. If none are given, far field "
                     " is printed if no near-field option is present, "
-                    " otherwise near field is printed."
+                    " otherwise near field is printed. The none option"
+                    " can be used to inhibit far/near field computation"
+                    " when only other output (or only command-line check)"
+                    " is desired"
                   % ', '.join (allowed_options)
         , action  = "append"
         , default = []
+        )
+    cmd.add_argument \
+        ( '--output-basic-input'
+        , help    = "Output a file that can be used to compute the"
+                    " antenna via the old mininec basic program."
+        )
+    cmd.add_argument \
+        ( '--output-cmdline'
+        , help    = "Output a file that contains the command line parameters"
         )
     cmd.add_argument \
         ( '--phi'
@@ -3784,6 +4224,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         else:
             options.add ('far-field')
             far_field = True
+    if args.output_basic_input:
+        with open (args.output_basic_input, 'w') as f:
+            f.write (m.as_basic_input (azi = azimuth, zen = zenith))
+    if args.output_cmdline:
+        with open (args.output_cmdline, 'w') as f:
+            f.write (m.as_cmdline (azi = azimuth, zen = zenith))
     if not args.frequency_steps or not args.frequency_increment:
         args.frequency_steps = 1
         args.frequency_increment = 0.0
