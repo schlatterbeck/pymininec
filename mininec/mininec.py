@@ -312,9 +312,11 @@ class _Load:
         self.pulses.append (pulse)
     # end def add_pulse
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline_load_attach (self, parent, by_wire = False):
         """ This needs to output the actual load, done by the subclass.
             But we can output the load attachments here.
+            This used to be 'as_cmdline' but since the class hierarchy
+            is more involved this is now a separate method.
         """
         r = []
         # Optimize: Check if we can issue an attach statement to *all*
@@ -348,7 +350,18 @@ class _Load:
             else:
                 r.append ('--attach-load=%d,%d' % (self.n + 1, p + 1))
         return '\n'.join (r)
-    # end def as_cmdline
+    # end def as_cmdline_load_attach
+
+    def as_mininec (self, parent):
+        r = []
+        imp = self.impedance (parent.f)
+        for p in self.pulses:
+            r.append \
+                ( 'PULSE NO.,RESISTANCE,REACTANCE: %2d , %s , %s'
+                % ((p + 1,) + format_float ([imp.real, imp.imag]))
+                )
+        return '\n'.join (r)
+    # end def as_mininec
 
     def impedance (self, f):
         """ Get impedance for a certain frequency
@@ -388,7 +401,7 @@ class Impedance_Load (_Load):
         if self._impedance.imag:
             ld += '+%gj' % self._impedance.imag
         r.append (ld)
-        r.append (super ().as_cmdline (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_wire))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -422,7 +435,7 @@ class Series_RLC_Load (_Load):
         ld = (self.r, self.l, self.c)
         s  = ','.join ('%g' if x else '' for x in ld)
         r.append ('--rlc-load=' + s % tuple (x for x in ld if x))
-        r.append (super ().as_cmdline (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_wire))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -501,9 +514,25 @@ class Laplace_Load (_Load):
         r = []
         r.append ('--laplace-load-b=%s' % ','.join ('%.8g' % b for b in self.b))
         r.append ('--laplace-load-a=%s' % ','.join ('%.8g' % a for a in self.a))
-        r.append (super ().as_cmdline (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_wire))
         return '\n'.join (r)
     # end def as_cmdline
+
+    def as_mininec (self, parent):
+        r = []
+        imp = self.impedance (parent.f)
+        for p in self.pulses:
+            r.append \
+                ( 'PULSE NO., ORDER OF S-PARAMETER FUNCTION:  %d , %d'
+                % (p + 1, self.degree)
+                )
+            for d in range (self.degree + 1):
+                # Factor, L, C are in µH, µF
+                f = 10 ** (6 * d)
+                s = 'NUMERATOR, DENOMINATOR COEFFICIENTS OF S^ %d : %g , %g'
+                r.append (s % (d + 1, self.b [d] * f, self.a [d] * f))
+        return '\n'.join (r)
+    # end def as_mininec
 
     def impedance (self, f):
         """ We multiply by s^^k for k in 0..n-1 for all n parameters
@@ -562,7 +591,7 @@ class Trap_Load (Laplace_Load):
     def as_cmdline (self, parent, by_wire = False):
         r = []
         r.append ('--trap-load=%g,%g,%g' % (self.r, self.l, self.c))
-        r.append (_Load.as_cmdline (self, parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_wire))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -3112,12 +3141,7 @@ class Mininec:
             n += len (l.pulses)
         r.append ('NUMBER OF LOADS %d' % n)
         for l in self.loads:
-            imp = l.impedance (self.f)
-            for p in l.pulses:
-                r.append \
-                    ( 'PULSE NO.,RESISTANCE,REACTANCE: %2d , %s , %s'
-                    % ((p + 1,) + format_float ([imp.real, imp.imag]))
-                    )
+            r.append (l.as_mininec (self))
         return '\n'.join (r)
     # end def loads_as_mininec
 
