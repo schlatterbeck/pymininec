@@ -407,54 +407,6 @@ class Impedance_Load (_Load):
 
 # end class Impedance_Load
 
-class Series_RLC_Load (_Load):
-    """ A load with R, L, C in series, an unspecified value is
-        considered to be a 0-Ohm resistor.
-        This was not in the original mininec code.
-        But it could be modelled with a Laplace load.
-        Frequency is in MHz (when calling impedance), otherwise we use
-        metric units Ohm, Henry, Farad.
-    >>> l = Series_RLC_Load (R = 0.1, L = 60e-6)
-    >>> z = l.impedance (7)
-    >>> print ("%g%+gj" % (z.real, z.imag))
-    0.1+2638.94j
-    >>> l = Series_RLC_Load (R = 1000, C = 60e-12)
-    >>> z = l.impedance (7)
-    >>> print ("%g%+gj" % (z.real, z.imag))
-    1000-378.94j
-    """
-    def __init__ (self, R = None, L = None, C = None):
-        super ().__init__ ()
-        self.r = R
-        self.l = L
-        self.c = C
-    # end def __init__
-
-    def as_cmdline (self, parent, by_wire = False):
-        r  = []
-        ld = (self.r, self.l, self.c)
-        s  = ','.join ('%g' if x else '' for x in ld)
-        r.append ('--rlc-load=' + s % tuple (x for x in ld if x))
-        r.append (self.as_cmdline_load_attach (parent, by_wire))
-        return '\n'.join (r)
-    # end def as_cmdline
-
-    def impedance (self, f):
-        """ Impedance for given frequency
-        """
-        w = 2 * np.pi * f * 1e6
-        x = 0 + 0j
-        if self.r is not None:
-            x += self.r
-        if self.l is not None:
-            x += w * self.l * 1j
-        if self.c is not None:
-            x -= 1 / (w * self.c) * 1j
-        return x
-    # end def impedance
-
-# end class Series_RLC_Load
-
 class Laplace_Load (_Load):
     """ Laplace s-Parameter (s = j omega) load from mininec implementation
         We get two lists of parameters. They represent the numerator and
@@ -550,6 +502,49 @@ class Laplace_Load (_Load):
     # end def impedance
 
 # end class Laplace_Load
+
+class Series_RLC_Load (Laplace_Load):
+    """ A load with R, L, C in series, an unspecified value is
+        considered to be a 0-Ohm resistor.
+        This was not in the original mininec code.
+        But it can be modelled with a Laplace load.
+        Frequency is in MHz (when calling impedance), otherwise we use
+        metric units Ohm, Henry, Farad.
+        This is convenient when converting models from NEC.
+    >>> l = Series_RLC_Load (R = 0.1, L = 60e-6)
+    >>> z = l.impedance (7)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    0.1+2638.94j
+    >>> l = Series_RLC_Load (R = 1000, C = 60e-12)
+    >>> z = l.impedance (7)
+    >>> print ("%g%+gj" % (z.real, z.imag))
+    1000-378.94j
+    """
+    def __init__ (self, R = None, L = None, C = None):
+        self.r = R
+        self.l = L
+        self.c = C
+        r = self.r or 0
+        l = self.l or 0
+        if C:
+            a = np.array ([0.0, self.c])
+            b = np.array ([1.0, r * self.c, l * self.c])
+        else:
+            a = np.array ([1.0])
+            b = np.array ([r, l])
+        super ().__init__ (a, b)
+    # end def __init__
+
+    def as_cmdline (self, parent, by_wire = False):
+        r  = []
+        ld = (self.r, self.l, self.c)
+        s  = ','.join ('%g' if x else '' for x in ld)
+        r.append ('--rlc-load=' + s % tuple (x for x in ld if x))
+        r.append (self.as_cmdline_load_attach (parent, by_wire))
+        return '\n'.join (r)
+    # end def as_cmdline
+
+# end class Series_RLC_Load
 
 class Trap_Load (Laplace_Load):
     """ A trap consisting of L+R in series parallel to a C.
