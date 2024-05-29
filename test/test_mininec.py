@@ -1295,6 +1295,15 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         self.mini_compare (bn, mini)
     # end def test_folded_18
 
+    def test_inve802B (self):
+        bn   = 'inve802B'
+        m    = self.setup_generic_file (bn, compute = False)
+        zen  = Angle (0, 11,  9)
+        azi  = Angle (0, 10, 37)
+        mini = m.as_basic_input (azi = azi, zen = zen)
+        self.mini_compare (bn, mini)
+    # end def test_inve802B
+
     def test_inv_l (self):
         bn   = 'inv-l'
         m    = self.setup_generic_file (bn, compute = False)
