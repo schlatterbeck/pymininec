@@ -324,8 +324,7 @@ class _Load:
         pulsecount_by_wire = {}
         wires = set ()
         wires_all = set ()
-        for p in self.pulses:
-            pulse = parent.pulses [p]
+        for pulse in self.pulses:
             if pulse.wire.n not in pulsecount_by_wire:
                 pulsecount_by_wire [pulse.wire.n] = 0
             pulsecount_by_wire [pulse.wire.n] += 1
@@ -338,8 +337,7 @@ class _Load:
         elif wires_all:
             for w in wires_all:
                 r.append ('--attach-load=%d,all,%d' % (self.n + 1, w.n + 1))
-        for p in self.pulses:
-            pulse = parent.pulses [p]
+        for pulse in self.pulses:
             if pulse.wire in wires_all:
                 continue
             if by_wire:
@@ -348,25 +346,26 @@ class _Load:
                     % (self.n + 1, pulse.n + 1, pulse.wire.n + 1)
                     )
             else:
-                r.append ('--attach-load=%d,%d' % (self.n + 1, p + 1))
+                r.append ('--attach-load=%d,%d' % (self.n + 1, pulse.idx + 1))
         return '\n'.join (r)
     # end def as_cmdline_load_attach
 
     def as_mininec (self, parent):
         r = []
-        imp = self.impedance (parent.f)
-        for p in self.pulses:
+        for pulse in self.pulses:
+            imp = self.impedance (parent.f, pulse)
             r.append \
                 ( 'PULSE NO.,RESISTANCE,REACTANCE: %2d , %s , %s'
-                % ((p + 1,) + format_float ([imp.real, imp.imag]))
+                % ((pulse.idx + 1,) + format_float ([imp.real, imp.imag]))
                 )
         return '\n'.join (r)
     # end def as_mininec
 
-    def impedance (self, f):
+    def impedance (self, f, pulse = None):
         """ Get impedance for a certain frequency
             This probably needs reimplementation in different derived
             classes. Especially if the impedance is frequency dependent.
+            Note that some subclasses need the pulse parameter.
         """
         return self._impedance
     # end def impedance
@@ -388,10 +387,10 @@ class Impedance_Load (_Load):
         if is_s:
             raise NotImplementedError \
                 ('Output of Impedance load as S-parameters not yet implemented')
-        for p in self. pulses:
+        for pulse in self.pulses:
             # PULSE NO.,RESISTANCE,REACTANCE:
             z = self._impedance
-            r.append ('%d, %g, %g' % (p + 1, z.real, z.imag))
+            r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
         return '\n'.join (r)
     # end def as_basic_input
 
@@ -451,9 +450,9 @@ class Laplace_Load (_Load):
     def as_basic_input (self, is_s):
         r = []
         assert is_s
-        for p in self.pulses:
+        for pulse in self.pulses:
             # PULSE NO., ORDER OF S-PARAMETER FUNCTION:
-            r.append ('%d, %d' % (p + 1, self.degree))
+            r.append ('%d, %d' % (pulse.idx + 1, self.degree))
             for d in range (self.degree + 1):
                 # Factor, L, C are in µH, µF
                 f = 10 ** (6 * d)
@@ -472,11 +471,11 @@ class Laplace_Load (_Load):
 
     def as_mininec (self, parent):
         r = []
-        imp = self.impedance (parent.f)
-        for p in self.pulses:
+        for pulse in self.pulses:
+            imp = self.impedance (parent.f, pulse)
             r.append \
                 ( 'PULSE NO., ORDER OF S-PARAMETER FUNCTION:  %d , %d'
-                % (p + 1, self.degree)
+                % (pulse.idx + 1, self.degree)
                 )
             for d in range (self.degree + 1):
                 # Factor, L, C are in µH, µF
@@ -486,7 +485,7 @@ class Laplace_Load (_Load):
         return '\n'.join (r)
     # end def as_mininec
 
-    def impedance (self, f):
+    def impedance (self, f, pulse = None):
         """ We multiply by s^^k for k in 0..n-1 for all n parameters
             Where s = 1j * omega = 2j * pi * f
             Note that the frequency is given in MHz.
@@ -591,6 +590,60 @@ class Trap_Load (Laplace_Load):
     # end def as_cmdline
 
 # end class Trap_Load
+
+class Skin_Effect_Load (_Load):
+    """ Ohmic loss due to skin effect
+    """
+    mu = 4e-7 * np.pi
+
+    def __init__ (self, wire, conductivity):
+        super ().__init__ ()
+        self.wire         = wire
+        self.conductivity = conductivity
+        if wire.skin_load is not None and wire.skin_load is not self:
+            raise ValueError ("Can assign only one skin-effect load per wire")
+        wire.skin_load = self
+    # end def __init__
+
+    def add_pulse (self, pulse):
+        for w in pulse.wires:
+            if w == self.wire:
+                break
+        else:
+            raise ValueError \
+                ('Skin-effect load can only be attached to pulses of its wires')
+        # Only if None of the wires of that pulse has a skin load yet
+        for w in pulse.wires:
+            if w.skin_load is not self:
+                assert w.skin_load is not None
+                break
+        else:
+            super ().add_pulse (pulse)
+    # end def add_pulse
+
+    def as_cmdline (self, parent, by_wire = False):
+        r = []
+        widx = self.wire.n + 1
+        r.append ('--skin-effect-load=%d,%g' % (widx, self.conductivity))
+        return '\n'.join (r)
+    # end def as_cmdline
+
+    def impedance (self, f, pulse):
+        """ Get resistance for given frequency
+        """
+        fhz = f * 1e6
+        r   = 0
+        for i, w in enumerate (pulse.wires):
+            if w.skin_load is None:
+                continue
+            ld    = w.skin_load
+            delta = np.sqrt (2 / (ld.conductivity * 2 * np.pi * fhz * self.mu))
+            l     = np.linalg.norm (pulse.ends [i] - pulse.point)
+            r += l / (ld.conductivity * 2 * np.pi * w.r * delta)
+        return r
+    # end def impedance
+
+# end class Skin_Effect_Load
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
@@ -775,14 +828,15 @@ class Wire:
     def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r):
         self.n_segments = n_segments
         # whenever we need to access both ends by index we use endpoints
-        self.p1         = np.array ([x1, y1, z1])
-        self.p2         = np.array ([x2, y2, z2])
-        self.endpoints  = np.array ([self.p1, self.p2])
-        self.pulses     = []
-        self._segtype   = 0
-        self.taper_min  = None
-        self.taper_max  = None
-        self.r = r
+        self.p1        = np.array ([x1, y1, z1])
+        self.p2        = np.array ([x2, y2, z2])
+        self.endpoints = np.array ([self.p1, self.p2])
+        self.pulses    = []
+        self._segtype  = 0
+        self.taper_min = None
+        self.taper_max = None
+        self.skin_load = None
+        self.r         = r
         if r <= 0:
             raise ValueError ("Radius must be >0")
         self.diff = self.p2 - self.p1
@@ -794,7 +848,7 @@ class Wire:
         # conn [0] contains wires that link to our first end
         # while conn [1] contains wires that link to our second end.
         self.conn = (Connected_Wires (), Connected_Wires ())
-        self.n = None # index into parent.geo
+        self.n    = None # index into parent.geo
     # end def __init__
 
     @property
@@ -1331,8 +1385,8 @@ class Mininec:
         # set small radius modification condition:
         self.srm     = .0001 * w
         # The wave number 2 * pi / lambda
-        self.w       = 2 * np.pi / w
-        self.w2      = self.w ** 2 / 2
+        self.w        = 2 * np.pi / w
+        self.w2       = self.w ** 2 / 2
         self.currents = None
         self.rhs      = None
         self.Z        = None
@@ -2028,19 +2082,18 @@ class Mininec:
 
     def compute_impedance_matrix_loads (self):
         for l in self.loads:
-            for j in l.pulses:
+            for pulse in l.pulses:
+                j  = pulse.idx
                 f2 = 1 / self.m
                 # Looks like K in the original code line 371 is set by
                 # the preceeding loop iterating over the images. So we
                 # replace this with self.media is not None
-                if  (   self.pulses [j].ground.any ()
-                    and self.media is not None
-                    ):
+                if pulse.ground.any () and self.media is not None:
                     f2 *= 2
                 # Weird, the imag part goes to the real Z component and
                 # vice-versa, the contribution to the real part is
                 # negated, the contribution to the imag part not
-                self.Z [j][j] += -f2 * l.impedance (self.f) * 1j
+                self.Z [j][j] += -f2 * l.impedance (self.f, pulse) * 1j
     # end def compute_impedance_matrix_loads
 
     def geo_as_str (self):
@@ -2642,13 +2695,20 @@ class Mininec:
 
     def register_load (self, load, pulse = None, wire_idx = None):
         """ Default if no pulse is given is to add the load to *all*
-            pulses. Otherwise if no wire_idx is given the pulse is an
-            absolute index, otherwise it's the index of a pulse on the
-            wire given by wire_idx. Indeces are 0-based.
+            pulses of the given wire, unless wire_idx is None, then it
+            is added to *all* pulses of *all* wires. Otherwise if no
+            wire_idx is given the pulse is an absolute index, otherwise
+            it's the index of a pulse on the wire given by wire_idx.
+            Indeces are 0-based.
         """
         if pulse is None:
-            for wire in self.geo:
-                for p in wire.pulse_idx_iter ():
+            if wire_idx is None:
+                for wire in self.geo:
+                    for p in wire.pulse_iter ():
+                        load.add_pulse (p)
+            else:
+                wire = self.geo [wire_idx]
+                for p in wire.pulse_iter ():
                     load.add_pulse (p)
             # Avoid adding same load several times
             if load.n is None:
@@ -2679,7 +2739,7 @@ class Mininec:
                 raise ValueError ('Invalid pulse %d' % pulse)
             else:
                 p = pulse
-            load.add_pulse (p)
+            load.add_pulse (self.pulses [p])
             # Avoid adding same load several times
             if load.n is None:
                 load.n = len (self.loads)
@@ -3914,6 +3974,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
+        ( '--skin-effect-load'
+        , help    = 'Wire conductivity load, give wire and conductivity'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
         ( '-T', '--timing'
         , help    = 'Measure the time for certain parts of the algorithm'
         , action  = 'store_true'
@@ -4181,6 +4247,24 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     if len (used_loads) != len (loads):
         print ("Error: Not all loads were used", file = f_err)
         return 23
+    # Skin-effect loads are last and attached automagically
+    for l in args.skin_effect_load:
+        try:
+            widx, cond = l.split (',')
+            if widx != 'all':
+                widx = int (widx)
+            cond = float (cond)
+            if widx == 'all':
+                for w in m.geo:
+                    ld = Skin_Effect_Load (w, cond)
+                    m.register_load (ld, None, w.n)
+            else:
+                w  = m.geo [widx - 1]
+                ld = Skin_Effect_Load (w, cond)
+                m.register_load (ld, None, w.n)
+        except ValueError as err:
+            print ("Error in skin-effect load: %s" % err, file = f_err)
+            return 23
     p = args.phi.split (',')
     if len (p) != 3:
         print \
