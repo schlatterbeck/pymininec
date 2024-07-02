@@ -631,7 +631,7 @@ class Skin_Effect_Load (_Load):
             ld    = w.skin_load
             delta = np.sqrt (2 / (ld.conductivity * 2 * np.pi * fhz * self.mu))
             l     = np.linalg.norm (pulse.ends [i] - pulse.point)
-            r += l / (ld.conductivity * 2 * np.pi * w.r * delta)
+            r += l / (np.pi * ld.conductivity * (2 * w.r - delta) * delta)
         return r
     # end def impedance
 
