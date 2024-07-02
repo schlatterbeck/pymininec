@@ -606,19 +606,11 @@ class Skin_Effect_Load (_Load):
     # end def __init__
 
     def add_pulse (self, pulse):
-        for w in pulse.wires:
-            if w == self.wire:
-                break
-        else:
+        # Allow adding only to our own wire
+        if self.wire != pulse.wire:
             raise ValueError \
                 ('Skin-effect load can only be attached to pulses of its wires')
-        # Only if None of the wires of that pulse has a skin load yet
-        for w in pulse.wires:
-            if w.skin_load is not self:
-                assert w.skin_load is not None
-                break
-        else:
-            super ().add_pulse (pulse)
+        super ().add_pulse (pulse)
     # end def add_pulse
 
     def as_cmdline (self, parent, by_wire = False):
