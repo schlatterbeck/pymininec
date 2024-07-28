@@ -29,7 +29,7 @@ import copy
 import time
 import numpy as np
 from datetime        import datetime
-from scipy.special   import ellipk
+from scipy.special   import ellipk, jv
 from scipy.integrate import fixed_quad
 from mininec.util    import format_float
 from mininec.pulse   import Pulse_Container, Pulse
@@ -594,7 +594,7 @@ class Trap_Load (Laplace_Load):
 class Skin_Effect_Load (_Load):
     """ Ohmic loss due to skin effect
     """
-    mu = 4e-7 * np.pi
+    mu = 1.256637061e-6
 
     def __init__ (self, wire, conductivity):
         super ().__init__ ()
@@ -622,17 +622,43 @@ class Skin_Effect_Load (_Load):
 
     def impedance (self, f, pulse):
         """ Get resistance for given frequency
+        >>> e1   = np.zeros (3)
+        >>> e2   = np.ones (3)
+        >>> wire = Wire (1, 0, 0, 0, 0, 0, 25, 1)
+        >>> wire.n = 0
+        >>> pc   = Pulse_Container ()
+        >>> s    = Segment (e1, e2, wire)
+        >>> p    = Pulse (pc, np.ones (1), np.zeros (1), np.ones (1), s, s)
+        >>> for r in (1e-6, 1e-4, 1e-3):
+        ...     wire = Wire (1, 0, 0, 0, 0, 0, 25, r)
+        ...     p.wires = [wire]
+        ...     ld = Skin_Effect_Load (wire, 2.5e6)
+        ...     x  = ld.impedance (1e3, p)
+        ...     print ('%.8g %+.8gj' % (x.real, x.imag))
+        63662.106 +157.07947j
+        33.273927 +31.556264j
+        3.1622777 +3.1622777j
         """
         fhz = f * 1e6
-        r   = 0
+        omg = 2 * np.pi * fhz
+        x   = 0
         for i, w in enumerate (pulse.wires):
-            if w.skin_load is None:
-                continue
             ld    = w.skin_load
-            delta = np.sqrt (2 / (ld.conductivity * 2 * np.pi * fhz * self.mu))
-            l     = np.linalg.norm (pulse.ends [i] - pulse.point)
-            r += l / (np.pi * ld.conductivity * (2 * w.r - delta) * delta)
-        return r
+            if ld is None:
+                continue
+            # Cache zint in wire
+            if w.zint is None:
+                k     = np.sqrt (-1j * omg * self.mu * ld.conductivity)
+                kr    = k * w.r
+                b     = 1j
+                if abs (kr) < 110.0:
+                    b = jv (0, kr) / jv (1, kr)
+                zint  = k / (2 * np.pi * w.r * ld.conductivity) * b
+                w.zint = zint
+            dv = pulse.dvecs (i - 0.5)
+            l  = np.linalg.norm (dv [0] - dv [1])
+            x += l * w.zint
+        return x
     # end def impedance
 
 # end class Skin_Effect_Load
@@ -829,6 +855,7 @@ class Wire:
         self.taper_max = None
         self.skin_load = None
         self.r         = r
+        self.zint      = None
         if r <= 0:
             raise ValueError ("Radius must be >0")
         self.diff = self.p2 - self.p1
