@@ -380,6 +380,138 @@ For a more detailed coverage report use::
 This will show a detailed report of the lines that are not covered by
 tests.
 
+Skin Effect Loads
+-----------------
+
+[This section uses math in ReStructuredText which may not render
+correctly on all platforms. In particular, `Github has an open issue`_
+on this for more than a decade now. It is said to be `supported on pypi`_,
+let's see.]
+
+To support skin effect loads on wires we need to compute the internal
+impedance of a wire section. The `Wikipedia article on skin effect`_ has
+the following formula for the internal impedance per unit length:
+
+.. math::
+    \newcommand{\Int}{{\mathrm\scriptscriptstyle int}}
+    \newcommand{\ber}{\mathop{\mathrm{ber}}\nolimits}
+    \newcommand{\bei}{\mathop{\mathrm{bei}}\nolimits}
+
+.. math::
+    Z_\Int = \frac{k\rho}{2\pi r}\frac{J_0 (kr)}{J_1 (kr)}
+
+where
+
+.. math::
+    k = \sqrt{\frac{-j\omega\mu}{\rho}}
+
+and :math:`r` is the wire radius, :math:`J_v` are the Bessel functions of
+the first kind of order :math:`v`. :math:`Z_\Int` is the impedance *per
+unit length* of wire.
+
+Since the `Wikipedia article on skin effect`_ cites this from a book not
+available to me, I've looked in a classic, Chipman's Theory and Problems
+of Transmission Lines [9]_.  This has the following formula for
+:math:`Z_\Int` (6.27 p.77):
+
+.. math::
+    Z_\Int = \frac{jR_s}{\sqrt{2}\pi a}
+             \frac{\ber(\sqrt{2}a/\delta) + j\bei(\sqrt{2}a/\delta)}
+             {\ber^\prime(\sqrt{2}a/\delta) + j\bei^\prime(\sqrt{2}a/\delta)}
+
+with
+
+.. math::
+    R_s = \frac{1}{\sigma\delta} = \sqrt{\frac{\omega\mu}{2\sigma}}
+
+and :math:`\delta` the skin depth (in formula 6.15, p. 74):
+
+.. math::
+    \delta = \sqrt{\frac{2}{\omega\mu\sigma}}
+
+and :math:`a` the radius.
+Note that this formula is identical to the formula used by the Fortran
+implementation of NEC-2 as derived in my blog post [10]_. But it is
+*not* identical to the one described in the theoretical paper on NEC
+[11]_ (p. 75) which is wrong as shown in my blog post [10]_.
+
+Chipman [9]_ also has a conversion from the Kelvin functions to the Bessel
+functions (formula 6.11 and 6.12 on p. 74):
+
+.. math::
+    \ber (x) = \Re (J_0(\sqrt{-j}x)) \\
+    \bei (x) = \Im (J_0(\sqrt{-j}x)) \\
+
+with :math:`\Re` being the real part and :math:`\Im` being the imaginary
+part of a complex number. In one expression this is:
+
+.. math::
+    J_0 \left(\sqrt{-j}x\right) = \ber (x) + j\bei(x)
+
+For the derivative we have:
+
+.. math::
+    -J_1 \left(\sqrt{-j}x\right) \sqrt{-j} = \ber^\prime(x) + j\bei^\prime(x)
+
+and consequently for the fraction of Kelvin functions:
+
+.. math::
+    \frac{\ber (x) + j\bei(x)}{\ber^\prime(x) + j\bei^\prime(x}
+    = \frac{-1}{\sqrt{-j}}\frac{J_0(\sqrt{-j}x)}{J_1(\sqrt{-j}x}
+
+Replacing this into the :math:`Z_\Int` formula above we get:
+
+.. math::
+    Z_\Int = \frac{-jR_s}{\sqrt{2}\pi a}
+             \frac{1}{\sqrt{-j}}
+             \frac{J_0(\sqrt{-2j}a/\delta)}{J_1(\sqrt{-2j}a/\delta)}
+
+Making use of the fact that
+
+.. math::
+    \sqrt{-j} = \frac{1-j}{\sqrt{2}}
+
+we get
+
+.. math::
+    Z_\Int =& \frac{-jR_s}{(1-j)\pi a}
+              \frac{J_0((1-j)a/\delta)}{J_1((1-j)a/\delta)} \\
+           =& \frac{(1-j)R_s}{2\pi a}
+              \frac{J_0((1-j)a/\delta)}{J_1((1-j)a/\delta)} \\
+
+replacing :math:`R_s` and :math:`\delta` and using :math:`\rho=1/\sigma` we get
+
+.. math::
+    Z_\Int = \frac{(1-j)}{2\pi a}
+             \sqrt{\frac{\omega\mu\rho}{2}}
+             \frac{J_0\left((1-j)a\sqrt{\frac{\omega\mu}{2\rho}}\right)}
+                  {J_1\left((1-j)a\sqrt{\frac{\omega\mu}{2\rho}}\right)}
+
+substituting :math:`k` above and using
+
+.. math::
+    \sqrt{-2j} = (1-j)
+
+.. math::
+    k = \sqrt{\frac{-j\omega\mu}{\rho}}
+
+.. math::
+    Z_\Int =& \frac{(1-j)k}{2\pi a}
+              \sqrt{\frac{\rho^2}{-2j}}
+              \frac{J_0\left(\frac{(1-j)ak}{\sqrt{-2j}}\right)}
+                   {J_1\left(\frac{(1-j)ak}{\sqrt{-2j}}\right)} \\
+           =& \frac{k\rho}{2\pi a} \frac{J_0(ak)}{J_1(ak)} \\
+
+which is identical to the Wikipedia formula when we substitute
+:math:`a=r`. This is the formula that is used for skin effect loads in
+pymininec.
+
+A note on the history of using Kelvin functions instead of Bessel
+functions here: Before the age of pocket calculators there were
+ready-made tables for Kelvin functions. Lookup of complex arguments to
+functions via tables was not possible, so a solution that was computable
+with books of mathematical tables was preferred...
+
 Notes on Elliptic Integral Parameters
 -------------------------------------
 
@@ -617,34 +749,44 @@ v0.1.0: Initial release
 .. _`pcbasic wiki`:
     https://github.com/robhagemans/pcbasic/wiki/Debugging-Basic-with-the-Python-Debugger
 
+Literature
+----------
+
 .. [1] Alfredo J. Julian, James C. Logan, and John W. Rockway.
-    Mininec: A mini-numerical electromagnetics code. Technical Report
-    NOSC TD 516, Naval Ocean Systems Center (NOSC), San Diego,
-    California, September 1982. Available as ADA121535_ from the Defense
-    Technical Information Center.
+   Mininec: A mini-numerical electromagnetics code. Technical Report
+   NOSC TD 516, Naval Ocean Systems Center (NOSC), San Diego,
+   California, September 1982. Available as ADA121535_ from the Defense
+   Technical Information Center.
 .. [2] J. C. Logan and J. W. Rockway. The new MININEC (version |-| 3): A
-    mini-numerical electromagnetic code. Technical Report NOSC TD 938,
-    Naval Ocean Systems Center (NOSC), San Diego, California, September
-    1986. Available as ADA181682_ from the Defense Technical Information
-    Center. Note: The scan of that report is *very* bad. If you have
-    access to a better version, please make it available!
+   mini-numerical electromagnetic code. Technical Report NOSC TD 938,
+   Naval Ocean Systems Center (NOSC), San Diego, California, September
+   1986. Available as ADA181682_ from the Defense Technical Information
+   Center. Note: The scan of that report is *very* bad. If you have
+   access to a better version, please make it available!
 .. [3] Milton Abramowitz and Irene A. Stegun, editors. Handbook of
-    Mathematical Functions With Formulas, Graphs, and Mathematical
-    Tables.  Number 55 in Applied Mathematics Series.  National Bureau
-    of Standards, 1972.
+   Mathematical Functions With Formulas, Graphs, and Mathematical
+   Tables.  Number 55 in Applied Mathematics Series.  National Bureau
+   of Standards, 1972.
 .. [4] Cecil Hastings, Jr. Approximations for Digital Computers.
-    Princeton University Press, 1955.
+   Princeton University Press, 1955.
 .. [5] Rafik Paul Zeineddin. Numerical electromagnetics codes: Problems,
-    solutions and applications. Master’s thesis, Ohio University, March 1993.
-    Available from the `OhioLINK Electronic Theses & Dissertations Center`_
+   solutions and applications. Master’s thesis, Ohio University, March 1993.
+   Available from the `OhioLINK Electronic Theses & Dissertations Center`_
 .. [6] L. B. Cebik. Radiation plots: Polar or rectangular; log or linear.
-    In Antenna Modeling Notes [7], chapter 48, pages 366–379. Available
-    in Cebik's `Antenna modelling notes episode 48`_
+   In Antenna Modeling Notes [7], chapter 48, pages 366–379. Available
+   in Cebik's `Antenna modelling notes episode 48`_
 .. [7] L. B. Cebik. Antenna Modeling Notes, volume 2. antenneX Online
-    Magazine, 2003. Available with antenna models from the `Cebik
-    collection`_.
+   Magazine, 2003. Available with antenna models from the `Cebik
+   collection`_.
 .. [8] Roy Lewallen. Mininec: The other edge of the sword. QST, pages
-    18–22, February 1991.
+   18–22, February 1991.
+.. [9] Robert A. Chipman. Theory and Problems of Transmission Lines.
+   Schaums Outline. McGraw-Hill, 1968.
+.. [10] Ralf Schlatterbeck. Skin Effect Load Update. `Blog post`_, Open
+   Source Consulting, July 2024.
+.. [11] G. J. Burke and A. J. Poggio. Numerical electromagnetics code (NEC)
+   |--| method of moments, Part I: Program description |--| theory.
+   January 1981.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
@@ -669,3 +811,8 @@ v0.1.0: Initial release
 .. _`plot-antenna`: https://github.com/schlatterbeck/plot-antenna
 .. _`web-page from 1998 by Dr. Carol F. Milazzo, KP4MD`:
     https://www.qsl.net/kp4md/kp4mdnec.htm
+.. _`Github has an open issue`: https://github.com/github/markup/issues/83
+.. _`supported on pypi`: https://github.com/pypi/warehouse/pull/12062
+.. _`Blog Post`: https://blog.runtux.com/posts/2024/07/28/
+.. _`Wikipedia article on skin effect`:
+    https://en.wikipedia.org/wiki/Skin_effect
