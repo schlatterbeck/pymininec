@@ -3872,13 +3872,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> r
     23
 
-    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--option=far-field', '--option=zoppel'])
-    >>> r = main (args, sys.stdout)
-    Invalid print option: zoppel
-    >>> r
-    23
-
     >>> args = ['-f', '7.15']
     >>> args.extend (['--excitation-segment=1'])
     >>> args.extend (['--theta=0,45,nonint', '--phi=0,180,3'])
@@ -4038,18 +4031,17 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , help    = "Power used for near-field computation"
         , type    = float
         )
-    allowed_options = ['far-field', 'near-field', 'far-field-absolute', 'none']
     cmd.add_argument \
         ( '--option'
-        , help    = "Computation/printing options, option can be repeated, "
-                    "use one or several of %s. If none are given, far field "
+        , help    = "Computation/printing options, option can be repeated."
+                    " If none are given, far field "
                     " is printed if no near-field option is present, "
                     " otherwise near field is printed. The none option"
                     " can be used to inhibit far/near field computation"
                     " when only other output (or only command-line check)"
                     " is desired"
-                  % ', '.join (allowed_options)
         , action  = "append"
+        , choices = ['far-field', 'near-field', 'far-field-absolute', 'none']
         , default = []
         )
     cmd.add_argument \
@@ -4334,9 +4326,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     options = set ()
     far_field = False
     for opt in args.option:
-        if opt not in allowed_options:
-            print ("Invalid print option: %s" % opt)
-            return 23
         options.add (opt)
         if opt.startswith ('far'):
             far_field = True
