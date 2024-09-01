@@ -198,7 +198,7 @@ class Excitation:
             if self.wire_tag is not None and self.wire_idx is not None:
                 r.append \
                     ( '--excitation-pulse=%d,%d'
-                    % (self.wire_tag, self.wire_idx + 1)
+                    % (self.wire_idx + 1, self.wire_tag)
                     )
             else:
                 r.append ('--excitation-pulse=%d' % (self.idx + 1))
@@ -3991,7 +3991,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     cmd.add_argument \
         (  '--excitation-pulse'
         , help    = "Pulse number for excitation, either an absolute pulse"
-                    " number or wire tag and pulse number separated by a"
+                    " number or pulse number and wire tag separated by a"
                     " comma, can be specified "
                     "more than once, default is the single pulse 5"
         , action  = 'append'
@@ -4299,14 +4299,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ('Invalid number of pulse index parameters: "%s"' % p)
             return 23
         if len (ep) > 1:
-            s = Excitation (cvolt = v, wire_tag = ep [0], wire_idx = ep [1] - 1)
+            s = Excitation (cvolt = v, wire_tag = ep [1], wire_idx = ep [0] - 1)
         else:
             s = Excitation (cvolt = v)
         if default_excitation:
             assert len (args.excitation_pulse) == 1
             s.is_default = True
         if len (ep) > 1:
-            m.register_source (s, ep [1] - 1, ep [0])
+            m.register_source (s, ep [0] - 1, ep [1])
         else:
             m.register_source (s, ep [0] - 1)
     loads = []
