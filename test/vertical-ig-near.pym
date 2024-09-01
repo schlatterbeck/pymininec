@@ -1,6 +1,6 @@
 -f 7.15
 -w 20,0,0,0,0,0,10.0838,0.001
---excitation-segment=1
+--excitation-pulse=1
 --medium=0,0,0
 --laplace-load-b=0,2.25998e-07
 --laplace-load-a=1,0

@@ -139,13 +139,16 @@ class Excitation:
         complex number for the voltage *or* floating point voltage
         magnitude and a phase in degrees.
     """
-    def __init__ (self, cvolt, phase = None):
+    def __init__ (self, cvolt, phase = None, wire_tag = None, wire_idx = None):
         if isinstance (cvolt, complex) and phase is not None:
             raise ValueError \
                 ("Either specify magnitude/phase or complex voltage")
 
-        self.parent    = None
-        self.idx       = None
+        self.parent     = None
+        self.idx        = None
+        self.is_default = False
+        self.wire_tag   = wire_tag
+        self.wire_idx   = wire_idx
         if phase is not None:
             self.magnitude = cvolt
             self.phase_d   = phase
@@ -191,7 +194,14 @@ class Excitation:
         r = []
         if self.voltage != 1+0j:
             r.append ('--excitation-voltage=%g' % self.voltage)
-        r.append ('--excitation-segment=%d' % (self.idx + 1))
+        if not self.is_default:
+            if self.wire_tag is not None and self.wire_idx is not None:
+                r.append \
+                    ( '--excitation-pulse=%d,%d'
+                    % (self.wire_tag, self.wire_idx + 1)
+                    )
+            else:
+                r.append ('--excitation-pulse=%d' % (self.idx + 1))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -1354,7 +1364,7 @@ class Mininec:
     >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.001))
     >>> s = Excitation (cvolt = 1+0j)
     >>> m = Mininec (20, w)
-    >>> m.register_source (s, 4, 0)
+    >>> m.register_source (s, 4, 1)
     >>> print (m.wires_as_mininec ())
     NO. OF WIRES: 1
     <BLANKLINE>
@@ -1614,7 +1624,9 @@ class Mininec:
         for w in self.geo:
             r.append (w.as_cmdline ())
         for s in self.sources:
-            r.append (s.as_cmdline ())
+            cm = s.as_cmdline ()
+            if cm:
+                r.append (cm)
         for g in (self.media or ()):
             r.append (g.as_cmdline ())
         for l in self.loads:
@@ -2773,21 +2785,21 @@ class Mininec:
         return self.psi (v2, vv, k, ds2, pidx, exact = False)
     # end def psi_near_field_56
 
-    def register_load (self, load, pulse = None, wire_idx = None):
+    def register_load (self, load, pulse = None, wire_tag = None):
         """ Default if no pulse is given is to add the load to *all*
-            pulses of the given wire, unless wire_idx is None, then it
+            pulses of the given wire, unless wire_tag is None, then it
             is added to *all* pulses of *all* wires. Otherwise if no
-            wire_idx is given the pulse is an absolute index, otherwise
-            it's the index of a pulse on the wire given by wire_idx.
+            wire_tag is given the pulse is an absolute index, otherwise
+            it's the tag of a pulse on the wire given by wire_tag.
             Indeces are 0-based.
         """
         if pulse is None:
-            if wire_idx is None:
+            if wire_tag is None:
                 for wire in self.geo:
                     for p in wire.pulse_iter ():
                         load.add_pulse (p)
             else:
-                wire = self.geo [wire_idx]
+                wire = self.geo.by_tag [wire_tag]
                 for p in wire.pulse_iter ():
                     load.add_pulse (p)
             # Avoid adding same load several times
@@ -2796,12 +2808,12 @@ class Mininec:
                 self.loads.append (load)
         else:
             if pulse < 0:
-                raise ValueError ("Pulse index must be >= 0")
-            if wire_idx is not None:
-                err = 'Invalid pulse %d for wire %d' % (pulse, wire_idx)
-                if wire_idx >= len (self.geo):
-                    raise ValueError ('Invalid wire index %d' % (wire_idx))
-                w = self.geo [wire_idx]
+                raise ValueError ("Pulse tag must be >= 1")
+            if wire_tag is not None:
+                err = 'Invalid pulse tag %d for wire %d' % (pulse + 1, wire_tag)
+                if not self.geo.by_tag.get (wire_tag):
+                    raise ValueError ('Invalid wire tag %d' % (wire_tag))
+                w = self.geo.by_tag [wire_tag]
                 if w.end_segs [0] is None or w.end_segs [1] is None:
                     if w.end_segs [0] is None and w.end_segs [1] is None:
                         raise ValueError (err)
@@ -2816,7 +2828,7 @@ class Mininec:
                     if p > w.end_segs [1]:
                         raise ValueError (err)
             elif pulse >= len (self.pulses):
-                raise ValueError ('Invalid pulse %d' % pulse)
+                raise ValueError ('Invalid pulse tag %d' % (pulse + 1))
             else:
                 p = pulse
             load.add_pulse (self.pulses [p])
@@ -2826,27 +2838,25 @@ class Mininec:
                 self.loads.append (load)
     # end def register_load
 
-    def register_source (self, source, pulse, wire_idx = None):
+    def register_source (self, source, pulse, wire_tag = None):
         """ Register a source, either with absolute pulse index or with
             a pulse index relative to a wire. Indeces are 0-based.
         """
         if pulse < 0:
-            raise ValueError ("Pulse index must be > 0")
+            raise ValueError ("Pulse tag must be >= 1")
         # Check source index
-        if wire_idx is not None:
-            w = self.geo [wire_idx]
-            if w.end_segs [0] is None:
+        if wire_tag is not None:
+            w = self.geo.by_tag.get (wire_tag)
+            if not w:
+                raise ValueError ('Invalid wire: "%s"' % wire_tag)
+            if pulse >= len (w.pulses):
                 raise ValueError \
-                    ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
-            p = w.end_segs [0] + pulse
-            if w.end_segs [1] is None or p > w.end_segs [1]:
-                raise ValueError \
-                    ('Invalid pulse %d for wire %d' % (pulse, wire_idx))
+                    ('Invalid pulse tag %d for wire %d' % (pulse + 1, wire_tag))
             self.sources.append (source)
-            source.register (self, p)
+            source.register (self, w.pulses [pulse].idx)
         else:
             if pulse >= len (self.pulses):
-                raise ValueError ('Invalid pulse %d' % pulse)
+                raise ValueError ('Invalid pulse tag %d' % (pulse + 1))
             self.sources.append (source)
             source.register (self, pulse)
     # end def register_source
@@ -3466,7 +3476,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     """ The main routine called from the command-line
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--frequency-increment=.01', '--frequency-steps=2'])
-    >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
+    >>> args.extend (['--medium=0,0,0', '--excitation-pulse=1'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180,3'])
     >>> main (args)
                        ****************************************
@@ -3578,7 +3588,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
      90            360           5.120395     -999           5.120395
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
+    >>> args.extend (['--medium=0,0,0', '--excitation-pulse=1'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180,3'])
     >>> args.extend (['--ff-power=100', '--ff-distance=1000'])
     >>> args.extend (['--option=far-field-absolute'])
@@ -3656,7 +3666,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
      90.00    360.00            1.396E-01    90.68           0.000E+00     0.00
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--medium=0,0,0', '--excitation-segment=1'])
+    >>> args.extend (['--medium=0,0,0', '--excitation-pulse=1'])
     >>> args.extend (['--near-field=1,1,1,1,1,1,1,1,1', '--nf-power=100'])
     >>> main (args)
                        ****************************************
@@ -3771,9 +3781,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--excitation-segment=1', '--excitation-segment=2'])
+    >>> args.extend (['--excitation-pulse=1', '--excitation-pulse=2'])
     >>> r = main (args, sys.stdout)
-    Number of excitation segments must match voltages
+    Number of excitation pulses must match voltages
     >>> r
     23
 
@@ -3804,50 +3814,50 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
     >>> args = ['--load=1+1j', '--attach-load=1,all', '--attach-load=5,all']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
     Load index 5 out of range
     >>> r
     23
     >>> args = ['--load=1+1j', '--attach-load=1,1', '--attach-load=1,7']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
-    Error attaching load: Invalid pulse 6
+    Error attaching load: Invalid pulse tag 7
     >>> r
     23
     >>> args = ['--load=1+1j', '--attach-load=1,1,7']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
-    Error attaching load: Invalid wire index 6
+    Error attaching load: Invalid wire tag 7
     >>> r
     23
     >>> args = ['--load=1+1j', '--attach-load=1,7,1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
-    Error attaching load: Invalid pulse 6 for wire 0
+    Error attaching load: Invalid pulse tag 7 for wire 1
     >>> r
     23
     >>> args = ['--load=1+1j', '--attach-load=1,0']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
-    Error attaching load: Pulse index must be >= 0
+    Error attaching load: Pulse tag must be >= 1
     >>> r
     23
 
     >>> args = ['--laplace-load-b=1', '--laplace-load-b=1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
     Error in Laplace load: At least one denominator parameter required
     >>> r
     23
     >>> args = ['--laplace-load-a=1', '--laplace-load-b=1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
     Error: Not all loads were used
     >>> r
@@ -3855,21 +3865,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> args = ['--laplace-load-a=1', '--laplace-load-b=1']
     >>> args = ['--laplace-load-a=1,2']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
     Error: Not all loads were used
     >>> r
     23
     >>> args = ['--laplace-load-a=1', '--laplace-load-b=1,b']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
     Error in Laplace load B: could not convert string to float: 'b'
     >>> r
     23
     >>> args = ['--laplace-load-a=1,a', '--laplace-load-b=1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> r = main (args, sys.stdout)
     Error in Laplace load A: could not convert string to float: 'a'
     >>> r
@@ -3890,7 +3900,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180'])
     >>> r = main (args, sys.stdout)
     Invalid phi angle, need three comma-separated values
@@ -3898,7 +3908,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> args.extend (['--medium=1,1,0', '--medium=1,1,0,5'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180,nonint'])
     >>> r = main (args, sys.stdout)
@@ -3907,7 +3917,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--excitation-segment=1', '--radial-count=8'])
+    >>> args.extend (['--excitation-pulse=1', '--radial-count=8'])
     >>> args.extend (['--theta=0,45', '--phi=0,180,3'])
     >>> r = main (args, sys.stdout)
     Invalid theta angle, need three comma-separated values
@@ -3940,7 +3950,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
 
     >>> args = ['-f', '7.15']
-    >>> args.extend (['--excitation-segment=1'])
+    >>> args.extend (['--excitation-pulse=1'])
     >>> args.extend (['--theta=0,45,nonint', '--phi=0,180,3'])
     >>> r = main (args, sys.stdout)
     Invalid theta angle, need float, float, int
@@ -3979,10 +3989,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = 'linear'
         )
     cmd.add_argument \
-        (  '--excitation-segment'
-        , help    = "Segment number for excitation, can be specified "
-                    "more than once, default is the single segment 5"
-        , type    = int
+        (  '--excitation-pulse'
+        , help    = "Pulse number for excitation, either an absolute pulse"
+                    " number or wire tag and pulse number separated by a"
+                    " comma, can be specified "
+                    "more than once, default is the single pulse 5"
         , action  = 'append'
         , default = []
         )
@@ -4177,8 +4188,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         return 23
     if not args.wire:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
-    if not args.excitation_segment:
-        args.excitation_segment = [5]
+    default_excitation = False
+    if not args.excitation_pulse:
+        args.excitation_pulse = ['5']
+        default_excitation = True
     if not args.excitation_voltage:
         args.excitation_voltage = [1]
     geo = Geo_Container ()
@@ -4242,9 +4255,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         wire.taper_min = taper_min
         wire.taper_max = taper_max
 
-    if len (args.excitation_segment) != len (args.excitation_voltage):
-        print \
-            ("Number of excitation segments must match voltages", file = f_err)
+    if len (args.excitation_pulse) != len (args.excitation_voltage):
+        print ("Number of excitation pulses must match voltages", file = f_err)
         return 23
 
     media = []
@@ -4277,9 +4289,26 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
 
     m = Mininec (args.frequency, geo, media = media, t = args.timing)
 
-    for i, v in zip (args.excitation_segment, args.excitation_voltage):
-        s = Excitation (cvolt = v)
-        m.register_source (s, i - 1)
+    for p, v in zip (args.excitation_pulse, args.excitation_voltage):
+        try:
+            ep = [int (x) for x in p.split (',')]
+        except ValueError as err:
+            print ('Invalid pulse for excitation: "%s"' % p)
+            return 23
+        if not 1 <= len (ep) <= 2:
+            print ('Invalid number of pulse index parameters: "%s"' % p)
+            return 23
+        if len (ep) > 1:
+            s = Excitation (cvolt = v, wire_tag = ep [0], wire_idx = ep [1] - 1)
+        else:
+            s = Excitation (cvolt = v)
+        if default_excitation:
+            assert len (args.excitation_pulse) == 1
+            s.is_default = True
+        if len (ep) > 1:
+            m.register_source (s, ep [1] - 1, ep [0])
+        else:
+            m.register_source (s, ep [0] - 1)
     loads = []
     for l in args.load:
         loads.append (Impedance_Load (l))
@@ -4331,18 +4360,22 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ("Append-load needs 2-3 parameters", file = f_err)
             return 23
         if len (att) == 2 and att [-1] == 'all':
-            att = att [:-1]
+            att.pop ()
         try:
-            att = [int (a) - 1 for a in att]
+            att = [int (a) for a in att]
         except ValueError as err:
             print ("Attach-load: %s" % err, file = f_err)
             return 23
-        if att [0] >= len (loads) or att [0] < 0:
-            print ("Load index %d out of range" % (att [0] + 1), file = f_err)
+        lidx = att [0] - 1
+        if lidx >= len (loads) or lidx < 0:
+            print ("Load index %d out of range" % att [0], file = f_err)
             return 23
-        used_loads.add (att [0])
+        used_loads.add (lidx)
+        # Pulse index is 0-based
+        if len (att) > 1:
+            att [1] = att [1] - 1
         try:
-            m.register_load (loads [att [0]], *att [1:])
+            m.register_load (loads [lidx], *att [1:])
         except ValueError as err:
             print ("Error attaching load: %s" % err, file = f_err)
             return 23
@@ -4352,18 +4385,26 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     # Skin-effect loads are last and attached automagically
     for l in args.skin_effect_load:
         try:
-            widx, cond = l.split (',')
-            if widx != 'all':
-                widx = int (widx)
+            tag, cond = l.split (',')
+            if tag != 'all':
+                try:
+                    tag = int (tag)
+                except ValueError as err:
+                    print ("Error parsing wire: %s" % err, file = f_err)
+                    return 23
             cond = float (cond)
-            if widx == 'all':
+            if tag == 'all':
                 for w in m.geo:
                     ld = Skin_Effect_Load (w, cond)
-                    m.register_load (ld, None, w.n)
+                    m.register_load (ld, None, w.tag)
             else:
-                w  = m.geo [widx - 1]
+                try:
+                    w  = m.geo.by_tag [tag]
+                except KeyError as err:
+                    print ("Error finding wire: %s" % err, file = f_err)
+                    return 23
                 ld = Skin_Effect_Load (w, cond)
-                m.register_load (ld, None, w.n)
+                m.register_load (ld, None, w.tag)
         except ValueError as err:
             print ("Error in skin-effect load: %s" % err, file = f_err)
             return 23

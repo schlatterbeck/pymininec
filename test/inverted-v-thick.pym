@@ -3,7 +3,7 @@
 --frequency-steps=11
 -w 92,0,0,10,-4.58993,0,7.35,0.0025
 -w 92,0,0,10,4.58993,0,7.35,0.0025
---excitation-segment=92
+--excitation-pulse=92
 --medium=13,0.005,0
 --theta=0,5,19
 --phi=0,5,73
