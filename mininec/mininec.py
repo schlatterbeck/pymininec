@@ -909,6 +909,7 @@ class Wire:
         self.skin_load = None
         self.r         = r
         self.tag       = tag
+        self.had_tag   = tag is not None
         self.zint      = None
         if r <= 0:
             raise ValueError ("Radius must be >0")
@@ -1006,10 +1007,14 @@ class Wire:
 
     def as_cmdline (self):
         r = []
-        r.append \
-            ( '-w %d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g'
-            % ((self.n_segments,) + tuple (self.endpoints.flat) + (self.r,))
-            )
+        tpl = (self.n_segments,) + tuple (self.endpoints.flat) + (self.r,)
+        if self.had_tag:
+            tpl = (self.tag,) + tpl
+            r.append \
+                ('-w %d,%d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
+        else:
+            r.append \
+                ('-w %d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
         if self.segtype:
             tpr = '--taper=%d,%d' % (self.n + 1, self.segtype)
             if self.taper_min or self.taper_max:
@@ -3740,9 +3745,15 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
        MAXIMUM OR PEAK FIELD =  .264655   AMPS/M
     <BLANKLINE>
 
-    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127,extra']
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127,extra,ex2']
     >>> r = main (args, sys.stdout)
     Invalid number of parameters for wire 1
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', 'a,5,0,0,0,0,0,10.0838,0.0127']
+    >>> r = main (args, sys.stdout)
+    Invalid wire tag "a": invalid literal for int() with base 10: 'a'
     >>> r
     23
 
@@ -4173,19 +4184,31 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     geo = Geo_Container ()
     for n, wire in enumerate (args.wire):
         wparams = wire.strip ().split (',')
-        if len (wparams) != 8:
+        if not 8 <= len (wparams) <= 9:
             print \
                 ( "Invalid number of parameters for wire %d" % (n + 1)
                 , file = f_err
                 )
             return 23
+        tag = None
+        if len (wparams) == 9:
+            tag = wparams.pop (0)
+            try:
+                tag = int (tag)
+            except ValueError as err:
+                print \
+                    ( 'Invalid wire tag "%s": %s'
+                    % (tag, str (err))
+                    , file = f_err
+                    )
+                return 23
         try:
             seg = int (wparams [0])
             r = [float (x) for x in wparams [1:]]
         except ValueError as err:
             print ("Invalid wire %d: %s" % (n + 1, str (err)), file = f_err)
             return 23
-        geo.append (Wire (seg, *r))
+        geo.append (Wire (seg, *r, tag = tag))
 
     geo.compute_tags ()
 
