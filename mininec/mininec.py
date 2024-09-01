@@ -92,16 +92,16 @@ class Connected_Wires:
         self.sgn_by_wire [other_wire] = sign2
     # end def add
 
-    def idx (self, wire):
+    def tag (self, wire):
         """ This computes I1 or I2 from the Basic code, respectively
         """
         if self.list:
             # Forward linked segments are printed as 0
             if wire.n < self.list [0][0].n:
                 return 0
-            return (1 + self.list [0][0].n) * self.sgn_by_wire [wire]
+            return (self.list [0][0].tag) * self.sgn_by_wire [wire]
         return 0
-    # end def idx
+    # end def tag
 
     def is_connected (self, other):
         return other in self.wires
@@ -615,8 +615,8 @@ class Skin_Effect_Load (_Load):
 
     def as_cmdline (self, parent, by_wire = False):
         r = []
-        widx = self.wire.n + 1
-        r.append ('--skin-effect-load=%d,%g' % (widx, self.conductivity))
+        tag = self.wire.tag
+        r.append ('--skin-effect-load=%d,%g' % (tag, self.conductivity))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -828,6 +828,59 @@ class Medium:
 
 ideal_ground = Medium (0, 0)
 
+class Geo_Container:
+
+    def __init__ (self, parent = None, geo = None):
+        self.parent = parent
+        self.geo    = geo or []
+        self.by_tag = {}
+    # end def __init__
+
+    def __getitem__ (self, idx):
+        return self.geo [idx]
+    # end def __getitem__
+
+    def __iter__ (self):
+        for geobj in self.geo:
+            yield geobj
+    # end def __iter__
+
+    def __len__ (self):
+        return len (self.geo)
+    # end def __len__
+
+    def append (self, geobj):
+        self.geo.append (geobj)
+    # end def append
+
+    def compute_ground (self):
+        for n, geobj in enumerate (self.geo):
+            geobj.compute_ground (n, self.parent.media)
+    # end def compute_ground
+
+    def compute_tags (self):
+        tags_seen = set ()
+        for geobj in self.geo:
+            if geobj.tag is not None:
+                if geobj.tag <= 0:
+                    raise ValueError ('Tag "%s" not allowed' % geobj.tag)
+                if geobj.tag in tags_seen:
+                    raise ValueError ('Duplicate tag "%s" in wire' % geobj.tag)
+                tags_seen.add (geobj.tag)
+        max_tag = 0
+        if tags_seen:
+            max_tag = max (tags_seen)
+        for n, geobj in enumerate (self.geo):
+            if geobj.tag is None:
+                max_tag += 1
+                geobj.tag = max_tag
+            self.by_tag [geobj.tag] = geobj
+        # sort by tag
+        self.geo.sort (key = lambda geobj: geobj.tag)
+    # end def compute_tags
+
+# end class Geo_Container
+
 class Wire:
     """ A NEC-like wire
         The original variable names are
@@ -843,7 +896,7 @@ class Wire:
     >>> wire
     Wire 23 [0 0 0]-[ 0  0 25], r=0.001
     """
-    def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r):
+    def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r, tag = None):
         self.n_segments = n_segments
         # whenever we need to access both ends by index we use endpoints
         self.p1        = np.array ([x1, y1, z1])
@@ -855,6 +908,7 @@ class Wire:
         self.taper_max = None
         self.skin_load = None
         self.r         = r
+        self.tag       = tag
         self.zint      = None
         if r <= 0:
             raise ValueError ("Radius must be >0")
@@ -1175,14 +1229,15 @@ class Wire:
     # end def connections
 
     def idx (self, end_idx):
-        """ The indeces I1, I2 from the Basic code, this is -self.n when
+        """ The indeces I1, I2 from the Basic code, this was -self.n when
             the end is grounded, the index of a connected wire (negative
             if the direction of the wire is reversed) if connected and 0
             otherwise. Used mainly when printing wires in mininec format.
+            We now use the tag of the wire.
         """
         if self.is_ground [end_idx]:
-            return -(self.n + 1)
-        return self.conn [end_idx].idx (self)
+            return -(self.tag)
+        return self.conn [end_idx].tag (self)
     # end def idx
 
     def is_connected (self, other):
@@ -1371,23 +1426,29 @@ class Mininec:
         conn r:
         <BLANKLINE>
         """
-        self.do_timing  = t
-        self.f          = f
-        self.media      = media
-        self.loads      = []
+        self.do_timing    = t
+        self.f            = f
+        self.media        = media
+        self.loads        = []
         self.check_ground ()
-        self.sources    = []
-        self.geo        = geo
+        self.sources      = []
+        if isinstance (geo, Geo_Container):
+            self.geo = geo
+            assert geo.parent is None
+            geo.parent = self
+        else:
+            self.geo = Geo_Container (self, geo)
+            self.geo.compute_tags ()
+        self.output_date  = False
         # Dictionary of ends to compute matches
-        self.end_dict   = {}
+        self.end_dict     = {}
         # Pulses
-        self.pulses     = Pulse_Container ()
-        self.print_opts = print_opts or set (('far-field',))
+        self.pulses       = Pulse_Container ()
+        self.print_opts   = print_opts or set (('far-field',))
         if not self.media or len (self.media) == 1:
             self.boundary = 'linear'
-        self.check_geo ()
+        self.geo.compute_ground ()
         self.compute_connectivity ()
-        self.output_date = False
     # end __init__
 
     @property
@@ -1585,11 +1646,6 @@ class Mininec:
         else:
             self.boundary = 'linear'
     # end def check_ground
-
-    def check_geo (self):
-        for n, wire in enumerate (self.geo):
-            wire.compute_ground (n, self.media)
-    # end def check_geo
 
     def compute (self):
         """ Compute the currents (solution of the impedance matrix)
@@ -2989,7 +3045,7 @@ class Mininec:
         r.append ('*' * 20 + '    CURRENT DATA    ' + '*' * 20)
         r.append ('')
         for wire in self.geo:
-            r.append ('WIRE NO.%3d :' % (wire.n + 1))
+            r.append ('WIRE NO.%3d :' % (wire.tag))
             r.append \
                 ( 'PULSE%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE'
                 % tuple (' ' * x for x in (9, 10, 5, 5))
@@ -3352,7 +3408,7 @@ class Mininec:
         r.append ('NO. OF WIRES: %d' % len (self.geo))
         r.append ('')
         for wire in self.geo:
-            r.append ('WIRE NO. %d' % (wire.n + 1))
+            r.append ('WIRE NO. %d' % (wire.tag))
             r.append \
                 ( '%sCOORDINATES%sEND%sNO. OF'
                 % (' ' * 12, ' ' * 33, ' ' * 9)
@@ -3378,7 +3434,7 @@ class Mininec:
             r.append ('')
             r.append \
                 ( 'WIRE NO.%3d  COORDINATES%sCONNECTION PULSE'
-                % (wire.n + 1, ' ' * 32)
+                % (wire.tag, ' ' * 32)
                 )
             r.append \
                 (('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS'))
@@ -4114,7 +4170,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         args.excitation_segment = [5]
     if not args.excitation_voltage:
         args.excitation_voltage = [1]
-    wires = []
+    geo = Geo_Container ()
     for n, wire in enumerate (args.wire):
         wparams = wire.strip ().split (',')
         if len (wparams) != 8:
@@ -4129,7 +4185,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         except ValueError as err:
             print ("Invalid wire %d: %s" % (n + 1, str (err)), file = f_err)
             return 23
-        wires.append (Wire (seg, *r))
+        geo.append (Wire (seg, *r))
+
+    geo.compute_tags ()
+
     for t in args.taper_wire:
         tparam = t.split (',')
         taper_min = taper_max = None
@@ -4137,7 +4196,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ("Invalid taper option: %s, invalid number of parameters" % t)
             return 23
         try:
-            widx, taper = (int (x) for x in tparam [:2])
+            tag, taper = (int (x) for x in tparam [:2])
             if len (tparam) > 2:
                 taper_min = float (tparam [2])
             if len (tparam) > 3:
@@ -4145,14 +4204,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         except ValueError as err:
             print ("Invalid taper option: %s, %s" % (t, err))
             return 23
-        if not 1 <= widx <= len (wires):
-            print ("Invalid taper option: unknown wire index %s" % widx)
+        
         if not 0 <= taper <= 3:
             print ("Invalid taper option: unknown taper %s" % taper)
-        wire = wires [widx - 1]
+        try:
+            wire = geo.by_tag [tag]
+        except KeyError as err:
+            print ("Invalid wire: %s" % err)
+            return 23
+        if not isinstance (wire, Wire):
+            print ('Invalid wire: "%s" is no wire' % tag)
+            return 23
         wire.segtype = taper
         wire.taper_min = taper_min
         wire.taper_max = taper_max
+
     if len (args.excitation_segment) != len (args.excitation_voltage):
         print \
             ("Number of excitation segments must match voltages", file = f_err)
@@ -4185,7 +4251,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         p = p [:3]
         media.append (Medium (*p, **d))
     media = media or None
-    m = Mininec (args.frequency, wires, media = media, t = args.timing)
+
+    m = Mininec (args.frequency, geo, media = media, t = args.timing)
+
     for i, v in zip (args.excitation_segment, args.excitation_voltage):
         s = Excitation (cvolt = v)
         m.register_source (s, i - 1)
