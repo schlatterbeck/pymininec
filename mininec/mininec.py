@@ -623,6 +623,18 @@ class Skin_Effect_Load (_Load):
         super ().add_pulse (pulse)
     # end def add_pulse
 
+    def as_basic_input (self, is_s = False):
+        r = []
+        if is_s:
+            raise NotImplementedError \
+                ('Output of Skin effect load as S-parameters not implemented')
+        for pulse in self.wire.pulses:
+            # PULSE NO.,RESISTANCE,REACTANCE:
+            z = self.impedance (self.wire.parent.parent.f, pulse)
+            r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
+        return '\n'.join (r)
+    # end def as_basic_input
+
     def as_cmdline (self, parent, by_wire = False):
         r = []
         tag = self.wire.tag
@@ -861,6 +873,8 @@ class Geo_Container:
 
     def append (self, geobj):
         self.geo.append (geobj)
+        assert getattr (geobj, 'parent', None) is None
+        geobj.parent = self
     # end def append
 
     def compute_ground (self):
@@ -1543,7 +1557,7 @@ class Mininec:
         is_s = False
         for l in self.loads:
             lsum += len (l.pulses)
-            if not isinstance (l, Impedance_Load):
+            if not isinstance (l, (Impedance_Load, Skin_Effect_Load)):
                 is_s = True
         r.append (str (lsum))
         if lsum:
