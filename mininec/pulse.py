@@ -277,7 +277,7 @@ class Pulse:
         self.container.add (self)
         self.point   = point
         self.ends    = [end1, end2]
-        self.wires   = [seg1.wire, seg2.wire]
+        self.wires   = [seg1.geobj, seg2.geobj]
         self.segs    = [seg1, seg2]
         self.n       = None # Index into the pulses of wire
         # The original implementation uses the sign of the wire index

@@ -45,6 +45,11 @@ try:
 except ImportError:
     pass
 
+# Constants
+mu_0      = 1.25663706127e-6
+epsilon_0 = 8.8541878188e-12
+c         = 1 / np.sqrt (mu_0 * epsilon_0)
+
 class Angle:
     """ Represents the stepping of Zenith and Azimuth angles
     """
@@ -604,7 +609,6 @@ class Trap_Load (Laplace_Load):
 class Skin_Effect_Load (_Load):
     """ Ohmic loss due to skin effect
     """
-    mu = 1.256637061e-6
 
     def __init__ (self, wire, conductivity):
         super ().__init__ ()
@@ -649,7 +653,7 @@ class Skin_Effect_Load (_Load):
         >>> wire = Wire (1, 0, 0, 0, 0, 0, 25, 1)
         >>> wire.n = 0
         >>> pc   = Pulse_Container ()
-        >>> s    = Segment (e1, e2, wire)
+        >>> s    = Segment (e1, e2, wire, 0)
         >>> p    = Pulse (pc, np.ones (1), np.zeros (1), np.ones (1), s, s)
         >>> for r in (1e-6, 1e-4, 1e-3):
         ...     wire = Wire (1, 0, 0, 0, 0, 0, 25, r)
@@ -670,7 +674,7 @@ class Skin_Effect_Load (_Load):
                 continue
             # Cache zint in wire
             if w.zint is None:
-                k     = np.sqrt (-1j * omg * self.mu * ld.conductivity)
+                k     = np.sqrt (-1j * omg * mu_0 * ld.conductivity)
                 kr    = k * w.r
                 b     = 1j
                 if abs (kr) < 110.0:
@@ -684,6 +688,65 @@ class Skin_Effect_Load (_Load):
     # end def impedance
 
 # end class Skin_Effect_Load
+
+class Insulation_Load (_Load):
+    """ Impedance due to insulation of wire
+    """
+
+    def __init__ (self, wire, radius, epsilon_r):
+        super ().__init__ ()
+        self.wire      = wire
+        self.epsilon_r = epsilon_r
+        self.epsilon   = epsilon_r * epsilon_0
+        self.radius    = radius
+        if  (   wire.coat_load is not None
+            and wire.coat_load is not self
+            ):
+            raise ValueError ("Can assign only one insulation-load per wire")
+        if wire.r >= radius:
+            raise ValueError ("Insulation radius must be > wire radius")
+        wire.coat_load = self
+        self.f = None
+    # end def __init__
+
+    def add_pulse (self, pulse):
+        # Allow adding only to our own wire
+        if self.wire != pulse.wire:
+            raise ValueError \
+                ('Insulation-load can only be attached to pulses of its wires')
+        super ().add_pulse (pulse)
+    # end def add_pulse
+
+    def as_cmdline (self, parent, by_wire = False):
+        r = []
+        widx = self.wire.n + 1
+        r.append \
+            ('--insulation-load=%d,%g,%g' % (widx, self.radius, self.epsilon_r))
+        return '\n'.join (r)
+    # end def as_cmdline
+
+    def impedance (self, f, pulse):
+        """ Get resistance for given frequency
+        """
+        fhz = f * 1e6
+        omg = 2 * np.pi * fhz
+        x   = 0j
+        for seg in pulse.segs:
+            # Not both segments may be from same wire
+            geobj = seg.geobj
+            if geobj.coat_load is not self:
+                continue
+            if geobj.zins is None:
+                geobj.zins = \
+                    ( mu_0 * (self.epsilon_r - 1) / self.epsilon_r
+                    * np.log (self.radius / self.wire._r)
+                    / (2 * np.pi)
+                    )
+            x += geobj.zins * omg * 1j * (seg.seg_len / 2)
+        return x
+    # end def impedance
+
+# end class Insulation_Load
 
 class Medium:
     """ This encapsulates the media (e.g. ground screen etc.)
@@ -905,7 +968,36 @@ class Geo_Container:
 
 # end class Geo_Container
 
-class Wire:
+class Geobj:
+
+    def __init__ (self, r, tag = None):
+        if r <= 0:
+            raise ValueError ("Radius must be >0")
+        self._r        = r
+        self.tag       = tag
+        self.zint      = None
+        self.zins      = None
+        self.skin_load = None
+        self.coat_load = None 
+        self.pulses    = []
+        self.had_tag   = tag is not None
+    # end def __init__
+
+    @property
+    def r (self):
+        """ Use equivalent radius if we have an insulation load
+        """
+        if not self.coat_load:
+            return self._r
+        a     = self._r
+        b     = self.coat_load.radius
+        eps_r = self.coat_load.epsilon_r
+        return b * (a / b) ** (1 / eps_r)
+    # end def r
+
+# end class Geobj
+
+class Wire (Geobj):
     """ A NEC-like wire
         The original variable names are
         x1, y1, z1, x2, y2, z2 (X1, Y1, Z1, X2, Y2, Z2)
@@ -921,22 +1013,15 @@ class Wire:
     Wire 23 [0 0 0]-[ 0  0 25], r=0.001
     """
     def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r, tag = None):
+        super ().__init__ (r, tag)
         self.n_segments = n_segments
         # whenever we need to access both ends by index we use endpoints
         self.p1        = np.array ([x1, y1, z1])
         self.p2        = np.array ([x2, y2, z2])
         self.endpoints = np.array ([self.p1, self.p2])
-        self.pulses    = []
         self._segtype  = 0
         self.taper_min = None
         self.taper_max = None
-        self.skin_load = None
-        self.r         = r
-        self.tag       = tag
-        self.had_tag   = tag is not None
-        self.zint      = None
-        if r <= 0:
-            raise ValueError ("Radius must be >0")
         self.diff = self.p2 - self.p1
         if (self.diff == 0).all ():
             raise ValueError ("Zero length wire: %s %s" % (self.p1, self.p2))
@@ -1194,7 +1279,7 @@ class Wire:
         s0      = seg
         for i in range (self.n_segments):
             s1 = seg + (i + 1) * dirvec * seg_len
-            self.segments.append (Segment (s0, s1, self))
+            self.segments.append (Segment (s0, s1, self, len (self.segments)))
             s0 = s1
             # Avoid rounding errors, these can have influence on the
             # currents computed, even if slightly off!
@@ -1240,7 +1325,7 @@ class Wire:
         if self.taper_min is not None:
             d.update (min_t = self.taper_min)
         for p1, p2 in taper1 (self.p1, self.p2, self.n_segments, self.r, **d):
-            self.segments.append (Segment (p1, p2, self))
+            self.segments.append (Segment (p1, p2, self, len (self.segments)))
     # end def compute_taper1_segments
 
     def compute_taper2_segments (self):
@@ -1250,7 +1335,7 @@ class Wire:
         if self.taper_min is not None:
             d.update (min_t = self.taper_min)
         for p1, p2 in taper2 (self.p1, self.p2, self.n_segments, self.r, **d):
-            self.segments.append (Segment (p1, p2, self))
+            self.segments.append (Segment (p1, p2, self, len (self.segments)))
     # end def compute_taper2_segments
 
     def connections (self):
@@ -1490,6 +1575,13 @@ class Mininec:
         self._f = frq
         self.wavelen = w = 299.8 / self.f
         # 1 / (4 * PI * OMEGA * EPSILON)
+        # \lambda = c / f
+        # c = 1 / sqrt (mu_0 * epsilon_0)
+        # \omega = 2 * pi * c/\lambda
+        # 1 / (4*pi*\omega*\epsilon_0) = \lambda/(4pi*2pi*c*\epsilon_0)
+        # = \lambda * sqrt (mu_0*epsilon_0)/epsilon_0 / (8*pi**2)
+        # = \lambda * sqrt (mu_0/epsilon_0) / (8*pi**2)
+        # \aprox 4.771345158604122
         self.m       = 4.77783352 * w
         # set small radius modification condition:
         self.srm     = .0001 * w
@@ -4084,6 +4176,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
+        ( '--insulation-load'
+        , help    = 'Wire insulation load, give wire, radius and epsilon_r'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
         ( '-T', '--timing'
         , help    = 'Measure the time for certain parts of the algorithm'
         , action  = 'store_true'
@@ -4396,7 +4494,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     if len (used_loads) != len (loads):
         print ("Error: Not all loads were used", file = f_err)
         return 23
-    # Skin-effect loads are last and attached automagically
+    # Skin-effect loads are prior-to-last and attached automagically
     for l in args.skin_effect_load:
         try:
             tag, cond = l.split (',')
@@ -4421,6 +4519,24 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
                 m.register_load (ld, None, w.tag)
         except ValueError as err:
             print ("Error in skin-effect load: %s" % err, file = f_err)
+            return 23
+    # Insulation-loads are last and attached automagically
+    for l in args.insulation_load:
+        try:
+            widx, r, eps = l.split (',')
+            if widx != 'all':
+                widx = int (widx)
+            r, eps = (float (x) for x in (r, eps))
+            if widx == 'all':
+                for w in m.geo:
+                    ld = Insulation_Load (w, r, eps)
+                    m.register_load (ld, None, w.tag)
+            else:
+                w  = m.geo [widx - 1]
+                ld = Insulation_Load (w, r, eps)
+                m.register_load (ld, None, w.tag)
+        except ValueError as err:
+            print ("Error in insulation-load: %s" % err, file = f_err)
             return 23
     p = args.phi.split (',')
     if len (p) != 3:

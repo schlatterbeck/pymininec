@@ -4,11 +4,12 @@ import numpy as np
 
 class Segment:
 
-    def __init__ (self, p1, p2, wire):
+    def __init__ (self, p1, p2, geobj, idx):
         diff         = p2 - p1
         self.p1      = p1
         self.p2      = p2
-        self.wire    = wire
+        self.geobj   = geobj
+        self.idx     = idx
         self.seg_len = np.linalg.norm (diff)
         self.dirvec  = diff / self.seg_len
         # This is Integral I1 in the paper(s), in the implementation
@@ -23,7 +24,7 @@ class Segment:
         # But s4 / f2 reduces to wire.seg_len / 2
         # See above, i6 is now passed as a parameter which is set to
         # 0 if not using the exact kernel.
-        self.i6     = (1 + np.log (16 * wire.r / self.seg_len)) / np.pi / wire.r
+        self.i6 = (1 + np.log (16 * geobj.r / self.seg_len)) / np.pi / geobj.r
     # end def __init__
 
     def __len__ (self):
