@@ -675,11 +675,11 @@ class Skin_Effect_Load (_Load):
             # Cache zint in wire
             if w.zint is None:
                 k     = np.sqrt (-1j * omg * mu_0 * ld.conductivity)
-                kr    = k * w.r
+                kr    = k * w.r_orig
                 b     = 1j
                 if abs (kr) < 110.0:
                     b = jv (0, kr) / jv (1, kr)
-                zint  = k / (2 * np.pi * w.r * ld.conductivity) * b
+                zint  = k / (2 * np.pi * w.r_orig * ld.conductivity) * b
                 w.zint = zint
             dv = pulse.dvecs (i - 0.5)
             l  = np.linalg.norm (dv [0] - dv [1])
@@ -739,7 +739,7 @@ class Insulation_Load (_Load):
             if geobj.zins is None:
                 geobj.zins = \
                     ( mu_0 * (self.epsilon_r - 1) / self.epsilon_r
-                    * np.log (self.radius / self.wire._r)
+                    * np.log (self.radius / self.wire.r_orig)
                     / (2 * np.pi)
                     )
             x += geobj.zins * omg * 1j * (seg.seg_len / 2)
@@ -994,6 +994,13 @@ class Geobj:
         eps_r = self.coat_load.epsilon_r
         return b * (a / b) ** (1 / eps_r)
     # end def r
+
+    @property
+    def r_orig (self):
+        """ Original unmodified radius
+        """
+        return self._r
+    # end def r_orig
 
 # end class Geobj
 
