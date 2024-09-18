@@ -388,9 +388,10 @@ correctly on all platforms. In particular, `Github has an open issue`_
 on this for more than a decade now. It is said to be `supported on pypi`_,
 let's see.]
 
-To support skin effect loads on wires we need to compute the internal
-impedance of a wire section. The `Wikipedia article on skin effect`_ has
-the following formula for the internal impedance per unit length:
+To support skin effect loads on geometry objects (e.g. wires) we need to
+compute the internal impedance of a segment. The `Wikipedia article
+on skin effect`_ has the following formula for the internal impedance
+per unit length:
 
 .. math::
     \newcommand{\Int}{{\mathrm\scriptscriptstyle int}}
@@ -405,7 +406,7 @@ where
 .. math::
     k = \sqrt{\frac{-j\omega\mu}{\rho}}
 
-and :math:`r` is the wire radius, :math:`J_v` are the Bessel functions of
+and :math:`r` is the radius, :math:`J_v` are the Bessel functions of
 the first kind of order :math:`v`. :math:`Z_\Int` is the impedance *per
 unit length* of wire.
 
