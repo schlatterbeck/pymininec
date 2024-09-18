@@ -50,6 +50,43 @@ mu_0      = 1.25663706127e-6
 epsilon_0 = 8.8541878188e-12
 c         = 1 / np.sqrt (mu_0 * epsilon_0)
 
+class Rotation_Matrix:
+
+    def __init__ (self, rotation):
+        rot_x = rot_y = rot_z = np.eye (3)
+        if rotation [0]:
+            a = rotation [0] / 180 * np.pi
+            rot_x = np.array \
+                ( [ [1, 0,           0         ]
+                  , [0, np.cos (a), -np.sin (a)]
+                  , [0, np.sin (a),  np.cos (a)]
+                  ]
+                )
+        if rotation [1]:
+            a = rotation [1] / 180 * np.pi
+            rot_y = np.array \
+                ( [ [ np.cos (a), 0, np.sin (a)]
+                  , [ 0,          1, 0         ]
+                  , [-np.sin (a), 0, np.cos (a)]
+                  ]
+                )
+        if rotation [2]:
+            a = rotation [2] / 180 * np.pi
+            rot_z = np.array \
+                ( [ [np.cos (a), -np.sin (a), 0]
+                  , [np.sin (a),  np.cos (a), 0]
+                  , [0,           0,          1]
+                  ]
+                )
+        self.m = rot_z @ rot_y @ rot_x
+    # end def __init__
+
+    def apply (self, vec):
+        return self.m @ vec
+    # end def apply
+
+# end def Rotation_Matrix
+
 class Angle:
     """ Represents the stepping of Zenith and Azimuth angles
     """
@@ -971,6 +1008,59 @@ class Geo_Container:
         self.geo.sort (key = lambda geobj: geobj.tag)
     # end def compute_tags
 
+    def rotate (self, rotation, tag = None):
+        """ Rotate geometry object given by tag. If tag is None, the
+            whole structure defined so far is rotated.
+            The parameter rotation is a 3-element vector with angles in
+            *degrees*.
+            As in NEC order of transformations is
+            - rotation about X-axis
+            - rotation about Y-axis
+            - rotation about Z-axis
+            Unlike in NEC there is currently no provision to *copy*
+            geometry objects to a new location.
+        """
+        rmatrix = Rotation_Matrix (rotation)
+        if tag is None:
+            for g in self:
+                g.rotate    (rmatrix)
+        else:
+            self.by_tag [tag].rotate (rmatrix)
+    # end def rotate
+
+    def scale (self, factor, tag = None):
+        """ Scale geometry object given by tag. If tag is None (the
+            typical use-case) the whole structure is scaled.
+            Note that *all* parameters are scaled *including* the
+            radius (but not the radius of an insulation load).
+            Note that scaling happens *after* translation and rotation,
+            so that parameters of translation are in the same
+            coordinates as the geo objects.
+        """
+        if tag is None:
+            for g in self:
+                g.scale (factor)
+        else:
+            self.by_tag [tag].scale (factor)
+    # end def scale
+
+    def translate (self, translation, tag = None):
+        """ Translate geometry object given by tag. If tag is None, the
+            whole structure defined so far is translated.
+            The parameter translation is a 3-element vector.
+            Unlike in NEC there is currently no provision to *copy*
+            geometry objects to a new location.
+            Note that scaling happens *after* translation and rotation,
+            so that parameters of translation are in the same
+            coordinates as the geo objects.
+        """
+        if tag is None:
+            for g in self:
+                g.translate (translation)
+        else:
+            self.by_tag [tag].translate (translation)
+    # end def translate
+
 # end class Geo_Container
 
 class Geobj:
@@ -1030,14 +1120,11 @@ class Wire (Geobj):
         # whenever we need to access both ends by index we use endpoints
         self.p1        = np.array ([x1, y1, z1])
         self.p2        = np.array ([x2, y2, z2])
-        self.endpoints = np.array ([self.p1, self.p2])
         self._segtype  = 0
         self.taper_min = None
         self.taper_max = None
-        self.diff = self.p2 - self.p1
-        if (self.diff == 0).all ():
-            raise ValueError ("Zero length wire: %s %s" % (self.p1, self.p2))
-        self.wire_len = np.linalg.norm (self.diff)
+        self.compute_endpoints ()
+
         self.end_segs = [None, None]
         # Links to previous/next connected wire (at start/end)
         # conn [0] contains wires that link to our first end
@@ -1277,6 +1364,14 @@ class Wire (Geobj):
             self.pulses.append (p)
     # end def compute_connections
 
+    def compute_endpoints (self):
+        self.endpoints = np.array ([self.p1, self.p2])
+        self.diff = self.p2 - self.p1
+        if (self.diff == 0).all ():
+            raise ValueError ("Zero length wire: %s %s" % (self.p1, self.p2))
+        self.wire_len = np.linalg.norm (self.diff)
+    # end def compute_endpoints
+
     def compute_equal_segments (self):
         """ Compute segments with equal segment length
             Second endpoint is slightly off in original Basic computation
@@ -1397,6 +1492,31 @@ class Wire (Geobj):
                 continue
             yield p
     # end def pulse_iter
+
+    def rotate (self, rmatrix):
+        assert not getattr (self, 'segments', None)
+        self.p1 = rmatrix.apply (self.p1)
+        self.p2 = rmatrix.apply (self.p2)
+        self.compute_endpoints ()
+    # end def rotate
+
+    def scale (self, factor):
+        """ Scale everything by factor including radius
+            Similar to the NEC GS card "Scale Structure Dimensions"
+        """
+        assert not getattr (self, 'segments', None)
+        self.p1 = self.p1 * factor
+        self.p2 = self.p2 * factor
+        self._r = self._r * factor
+        self.compute_endpoints ()
+    # end def scale
+
+    def translate (self, translation):
+        assert not getattr (self, 'segments', None)
+        self.p1 = self.p1 + translation
+        self.p2 = self.p2 + translation
+        self.compute_endpoints ()
+    # end def translate
 
     def __str__ (self):
         if self.n is None:
@@ -4155,6 +4275,34 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , type    = float
         )
     cmd.add_argument \
+        ( '--geo-rotate'
+        , help    = "Gets 4-5 comma-separated parameters,"
+                    " a (numeric) key for sorting specifying the order of geo"
+                    " transformations, the angle for X- Y- and Z-axis"
+                    " and an optional fifth parameter the geo object"
+                    " tag to rotate"
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--geo-scale'
+        , help    = "Gets one or two comma-separated parameters,"
+                    " the first is the scale factor the second the geo"
+                    " object tag to scale"
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--geo-translate'
+        , help    = "Gets 4-5 comma-separated parameters,"
+                    " a (numeric) key for sorting specifying the order of geo"
+                    " transformations, the X- Y- and Z-translation"
+                    " and an optional fifth parameter the geo object"
+                    " tag to translate"
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
         ( '--laplace-load-a'
         , help    = 'Laplace load, A (denominator) parameters (comma-separated)'
                     ' if multiple load-types are given, Laplace loads'
@@ -4352,6 +4500,75 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         geo.append (Wire (seg, *r, tag = tag))
 
     geo.compute_tags ()
+
+    geo_transforms = []
+
+    for rot in args.geo_rotate:
+        rparam = rot.split (',')
+        if not 4 <= len (rparam) <= 5:
+            print \
+                ( "Invalid geo-rotate option: %s, invalid number of parameters"
+                % rot
+                )
+            return 23
+        tag = None
+        try:
+            key = float (rparam [0])
+            if len (rparam) == 5:
+                tag = int (rparam [-1])
+            rotation = [float (x) for x in rparam [1:4]]
+            rotation = np.array (rotation)
+            geo_transforms.append ((key, geo.rotate, rotation, tag, rot))
+        except ValueError as err:
+            print ("Invalid geo-rotate option: %s, %s" % (rot, err))
+            return 23
+
+    for tr in args.geo_translate:
+        rparam = tr.split (',')
+        if not 4 <= len (rparam) <= 5:
+            print \
+                ( "Invalid geo-translate option: %s, "
+                  "invalid number of parameters"
+                % tr
+                )
+            return 23
+        tag = None
+        try:
+            key = float (rparam [0])
+            if len (rparam) == 5:
+                tag = int (rparam [-1])
+            translation = [float (x) for x in rparam [1:4]]
+            translation = np.array (translation)
+            geo_transforms.append ((key, geo.translate, translation, tag, tr))
+        except ValueError as err:
+            print ("Invalid geo-translation option: %s, %s" % (tr, err))
+            return 23
+
+    for t in sorted (geo_transforms, key = lambda x: x [0]):
+        try:
+            t [1] (t [2], t [3])
+        except ValueError as err:
+            print ("Invalid geo-transformation: %s, %s" % (t [-1], err))
+            return 23
+
+    for scl in args.geo_scale:
+        rparam = scl.split (',')
+        if not 1 <= len (rparam) <= 2:
+            print \
+                ( "Invalid geo-scale option: %s, "
+                  "invalid number of parameters"
+                % scl
+                )
+            return 23
+        tag = None
+        try:
+            if len (rparam) == 2:
+                tag = int (rparam [-1])
+            factor = float (rparam [0])
+            geo.scale (factor, tag)
+        except ValueError as err:
+            print ("Invalid geo-scale option: %s, %s" % (scl, err))
+            return 23
 
     for t in args.taper_wire:
         tparam = t.split (',')

@@ -849,6 +849,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_impedance (m, 96.67604+55.41392j)
     # end def test_skin_effect
 
+    def test_vdipole_rot_trans (self):
+        m = self.setup_generic_file ('vdipole-rot-trans')
+        self.compare_far_field_data (m)
+    # end def test_vdipole_rot_trans
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
@@ -1227,6 +1232,17 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_skin_effect
 
+    def test_vdipole_rot_trans (self):
+        bn  = 'vdipole-rot-trans'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        # We end up with the vdipole-001g0 file because the --geo-rotate
+        # and --geo-translate modifications are not round-tripped
+        self.pym_compare ('vdipole-001g0', cmd)
+    # end def test_vdipole_rot_trans
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1483,6 +1499,16 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         mini = m.as_basic_input ()
         self.mini_compare (bn, mini)
     # end def test_skin_effect
+
+    def test_vdipole_rot_trans (self):
+        bn   = 'vdipole-rot-trans'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VDI001G0.OUT', azi = azi, zen = zen, gainfile = 'VDI001G0.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_rot_trans
 
 # end class Test_Case_Basic_Input_File
 

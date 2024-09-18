@@ -1,0 +1,11 @@
+-f 28.074
+-w 10,0,0,0,5.37,0,0,0.001
+# Rotate from X to Y axis
+--geo-rotate=1,0,0,90
+# Rotate from Y to Z axis
+--geo-rotate=2,90,0,0
+# Translate by Y=7.33
+--geo-translate=3,0,0,7.33
+--medium=0,0,0
+--theta=0,10,10
+--phi=0,10,37
