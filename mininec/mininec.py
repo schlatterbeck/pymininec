@@ -71,13 +71,13 @@ class Angle:
 
 # end class Angle
 
-class Connected_Wires:
+class Connected_Geobj:
     """ This is used to store a set of connected wires *and* the
         corresponding segments in one data structure.
     """
 
     def __init__ (self):
-        self.wires         = set ()
+        self.geo           = set ()
         self.list          = []
         self.cached_pulses = None
         self.sgn_by_wire   = {}
@@ -90,38 +90,38 @@ class Connected_Wires:
         return self.cached_pulses
     # end def pulses
 
-    def add (self, wire, other_wire, end_idx, sign, sign2):
-        assert wire not in self.wires
-        self.wires.add (wire)
-        self.list.append ((wire, other_wire, end_idx, sign))
-        self.sgn_by_wire [other_wire] = sign2
+    def add (self, geobj, other_geobj, end_idx, sign, sign2):
+        assert geobj not in self.geo
+        self.geo.add (geobj)
+        self.list.append ((geobj, other_geobj, end_idx, sign))
+        self.sgn_by_wire [other_geobj] = sign2
     # end def add
 
-    def tag (self, wire):
+    def tag (self, geobj):
         """ This computes I1 or I2 from the Basic code, respectively
         """
         if self.list:
             # Forward linked segments are printed as 0
-            if wire.n < self.list [0][0].n:
+            if geobj.n < self.list [0][0].n:
                 return 0
-            return (self.list [0][0].tag) * self.sgn_by_wire [wire]
+            return (self.list [0][0].tag) * self.sgn_by_wire [geobj]
         return 0
     # end def tag
 
     def is_connected (self, other):
-        return other in self.wires
+        return other in self.geo
     # end def is_connected
 
     def pulse_iter (self):
         """ Yield pulse indeces sorted by wire index
         """
-        for wire, ow, idx, s in self._iter ():
+        for geobj, ow, idx, s in self._iter ():
             yield (ow.end_segs [idx], s)
     # end def pulse_iter
 
     def _iter (self):
-        for wire, ow, idx, s in sorted (self.list, key = lambda x: x [0].n):
-            yield (wire, ow, idx, s)
+        for geobj, ow, idx, s in sorted (self.list, key = lambda x: x [0].n):
+            yield (geobj, ow, idx, s)
     # end def _iter
 
     def __bool__ (self):
@@ -130,12 +130,12 @@ class Connected_Wires:
 
     def __str__ (self):
         r = []
-        for wire, ow, idx, s in self._iter ():
-            r.append ('w: %d idx: %d s:%d' % (wire.n, ow.end_segs [idx], s))
+        for geobj, ow, idx, s in self._iter ():
+            r.append ('geo: %d idx: %d s:%d' % (geobj.n, ow.end_segs [idx], s))
         return '\n'.join (r)
     __repr__ = __str__
 
-# end class Connected_Wires
+# end class Connected_Geobj
 
 class Excitation:
     """ This is the pulse source definition in mininec.
@@ -144,7 +144,7 @@ class Excitation:
         complex number for the voltage *or* floating point voltage
         magnitude and a phase in degrees.
     """
-    def __init__ (self, cvolt, phase = None, wire_tag = None, wire_idx = None):
+    def __init__ (self, cvolt, phase = None, wire_tag = None, geo_idx = None):
         if isinstance (cvolt, complex) and phase is not None:
             raise ValueError \
                 ("Either specify magnitude/phase or complex voltage")
@@ -153,7 +153,7 @@ class Excitation:
         self.idx        = None
         self.is_default = False
         self.wire_tag   = wire_tag
-        self.wire_idx   = wire_idx
+        self.geo_idx    = geo_idx
         if phase is not None:
             self.magnitude = cvolt
             self.phase_d   = phase
@@ -200,10 +200,10 @@ class Excitation:
         if self.voltage != 1+0j:
             r.append ('--excitation-voltage=%g' % self.voltage)
         if not self.is_default:
-            if self.wire_tag is not None and self.wire_idx is not None:
+            if self.wire_tag is not None and self.geo_idx is not None:
                 r.append \
                     ( '--excitation-pulse=%d,%d'
-                    % (self.wire_idx + 1, self.wire_tag)
+                    % (self.geo_idx + 1, self.wire_tag)
                     )
             else:
                 r.append ('--excitation-pulse=%d' % (self.idx + 1))
@@ -327,7 +327,7 @@ class _Load:
         self.pulses.append (pulse)
     # end def add_pulse
 
-    def as_cmdline_load_attach (self, parent, by_wire = False):
+    def as_cmdline_load_attach (self, parent, by_geo = False):
         """ This needs to output the actual load, done by the subclass.
             But we can output the load attachments here.
             This used to be 'as_cmdline' but since the class hierarchy
@@ -336,29 +336,29 @@ class _Load:
         r = []
         # Optimize: Check if we can issue an attach statement to *all*
         # of a wire or to *all* pulses
-        pulsecount_by_wire = {}
-        wires = set ()
-        wires_all = set ()
+        pulsecount_by_geo = {}
+        geo = set ()
+        geo_all = set ()
         for pulse in self.pulses:
-            if pulse.wire.n not in pulsecount_by_wire:
-                pulsecount_by_wire [pulse.wire.n] = 0
-            pulsecount_by_wire [pulse.wire.n] += 1
-            wires.add (pulse.wire)
-        for w in wires:
-            if pulsecount_by_wire [w.n] == len (w.pulses):
-                wires_all.add (w)
-        if len (wires_all) == len (parent.geo):
+            if pulse.geobj.n not in pulsecount_by_geo:
+                pulsecount_by_geo [pulse.geobj.n] = 0
+            pulsecount_by_geo [pulse.geobj.n] += 1
+            geo.add (pulse.geobj)
+        for w in geo:
+            if pulsecount_by_geo [w.n] == len (w.pulses):
+                geo_all.add (w)
+        if len (geo_all) == len (parent.geo):
             r.append ('--attach-load=%d,all' % (self.n + 1))
-        elif wires_all:
-            for w in wires_all:
+        elif geo_all:
+            for w in geo_all:
                 r.append ('--attach-load=%d,all,%d' % (self.n + 1, w.n + 1))
         for pulse in self.pulses:
-            if pulse.wire in wires_all:
+            if pulse.geobj in geo_all:
                 continue
-            if by_wire:
+            if by_geo:
                 r.append \
                     ( '--attach-load=%d,%d,%d'
-                    % (self.n + 1, pulse.n + 1, pulse.wire.n + 1)
+                    % (self.n + 1, pulse.n + 1, pulse.geobj.n + 1)
                     )
             else:
                 r.append ('--attach-load=%d,%d' % (self.n + 1, pulse.idx + 1))
@@ -409,13 +409,13 @@ class Impedance_Load (_Load):
         return '\n'.join (r)
     # end def as_basic_input
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline (self, parent, by_geo = False):
         r = []
         ld = '--load=%g' % self._impedance.real
         if self._impedance.imag:
             ld += '+%gj' % self._impedance.imag
         r.append (ld)
-        r.append (self.as_cmdline_load_attach (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_geo))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -476,11 +476,11 @@ class Laplace_Load (_Load):
         return '\n'.join (r)
     # end def as_basic_input
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline (self, parent, by_geo = False):
         r = []
         r.append ('--laplace-load-b=%s' % ','.join ('%.8g' % b for b in self.b))
         r.append ('--laplace-load-a=%s' % ','.join ('%.8g' % a for a in self.a))
-        r.append (self.as_cmdline_load_attach (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_geo))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -549,12 +549,12 @@ class Series_RLC_Load (Laplace_Load):
         super ().__init__ (a, b)
     # end def __init__
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline (self, parent, by_geo = False):
         r  = []
         ld = (self.r, self.l, self.c)
         s  = ','.join ('%g' if x else '' for x in ld)
         r.append ('--rlc-load=' + s % tuple (x for x in ld if x))
-        r.append (self.as_cmdline_load_attach (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_geo))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -597,10 +597,10 @@ class Trap_Load (Laplace_Load):
         super ().__init__ (a = (1, R*C, L*C), b = (R, L))
     # end def __init__
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline (self, parent, by_geo = False):
         r = []
         r.append ('--trap-load=%g,%g,%g' % (self.r, self.l, self.c))
-        r.append (self.as_cmdline_load_attach (parent, by_wire))
+        r.append (self.as_cmdline_load_attach (parent, by_geo))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -610,18 +610,18 @@ class Skin_Effect_Load (_Load):
     """ Ohmic loss due to skin effect
     """
 
-    def __init__ (self, wire, conductivity):
+    def __init__ (self, geobj, conductivity):
         super ().__init__ ()
-        self.wire         = wire
+        self.geobj        = geobj
         self.conductivity = conductivity
-        if wire.skin_load is not None and wire.skin_load is not self:
+        if geobj.skin_load is not None and geobj.skin_load is not self:
             raise ValueError ("Can assign only one skin-effect load per wire")
-        wire.skin_load = self
+        geobj.skin_load = self
     # end def __init__
 
     def add_pulse (self, pulse):
-        # Allow adding only to our own wire
-        if self.wire != pulse.wire:
+        # Allow adding only to our own geobj
+        if self.geobj != pulse.geobj:
             raise ValueError \
                 ('Skin-effect load can only be attached to pulses of its wires')
         super ().add_pulse (pulse)
@@ -632,16 +632,16 @@ class Skin_Effect_Load (_Load):
         if is_s:
             raise NotImplementedError \
                 ('Output of Skin effect load as S-parameters not implemented')
-        for pulse in self.wire.pulses:
+        for pulse in self.geobj.pulses:
             # PULSE NO.,RESISTANCE,REACTANCE:
-            z = self.impedance (self.wire.parent.parent.f, pulse)
+            z = self.impedance (self.geobj.parent.parent.f, pulse)
             r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
         return '\n'.join (r)
     # end def as_basic_input
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline (self, parent, by_geo = False):
         r = []
-        tag = self.wire.tag
+        tag = self.geobj.tag
         r.append ('--skin-effect-load=%d,%g' % (tag, self.conductivity))
         return '\n'.join (r)
     # end def as_cmdline
@@ -657,7 +657,7 @@ class Skin_Effect_Load (_Load):
         >>> p    = Pulse (pc, np.ones (1), np.zeros (1), np.ones (1), s, s)
         >>> for r in (1e-6, 1e-4, 1e-3):
         ...     wire = Wire (1, 0, 0, 0, 0, 0, 25, r)
-        ...     p.wires = [wire]
+        ...     p.geo = [wire]
         ...     ld = Skin_Effect_Load (wire, 2.5e6)
         ...     x  = ld.impedance (1e3, p)
         ...     print ('%.8g %+.8gj' % (x.real, x.imag))
@@ -668,11 +668,11 @@ class Skin_Effect_Load (_Load):
         fhz = f * 1e6
         omg = 2 * np.pi * fhz
         x   = 0
-        for i, w in enumerate (pulse.wires):
+        for i, w in enumerate (pulse.geo):
             ld    = w.skin_load
             if ld is None:
                 continue
-            # Cache zint in wire
+            # Cache zint in geobj
             if w.zint is None:
                 k     = np.sqrt (-1j * omg * mu_0 * ld.conductivity)
                 kr    = k * w.r_orig
@@ -690,36 +690,38 @@ class Skin_Effect_Load (_Load):
 # end class Skin_Effect_Load
 
 class Insulation_Load (_Load):
-    """ Impedance due to insulation of wire
+    """ Impedance due to insulation of geobj
     """
 
-    def __init__ (self, wire, radius, epsilon_r):
+    def __init__ (self, geobj, radius, epsilon_r):
         super ().__init__ ()
-        self.wire      = wire
+        self.geobj     = geobj
         self.epsilon_r = epsilon_r
         self.epsilon   = epsilon_r * epsilon_0
         self.radius    = radius
-        if  (   wire.coat_load is not None
-            and wire.coat_load is not self
+        if  (   geobj.coat_load is not None
+            and geobj.coat_load is not self
             ):
-            raise ValueError ("Can assign only one insulation-load per wire")
-        if wire.r >= radius:
-            raise ValueError ("Insulation radius must be > wire radius")
-        wire.coat_load = self
+            raise ValueError ("Can assign only one insulation-load per geobj")
+        if geobj.r >= radius:
+            raise ValueError ("Insulation radius must be > geobj radius")
+        geobj.coat_load = self
         self.f = None
     # end def __init__
 
     def add_pulse (self, pulse):
-        # Allow adding only to our own wire
-        if self.wire != pulse.wire:
+        # Allow adding only to our own geobj
+        if self.geobj != pulse.geobj:
             raise ValueError \
-                ('Insulation-load can only be attached to pulses of its wires')
+                ('Insulation-load can only be attached to pulses of its '
+                 'geo objects'
+                )
         super ().add_pulse (pulse)
     # end def add_pulse
 
-    def as_cmdline (self, parent, by_wire = False):
+    def as_cmdline (self, parent, by_geo = False):
         r = []
-        widx = self.wire.n + 1
+        widx = self.geobj.n + 1
         r.append \
             ('--insulation-load=%d,%g,%g' % (widx, self.radius, self.epsilon_r))
         return '\n'.join (r)
@@ -732,14 +734,14 @@ class Insulation_Load (_Load):
         omg = 2 * np.pi * fhz
         x   = 0j
         for seg in pulse.segs:
-            # Not both segments may be from same wire
+            # Not both segments may be from same geobj
             geobj = seg.geobj
             if geobj.coat_load is not self:
                 continue
             if geobj.zins is None:
                 geobj.zins = \
                     ( mu_0 * (self.epsilon_r - 1) / self.epsilon_r
-                    * np.log (self.radius / self.wire.r_orig)
+                    * np.log (self.radius / self.geobj.r_orig)
                     / (2 * np.pi)
                     )
             x += geobj.zins * omg * 1j * (seg.seg_len / 2)
@@ -952,7 +954,7 @@ class Geo_Container:
                 if geobj.tag <= 0:
                     raise ValueError ('Tag "%s" not allowed' % geobj.tag)
                 if geobj.tag in tags_seen:
-                    raise ValueError ('Duplicate tag "%s" in wire' % geobj.tag)
+                    raise ValueError ('Duplicate tag "%s" in geobj' % geobj.tag)
                 tags_seen.add (geobj.tag)
         max_tag = 0
         if tags_seen:
@@ -978,7 +980,7 @@ class Geobj:
         self.zint      = None
         self.zins      = None
         self.skin_load = None
-        self.coat_load = None 
+        self.coat_load = None
         self.pulses    = []
         self.had_tag   = tag is not None
     # end def __init__
@@ -1037,7 +1039,7 @@ class Wire (Geobj):
         # Links to previous/next connected wire (at start/end)
         # conn [0] contains wires that link to our first end
         # while conn [1] contains wires that link to our second end.
-        self.conn = (Connected_Wires (), Connected_Wires ())
+        self.conn = (Connected_Geobj (), Connected_Geobj ())
         self.n    = None # index into parent.geo
     # end def __init__
 
@@ -1160,16 +1162,16 @@ class Wire (Geobj):
     # end def compute_ground
 
     def compute_connections (self, parent):
-        """ Compute links to connected wires
+        """ Compute links to connected geo objects
             Also compute sets of indeces of pulses.
             Note that we're using a dictionary for matching endpoints,
-            this reduces two nested loops over the wires which is O(N**2)
+            this reduces two nested loops over the geo which is O(N**2)
             to a single loop O(N).
 
-            We do not use a second loop but instead put each wire end
-            into a dictionary linking to the wire. That way the
-            algorithm is O(N) not O(N^2). The dictionaries for the wire
-            ends is end_dict, we store a tuple of end index and wire in
+            We do not use a second loop but instead put each geobj end
+            into a dictionary linking to the geobj. That way the
+            algorithm is O(N) not O(N^2). The dictionaries for the geobj
+            ends is end_dict, we store a tuple of end index and geobj in
             this dictionary.
 
             In the future we may want to introduce fuzzy matching of
@@ -1210,7 +1212,7 @@ class Wire (Geobj):
 
         pc = 0
         pu = parent.pulses
-        # Connection to other wire(s) at end 1
+        # Connection to other geo object(s) at end 1
         seg0 = self.segments [0]
         if self.idx_1 != 0 and abs (self.idx_1) - 1 != self.n:
             assert not self.is_ground [0]
@@ -1244,7 +1246,7 @@ class Wire (Geobj):
                 p.c_per [0] = 0
             if i == self.n_segments - 2 and self.idx_2 == 0:
                 p.c_per [1] = 0
-        # Connection to other wire(s) at end 2
+        # Connection to other geo object(s) at end 2
         lseg = self.segments [-1]
         p1   = lseg.p1
         p2   = lseg.p2
@@ -1346,7 +1348,7 @@ class Wire (Geobj):
     # end def compute_taper2_segments
 
     def connections (self):
-        return self.conn [0].wires.union (self.conn [1].wires)
+        return self.conn [0].geo.union (self.conn [1].geo)
     # end def connections
 
     def idx (self, end_idx):
@@ -1388,7 +1390,7 @@ class Wire (Geobj):
 
     def pulse_iter (self, yield_ends = True):
         for p in self.pulses:
-            if p.wires [0] != p.wires [1] and not yield_ends:
+            if p.geo [0] != p.geo [1] and not yield_ends:
                 continue
             yield p
     # end def pulse_iter
@@ -1540,10 +1542,10 @@ class Mininec:
         conn l:
         <BLANKLINE>
         conn r:
-        w: 1 idx: 9 s:1
+        geo: 1 idx: 9 s:1
         W: 1
         conn l:
-        w: 0 idx: 9 s:1
+        geo: 0 idx: 9 s:1
         conn r:
         <BLANKLINE>
         """
@@ -1729,7 +1731,7 @@ class Mininec:
         , azi = None, zen = None
         , near = None, pwr_nf = None
         , pwr_ff = None, ff_dist = None
-        , load_by_wire = False
+        , load_by_geo = False
         , opt = ()
         ):
         r = []
@@ -1743,7 +1745,7 @@ class Mininec:
         for g in (self.media or ()):
             r.append (g.as_cmdline ())
         for l in self.loads:
-            r.append (l.as_cmdline (self, by_wire = load_by_wire))
+            r.append (l.as_cmdline (self, by_geo = load_by_geo))
         if zen is not None:
             r.append ('--theta=%g,%g,%d' % (zen.initial, zen.inc, zen.number))
         if azi is not None:
@@ -2161,7 +2163,7 @@ class Mininec:
         same_dir     = np.logical_and (*self.pulses.matrix_same_dir)
         same_seg     = np.logical_and (same_len, same_dir)
         same         = np.logical_and (same_wire, same_seg)
-        idx0, idx1   = self.pulses.matrix_wire_idx_0
+        idx0, idx1   = self.pulses.matrix_geo_idx_0
         gs           = self.pulses.matrix_gnd_sgn [1]
         sg           = self.pulses.matrix_sign [1]
         sl           = self.pulses.matrix_seg_len [1]
@@ -2575,7 +2577,7 @@ class Mininec:
         # Then a thick wire without exact kernel
         # Original produces
         # 0.2819941 -0.1414753j
-        >>> w [0].r = 0.01
+        >>> w [0]._r = 0.01
         >>> r, = m.integral_i2_i3 (t, v2, vv, 1, wire.r, False)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         0.2819941 -0.1414753j
@@ -3009,7 +3011,7 @@ class Mininec:
         >>> r = m.scalar_potential (1, (0, 8), 0.5, -1)
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         -0.0833344 -0.1156091j
-        >>> w [0].r = 0.001
+        >>> w [0]._r = 0.001
 
         # When changing wire we need to flush the relevant parts of the
         # pulse cache
@@ -3018,7 +3020,7 @@ class Mininec:
         >>> print ("%.7f %.7fj" % (r.real, r.imag))
         1.0497691 -0.3085993j
 
-        >>> w [0].r = 0.01
+        >>> w [0]._r = 0.01
         >>> m.pulses.reset ()
 
         # vector case
@@ -3042,7 +3044,7 @@ class Mininec:
         cidx   = np.zeros ((plen, plen), dtype = bool)
         cidx [pidx] = True
         midx   = self.pulses.matrix_idx
-        mwx    = self.pulses.matrix_wire_idx
+        mwx    = self.pulses.matrix_geo_idx
         cond   = midx [0] + ds1 != midx [1] + ds2 / 2
         cond   = np.logical_or (cond, mwx [0] != mwx [1])
         cond   = np.logical_or \
@@ -4359,7 +4361,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         except ValueError as err:
             print ("Invalid taper option: %s, %s" % (t, err))
             return 23
-        
+
         if not 0 <= taper <= 3:
             print ("Invalid taper option: unknown taper %s" % taper)
         try:
@@ -4418,7 +4420,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ('Invalid number of pulse index parameters: "%s"' % p)
             return 23
         if len (ep) > 1:
-            s = Excitation (cvolt = v, wire_tag = ep [1], wire_idx = ep [0] - 1)
+            s = Excitation (cvolt = v, wire_tag = ep [1], geo_idx = ep [0] - 1)
         else:
             s = Excitation (cvolt = v)
         if default_excitation:

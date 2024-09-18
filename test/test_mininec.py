@@ -1044,7 +1044,7 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         m   = self.setup_generic_file (bn, compute = False)
         zen = Angle (0, 11,  9)
         azi = Angle (0, 10, 37)
-        cmd = m.as_cmdline (azi = azi, zen = zen, load_by_wire = True)
+        cmd = m.as_cmdline (azi = azi, zen = zen, load_by_geo = True)
         self.pym_compare (bn, cmd)
     # end def test_inve802B
 
