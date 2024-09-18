@@ -849,6 +849,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_impedance (m, 96.67604+55.41392j)
     # end def test_skin_effect
 
+    def test_skin2_effect (self):
+        m = self.setup_generic_file ('dip_skin2', no_ff = True)
+        self.compare_impedance (m, 96.67604+55.41392j)
+    # end def test_skin_effect
+
     def test_vdipole_rot_trans (self):
         m = self.setup_generic_file ('vdipole-rot-trans')
         self.compare_far_field_data (m)
@@ -1232,6 +1237,13 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_skin_effect
 
+    def test_skin2_effect (self):
+        bn  = 'dip_skin2'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare ('dip_skin', cmd)
+    # end def test_skin2_effect
+
     def test_vdipole_rot_trans (self):
         bn  = 'vdipole-rot-trans'
         m   = self.setup_generic_file (bn, compute = False)
@@ -1498,6 +1510,13 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         mini = m.as_basic_input ()
         self.mini_compare (bn, mini)
+    # end def test_skin_effect
+
+    def test_skin_effect (self):
+        bn   = 'dip_skin2'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare ('dip_skin', mini)
     # end def test_skin_effect
 
     def test_vdipole_rot_trans (self):

@@ -1,5 +1,5 @@
 -f 299.8
 -w 50,0,0,0,0,0.5,0,66e-6
 --excitation-pulse=25
---skin-effect-conductivity=2.5e+06,1
+--skin-effect-resistivity=4e-07
 --option=none

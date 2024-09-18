@@ -682,7 +682,7 @@ class Skin_Effect_Load (_Load):
     def as_cmdline (self, parent, by_geo = False):
         r = []
         tag = self.geobj.tag
-        r.append ('--skin-effect-load=%d,%g' % (tag, self.conductivity))
+        r.append ('--skin-effect-conductivity=%g,%d' % (self.conductivity, tag))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -761,9 +761,9 @@ class Insulation_Load (_Load):
 
     def as_cmdline (self, parent, by_geo = False):
         r = []
-        widx = self.geobj.n + 1
+        tag = self.geobj.tag
         r.append \
-            ('--insulation-load=%d,%g,%g' % (widx, self.radius, self.epsilon_r))
+            ('--insulation-load=%g,%g,%d' % (self.radius, self.epsilon_r, tag))
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -4334,14 +4334,26 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
-        ( '--skin-effect-load'
-        , help    = 'Wire conductivity load, give geobj and conductivity'
+        ( '--skin-effect-conductivity'
+        , help    = 'Wire conductivity load, give conductivity and'
+                    ' optionally the geometry tag, if no tag is given, it'
+                    ' applies to all geometry objects'
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
+        ( '--skin-effect-resistivity'
+        , help    = 'Wire resistivity load, give resistivity and'
+                    ' optionally the geometry tag, if no tag is given, it'
+                    ' applies to all geometry objects'
         , action  = 'append'
         , default = []
         )
     cmd.add_argument \
         ( '--insulation-load'
-        , help    = 'Wire insulation load, give geobj, radius and epsilon_r'
+        , help    = 'Wire insulation load, radius, epsilon_r and'
+                    ' optionally the geometry tag, if no tag is given, it'
+                    ' applies to all geometry objects'
         , action  = 'append'
         , default = []
         )
@@ -4728,47 +4740,74 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         print ("Error: Not all loads were used", file = f_err)
         return 23
     # Skin-effect loads are prior-to-last and attached automagically
-    for l in args.skin_effect_load:
+    for l in args.skin_effect_conductivity:
+        ld = l.split (',')
+        if not 1 <= len (ld) <= 2:
+            print \
+                ( 'Error in skin-effect-conductivity: '
+                  'Invalid number of parameters'
+                )
+            return 23
+        tag = None
         try:
-            tag, cond = l.split (',')
-            if tag != 'all':
-                try:
-                    tag = int (tag)
-                except ValueError as err:
-                    print ("Error parsing geobj: %s" % err, file = f_err)
-                    return 23
-            cond = float (cond)
-            if tag == 'all':
+            if len (ld) == 2:
+                tag = int (ld [-1])
+            cond = float (ld [0])
+            if tag is None:
                 for w in m.geo:
                     ld = Skin_Effect_Load (w, cond)
                     m.register_load (ld, None, w.tag)
             else:
-                try:
-                    w  = m.geo.by_tag [tag]
-                except KeyError as err:
-                    print ("Error finding geobj: %s" % err, file = f_err)
-                    return 23
+                w  = m.geo.by_tag [tag]
                 ld = Skin_Effect_Load (w, cond)
                 m.register_load (ld, None, w.tag)
-        except ValueError as err:
-            print ("Error in skin-effect load: %s" % err, file = f_err)
+        except (KeyError, ValueError) as err:
+            print ("Error in skin-effect conductivity: %s" % err, file = f_err)
+            return 23
+    for l in args.skin_effect_resistivity:
+        ld = l.split (',')
+        if not 1 <= len (ld) <= 2:
+            print \
+                ( 'Error in skin-effect-resistivity: '
+                  'Invalid number of parameters'
+                )
+            return 23
+        tag = None
+        try:
+            if len (ld) == 2:
+                tag = int (tag)
+            res = float (ld [0])
+            if tag is None:
+                for w in m.geo:
+                    ld = Skin_Effect_Load (w, 1 / res)
+                    m.register_load (ld, None, w.tag)
+            else:
+                w  = m.geo.by_tag [tag]
+                ld = Skin_Effect_Load (w, 1 / res)
+                m.register_load (ld, None, w.tag)
+        except (KeyError, ValueError) as err:
+            print ("Error in skin-effect resistivity: %s" % err, file = f_err)
             return 23
     # Insulation-loads are last and attached automagically
     for l in args.insulation_load:
         try:
-            widx, r, eps = l.split (',')
-            if widx != 'all':
-                widx = int (widx)
-            r, eps = (float (x) for x in (r, eps))
-            if widx == 'all':
+            ld = l.split (',')
+            if not 2 <= len (ld) <= 3:
+                print ("Error in insulation-load: Invalid number of parameters")
+                return 23
+            tag = None
+            if len (ld) == 3:
+                tag = int (ld [-1])
+            r, eps = (float (x) for x in ld [:2])
+            if tag is None:
                 for w in m.geo:
                     ld = Insulation_Load (w, r, eps)
                     m.register_load (ld, None, w.tag)
             else:
-                w  = m.geo [widx - 1]
+                w  = m.geo.by_tag [tag]
                 ld = Insulation_Load (w, r, eps)
                 m.register_load (ld, None, w.tag)
-        except ValueError as err:
+        except (KeyError, ValueError) as err:
             print ("Error in insulation-load: %s" % err, file = f_err)
             return 23
     p = args.phi.split (',')
