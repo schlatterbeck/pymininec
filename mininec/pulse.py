@@ -112,9 +112,9 @@ class Pulse_Container:
     # end def radius
 
     @cached_property
-    def same_wire (self):
+    def same_geobj (self):
         return np.array ([(p.geo [0] == p.geo [1]) for p in self])
-    # end def same_wire
+    # end def same_geobj
 
     @cached_property
     def same_dir (self):
@@ -213,8 +213,8 @@ class Pulse_Container:
         return self.matrix_endseg_cache [ds]
     # end def matrix_endseg
 
-    def matrix_wires_unconnected (self):
-        if getattr (self, '_matrix_wires_unconnected', None) is None:
+    def matrix_geo_unconnected (self):
+        if getattr (self, '_matrix_geo_unconnected', None) is None:
             l = len (self)
             r = np.zeros ((l, l), dtype = bool)
 
@@ -237,9 +237,9 @@ class Pulse_Container:
                     r [ixgrig1] = True
                     r [ixgrig2] = True
 
-            self._matrix_wires_unconnected = r
-        return self._matrix_wires_unconnected
-    # end def matrix_wires_unconnected
+            self._matrix_geo_unconnected = r
+        return self._matrix_geo_unconnected
+    # end def matrix_geo_unconnected
 
 # end class Pulse_Container
 
@@ -337,7 +337,7 @@ class Pulse:
         return self.point, self.endseg (ds)
     # end def dvecs
 
-    def wires_unconnected (self, other):
+    def geo_unconnected (self, other):
         """ Check if the wires to which the given pulses belong are
             *not* connected.
         """
@@ -345,6 +345,6 @@ class Pulse:
         w2 = other.wire
         # Well this should really be symmetric, so one should be enough :-)
         return not w1.is_connected (w2) and not w2.is_connected (w1)
-    # end def wires_unconnected
+    # end def geo_unconnected
 
 # end class Pulse
