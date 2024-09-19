@@ -859,6 +859,13 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_far_field_data (m)
     # end def test_vdipole_rot_trans
 
+    def test_dip_coat (self):
+        m = self.setup_generic_file ('dip_coat')
+        # compute impedance from expected admittance
+        imp = (66.21636203467537-1.2609487888760895j)
+        self.compare_impedance (m, imp)
+    # end def test_dip_coat
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
@@ -1255,6 +1262,13 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare ('vdipole-001g0', cmd)
     # end def test_vdipole_rot_trans
 
+    def test_dip_coat (self):
+        bn = 'dip_coat'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare ('dip_coat_scaled', cmd)
+    # end def test_dip_coat
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1528,6 +1542,13 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
             ('VDI001G0.OUT', azi = azi, zen = zen, gainfile = 'VDI001G0.GNN')
         self.mini_compare (bn, mini)
     # end def test_vdipole_rot_trans
+
+    def test_dip_coat (self):
+        bn   = 'dip_coat'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare (bn, mini)
+    # end def test_dip_coat
 
 # end class Test_Case_Basic_Input_File
 

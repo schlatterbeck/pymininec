@@ -759,6 +759,18 @@ class Insulation_Load (_Load):
         super ().add_pulse (pulse)
     # end def add_pulse
 
+    def as_basic_input (self, is_s = False):
+        r = []
+        if is_s:
+            raise NotImplementedError \
+                ('Output of Insulation load as S-parameters not implemented')
+        for pulse in self.geobj.pulses:
+            # PULSE NO.,RESISTANCE,REACTANCE:
+            z = self.impedance (self.geobj.parent.parent.f, pulse)
+            r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
+        return '\n'.join (r)
+    # end def as_basic_input
+
     def as_cmdline (self, parent, by_geo = False):
         r = []
         tag = self.geobj.tag
@@ -776,12 +788,11 @@ class Insulation_Load (_Load):
         for seg in pulse.segs:
             # Not both segments may be from same geobj
             geobj = seg.geobj
-            if geobj.coat_load is not self:
-                continue
+            ld    = geobj.coat_load
             if geobj.zins is None:
                 geobj.zins = \
-                    ( mu_0 * (self.epsilon_r - 1) / self.epsilon_r
-                    * np.log (self.radius / self.geobj.r_orig)
+                    ( mu_0 * (ld.epsilon_r - 1) / ld.epsilon_r
+                    * np.log (ld.radius / self.geobj.r_orig)
                     / (2 * np.pi)
                     )
             x += geobj.zins * omg * 1j * (seg.seg_len / 2)
@@ -1215,7 +1226,7 @@ class Wire (Geobj):
 
     def as_cmdline (self):
         r = []
-        tpl = (self.n_segments,) + tuple (self.endpoints.flat) + (self.r,)
+        tpl = (self.n_segments,) + tuple (self.endpoints.flat) + (self.r_orig,)
         if self.had_tag:
             tpl = (self.tag,) + tpl
             r.append \
@@ -1224,7 +1235,7 @@ class Wire (Geobj):
             r.append \
                 ('-w %d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
         if self.segtype:
-            tpr = '--taper=%d,%d' % (self.n + 1, self.segtype)
+            tpr = '--taper-wire=%d,%d' % (self.n + 1, self.segtype)
             if self.taper_min or self.taper_max:
                 if self.taper_max is not None:
                     mn   = self.taper_min or 0
@@ -1779,9 +1790,10 @@ class Mininec:
         # NUMBER OF LOADS:
         lsum = 0
         is_s = False
+        ldtypes = (Impedance_Load, Skin_Effect_Load, Insulation_Load)
         for l in self.loads:
             lsum += len (l.pulses)
-            if not isinstance (l, (Impedance_Load, Skin_Effect_Load)):
+            if not isinstance (l, ldtypes):
                 is_s = True
         r.append (str (lsum))
         if lsum:
