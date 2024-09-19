@@ -4021,13 +4021,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> r
     23
 
-    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
-    >>> args.extend (['--boundary', 'unknown'])
-    >>> r = main (args, sys.stdout)
-    Invalid boundary: unknown, must be one of "linear", "circular"
-    >>> r
-    23
-
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,extra']
     >>> r = main (args, sys.stdout)
     Invalid wire 1: could not convert string to float: 'extra'
@@ -4223,7 +4216,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> r
     23
     """
-    boundaries = ('linear', 'circular')
     from argparse import ArgumentParser
     cmd = ArgumentParser ()
     cmd.add_argument \
@@ -4238,9 +4230,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         )
     cmd.add_argument \
         ( '--boundary'
-        , help    = 'Boundary between different media, one of %s'
-                  % ','.join ('"%s"' % b for b in boundaries)
+        , help    = 'Boundary between different media'
         , default = 'linear'
+        , choices = ('linear', 'circular')
         )
     cmd.add_argument \
         (  '--excitation-pulse'
@@ -4479,13 +4471,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     args = cmd.parse_args (argv)
-    if args.boundary not in boundaries:
-        print \
-            ( 'Invalid boundary: %s, must be one of %s'
-            % (args.boundary, ', '.join ('"%s"' % b for b in boundaries))
-            , file = f_err
-            )
-        return 23
     if not args.wire:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     default_excitation = False
