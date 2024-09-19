@@ -822,7 +822,7 @@ class Medium:
     def __init__ \
         ( self
         , permittivity, conductivity, height = 0
-        , nradials = 0, radius = 0, dist = 0
+        , nradials = 0, radius = 0
         , boundary = 'linear', coord = 1e6
         ):
         self.permittivity = permittivity  # (dielectric constant) T(I)
@@ -898,8 +898,6 @@ class Medium:
             if self.nradials:
                 r.append ('--radial-count=%d' % self.nradials)
                 r.append ('--radial-radius=%g' % self.radius)
-                # FIXME, seems the radial distance is currently ignored
-                # Need to look at original Basic code..
         return '\n'.join (r)
     # end def as_cmdline
 
@@ -1967,7 +1965,8 @@ class Mininec:
         """
         # We only use calculation in dBi for now, see 641-654
         # Note that the volts/meter calculation asks about the power and
-        # about the radial distance (?)
+        # about the radial distance, the latter is the distance of the
+        # far field measurement point in radial direction.
         # 685 has code to print radials, only used for volts/meter
         # Original vars:
         # X1, Y1, Z1: vec real
@@ -4277,12 +4276,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         )
     cmd.add_argument \
         ( '--ff-distance'
-        , help    = "Distance used for far-field computation"
+        , help    = "Distance used for absolute (V/m) far-field computation"
         , type    = float
         )
     cmd.add_argument \
         ( '--ff-power'
-        , help    = "Power used for far-field computation"
+        , help    = "Power used for absolute (V/m) far-field computation"
         , type    = float
         )
     cmd.add_argument \
@@ -4369,11 +4368,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
-        ( '-T', '--timing'
-        , help    = 'Measure the time for certain parts of the algorithm'
-        , action  = 'store_true'
-        )
-    cmd.add_argument \
         ( '--trap-load'
         , help    = 'Trap load, R+L in series parallel to C, '
                     'specify R,L,C in Ohm, Henry, Farad,'
@@ -4447,12 +4441,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , help    = 'Radius of radial wires'
         )
     cmd.add_argument \
-        ( '--radial-distance'
-        , type    = float
-        , help    = 'Distance of radials'
-        , default = 0
-        )
-    cmd.add_argument \
         ( '--taper-wire'
         , help    = "Taper a wire from end 1, 2 or both (3) and "
                     "optionally set min and max segment length, gets "
@@ -4466,6 +4454,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '--theta'
         , help    = "Theta angle: start, increment, count"
         , default = '0,10,10'
+        )
+    cmd.add_argument \
+        ( '-T', '--timing'
+        , help    = 'Measure the time for certain parts of the algorithm'
+        , action  = 'store_true'
         )
     cmd.add_argument \
         ( '-w', '--wire'
@@ -4626,7 +4619,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         rad = dict \
             ( nradials = args.radial_count
             , radius   = args.radial_radius
-            , dist     = args.radial_distance
             )
     for n, m in enumerate (args.medium):
         p = m.split (',')

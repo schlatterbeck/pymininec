@@ -429,7 +429,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         with pytest.raises (ValueError):
             Medium (1, 0)
         with pytest.raises (ValueError):
-            Medium (1, 1, nradials = 1, coord = 5, dist = 7)
+            Medium (1, 1, nradials = 1, coord = 5)
         w = []
         w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         with pytest.raises (ValueError):
@@ -438,7 +438,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         media = [ideal, ideal]
         with pytest.raises (ValueError):
             Mininec (7, w, media = media)
-        rad = Medium (1, 1, nradials = 1, radius = 1, dist = 1)
+        rad = Medium (1, 1, nradials = 1, radius = 1)
         media = [rad, rad]
         with pytest.raises (ValueError):
             Mininec (7, w, media = media)
