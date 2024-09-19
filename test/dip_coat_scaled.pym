@@ -1,0 +1,9 @@
+-f 600
+-w 10,0,0.11086354167,0,0,0,0,0.003175
+-w 10,0,-0.11086354167,0,0,0,0,0.003175
+--excitation-pulse=19
+--skin-effect-conductivity=5.96e+07,1
+--skin-effect-conductivity=5.96e+07,2
+--insulation-load=0.0047625,3.2,1
+--insulation-load=0.0047625,3.2,2
+--option=none

@@ -108,13 +108,13 @@ class Pulse_Container:
 
     @cached_property
     def radius (self):
-        return np.array ([[w.r for w in p.wires] for p in self])
+        return np.array ([[w.r for w in p.geo] for p in self])
     # end def radius
 
     @cached_property
-    def same_wire (self):
-        return np.array ([(p.wires [0] == p.wires [1]) for p in self])
-    # end def same_wire
+    def same_geobj (self):
+        return np.array ([(p.geo [0] == p.geo [1]) for p in self])
+    # end def same_geobj
 
     @cached_property
     def same_dir (self):
@@ -129,14 +129,14 @@ class Pulse_Container:
     # end def same_len
 
     @cached_property
-    def wire_idx (self):
-        return np.array ([p.wire.n for p in self])
-    # end def wire_idx
+    def geo_idx (self):
+        return np.array ([p.geobj.n for p in self])
+    # end def geo_idx
 
     @cached_property
-    def wire_idx_0 (self):
-        return np.array ([p.wires [0].n for p in self])
-    # end def wire_idx_0
+    def geo_idx_0 (self):
+        return np.array ([p.geo [0].n for p in self])
+    # end def geo_idx_0
 
     # Pulse properties
 
@@ -213,33 +213,33 @@ class Pulse_Container:
         return self.matrix_endseg_cache [ds]
     # end def matrix_endseg
 
-    def matrix_wires_unconnected (self):
-        if getattr (self, '_matrix_wires_unconnected', None) is None:
+    def matrix_geo_unconnected (self):
+        if getattr (self, '_matrix_geo_unconnected', None) is None:
             l = len (self)
             r = np.zeros ((l, l), dtype = bool)
 
-            # Collect all wires and corresponding pulses ids
-            wires = {}
+            # Collect all geo objects and corresponding pulses ids
+            geo = {}
             for p_id, p in enumerate (self):
-                if p.wire.n not in wires:
-                    wires [p.wire.n] = [p.wire, p_id]
+                if p.geobj.n not in geo:
+                    geo [p.geobj.n] = [p.geobj, p_id]
                 else:
-                    wires [p.wire.n].append (p_id)
+                    geo [p.geobj.n].append (p_id)
 
-            # Check connectivity between each pair of wires and update unconnected
-            # matrix for pulses
-            for w1_id, w2_id in itertools.combinations (wires, 2):
-                w1, *p1_ids = wires [w1_id]
-                w2, *p2_ids = wires [w2_id]
+            # Check connectivity between each pair of geobj and update
+            # unconnected matrix for pulses
+            for w1_id, w2_id in itertools.combinations (geo, 2):
+                w1, *p1_ids = geo [w1_id]
+                w2, *p2_ids = geo [w2_id]
                 if not w1.is_connected (w2):
                     ixgrig1 = np.ix_ (p1_ids, p2_ids)
                     ixgrig2 = np.ix_ (p2_ids, p1_ids)
                     r [ixgrig1] = True
                     r [ixgrig2] = True
 
-            self._matrix_wires_unconnected = r
-        return self._matrix_wires_unconnected
-    # end def matrix_wires_unconnected
+            self._matrix_geo_unconnected = r
+        return self._matrix_geo_unconnected
+    # end def matrix_geo_unconnected
 
 # end class Pulse_Container
 
@@ -277,7 +277,7 @@ class Pulse:
         self.container.add (self)
         self.point   = point
         self.ends    = [end1, end2]
-        self.wires   = [seg1.wire, seg2.wire]
+        self.geo     = [seg1.geobj, seg2.geobj]
         self.segs    = [seg1, seg2]
         self.n       = None # Index into the pulses of wire
         # The original implementation uses the sign of the wire index
@@ -297,10 +297,10 @@ class Pulse:
         # Semantics is "The other end is grounded"
         self.inv_ground = np.array ([self.ground [1], self.ground [0]])
         # The main wire is the one with the larger index
-        self.wire_idx = np.argmax ([w.n for w in self.wires])
-        self.wire     = self.wires [self.wire_idx]
+        self.geo_idx  = np.argmax ([w.n for w in self.geo])
+        self.geobj    = self.geo [self.geo_idx]
         self.sign     = self.dir_sgn
-        idx = np.array ([w.n for w in self.wires]) + 1
+        idx = np.array ([w.n for w in self.geo]) + 1
         if idx [0] == idx [1]:
             self.gnd_sgn [self.ground] = -1
             self.sign    = self.sign * self.gnd_sgn
@@ -311,7 +311,7 @@ class Pulse:
     def as_mininec (self):
         l = []
         l.append (('%-13s ' * 3) % format_float (self.point))
-        l.append ('%-12s' % format_float ([self.wire.r]))
+        l.append ('%-12s' % format_float ([self.geobj.r]))
         l.append ('%4d %4d' % tuple (self.c_per))
         l.append ('%4d' % (self.idx + 1))
         return  ''.join (l)
@@ -337,7 +337,7 @@ class Pulse:
         return self.point, self.endseg (ds)
     # end def dvecs
 
-    def wires_unconnected (self, other):
+    def geo_unconnected (self, other):
         """ Check if the wires to which the given pulses belong are
             *not* connected.
         """
@@ -345,6 +345,6 @@ class Pulse:
         w2 = other.wire
         # Well this should really be symmetric, so one should be enough :-)
         return not w1.is_connected (w2) and not w2.is_connected (w1)
-    # end def wires_unconnected
+    # end def geo_unconnected
 
 # end class Pulse

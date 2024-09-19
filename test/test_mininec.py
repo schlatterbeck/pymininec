@@ -844,6 +844,28 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_far_field_data (m)
     # end def test_w0xi
 
+    def test_skin_effect (self):
+        m = self.setup_generic_file ('dip_skin', no_ff = True)
+        self.compare_impedance (m, 96.67604+55.41392j)
+    # end def test_skin_effect
+
+    def test_skin2_effect (self):
+        m = self.setup_generic_file ('dip_skin2', no_ff = True)
+        self.compare_impedance (m, 96.67604+55.41392j)
+    # end def test_skin_effect
+
+    def test_vdipole_rot_trans (self):
+        m = self.setup_generic_file ('vdipole-rot-trans')
+        self.compare_far_field_data (m)
+    # end def test_vdipole_rot_trans
+
+    def test_dip_coat (self):
+        m = self.setup_generic_file ('dip_coat')
+        # compute impedance from expected admittance
+        imp = (66.21636203467537-1.2609487888760895j)
+        self.compare_impedance (m, imp)
+    # end def test_dip_coat
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
@@ -874,8 +896,9 @@ class Test_Case_Cmdline (_Test_Base_With_File):
     def pym_compare (self, basename, cmd):
         eps = 1e-8
         with open (self.pym_path (basename), 'r') as f:
-            itr = self.pym_iter (f)
-            for ln, (a, b) in enumerate (zip (itr, cmd.split ('\n'))):
+            f_itr = self.pym_iter (f)
+            c_itr = iter (cmd.strip ().split ('\n'))
+            for ln, (a, b) in enumerate (zip (f_itr, c_itr)):
                 la = a = a.strip ()
                 lb = b = b.strip ()
                 if a.startswith ('-w'):
@@ -893,6 +916,10 @@ class Test_Case_Cmdline (_Test_Base_With_File):
                         ( 'Comparison failed in line %d\n%s\n%s'
                         % (ln + 1, la, lb)
                         )
+            with pytest.raises (StopIteration):
+                next (f_itr)
+            with pytest.raises (StopIteration):
+                 next (c_itr)
     # end def pym_compare
 
     def test_12_el (self):
@@ -1034,7 +1061,7 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         m   = self.setup_generic_file (bn, compute = False)
         zen = Angle (0, 11,  9)
         azi = Angle (0, 10, 37)
-        cmd = m.as_cmdline (azi = azi, zen = zen, load_by_wire = True)
+        cmd = m.as_cmdline (azi = azi, zen = zen, load_by_geo = True)
         self.pym_compare (bn, cmd)
     # end def test_inve802B
 
@@ -1210,6 +1237,38 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_w0xi
 
+    def test_skin_effect (self):
+        bn  = 'dip_skin'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare (bn, cmd)
+    # end def test_skin_effect
+
+    def test_skin2_effect (self):
+        bn  = 'dip_skin2'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare ('dip_skin', cmd)
+    # end def test_skin2_effect
+
+    def test_vdipole_rot_trans (self):
+        bn  = 'vdipole-rot-trans'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        # We end up with the vdipole-001g0 file because the --geo-rotate
+        # and --geo-translate modifications are not round-tripped
+        self.pym_compare ('vdipole-001g0', cmd)
+    # end def test_vdipole_rot_trans
+
+    def test_dip_coat (self):
+        bn = 'dip_coat'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare ('dip_coat_scaled', cmd)
+    # end def test_dip_coat
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1218,7 +1277,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
 
     def mini_compare (self, basename, mini):
         with open (self.pym_path (basename, '.mini')) as f:
-            for ln, (la, lb) in enumerate (zip (f, mini.split ('\n'))):
+            itr = iter (mini.split ('\n'))
+            for ln, (la, lb) in enumerate (zip (f, itr)):
                 la = la.strip ()
                 lb = lb.strip ()
                 if ',' in la:
@@ -1228,6 +1288,10 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
                         ( 'Comparison failed in line %d\n%s\n%s'
                         % (ln + 1, la, lb)
                         )
+            with pytest.raises (StopIteration):
+                next (f)
+            with pytest.raises (StopIteration):
+                next (itr)
     # end def mini_compare
 
     def test_dip_10s (self):
@@ -1455,6 +1519,37 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         self.mini_compare (bn, mini)
     # end def test_w0xi
 
+    def test_skin_effect (self):
+        bn   = 'dip_skin'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare (bn, mini)
+    # end def test_skin_effect
+
+    def test_skin_effect (self):
+        bn   = 'dip_skin2'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare ('dip_skin', mini)
+    # end def test_skin_effect
+
+    def test_vdipole_rot_trans (self):
+        bn   = 'vdipole-rot-trans'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VDI001G0.OUT', azi = azi, zen = zen, gainfile = 'VDI001G0.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_rot_trans
+
+    def test_dip_coat (self):
+        bn   = 'dip_coat'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare (bn, mini)
+    # end def test_dip_coat
+
 # end class Test_Case_Basic_Input_File
 
 class Test_Doctest:
@@ -1476,7 +1571,7 @@ class Test_Doctest:
     # end def run_test
 
     def test_mininec (self):
-        num_tests = 387
+        num_tests = 390
         self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
 

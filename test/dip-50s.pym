@@ -1,6 +1,6 @@
 -f 299.8
 -w 50,0,0,0.5,0,0.5,0.5,0.001
---excitation-segment=25
+--excitation-pulse=25
 --medium=0,0,0
 --theta=0,10,1
 --phi=0,10,1
