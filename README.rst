@@ -43,7 +43,7 @@ option.  The command-line options for the 12-element antenna example
     -w 22,-.40894,5.33400,0,.40894,5.33400,0,.00238 \
     -w 22,-.39624,6.0452,0,.39624,6.0452,0,.00238 \
     --theta=0,5,37 --phi=0,5,73 \
-    --excitation-segment=33 > 12-el.pout
+    --excitation-pulse=33 > 12-el.pout
 
 When the command line options are in a file, comments (using '#' at the
 start of the line) can be added.
@@ -61,6 +61,237 @@ command-line parameters to pymininec.
 The resulting output file contains currents, impedance at the feedpoint
 and antenna far field in dBi as tables. The output tries to reproduce
 the format of the original Basic implementation of Mininec.
+
+Usage
+-----
+
+There is a ``-h`` or equivalent ``--help`` option that gives a brief
+summary of the available options. All long options can be abbreviated to
+their shortest unique prefix. Values often follow an option, either as a
+separate argument (with a space between option and value) or directly
+connected to the option with ``=``, see the example in the introduction.
+
+Frequency
++++++++++
+
+The typical usage defines the frequency using the ``-f`` or
+``--frequency`` option, frequency is specified in MHz. In addition it
+often makes sense to define a frequency sweep: The start frequency of
+the sweep is the value given by the ``-f`` option, with the options
+``--frequency-increment=<increment>`` and ``--frequency-steps=<steps>``
+specifying how many steps with size increment are performed.
+
+Geometry
+++++++++
+
+Next the geometry of the antenna is defined. In the current version
+there are only wires that can be specified. A wire definition takes the
+form::
+
+ --wire [tag,]<nseg>,<x1>,<y1>,<z1>,<x2>,<y2>,<z2>,<radius>
+
+where (x1, y1, z1) specifies the first endpoint of the wire in
+carthesian coordinates, (x2, y2, z2) defines the second endpoint of the
+wire, and finally the radius is specified. All lengths and coordinates
+are in meter, but see below for the ``--geo-scale`` option. The leading
+tag is optional and is used to refer back to the wire with other
+options, e.g. when specifying the feedpoint or loads on the antenna.  If
+no tag is specified, wires are numbered starting with the highest
+specified tag number or if no tag is specified, one. It is recommended
+to not mix wires with and without tag. The parameter ``nseg`` specifies
+the number of segments the wire is split into for computation.
+
+By default wires are segmented into equal-length segments. Segments
+should not be longer than 1/20 the shortest wavelength λ. Mininec
+typically produces results with a resonant frequency slightly too high
+(so the antenna is too long), this can be improved by using a high
+number of segments.
+
+Segment length tapering
++++++++++++++++++++++++
+
+An alternative is to use segments that are not equal-length. This can be
+done using the ``--taper-wire`` option. It gets 2-4 parameters. The first
+is the wire tag to identify the wire that should be length-tapered. The
+second parameter specifies from which end of the wire tapering should be
+performed. The end can either be ``1``, ``2`` for first and second end,
+respectively, and ``3`` for both ends. The third and fourth parameters
+specify the minimum and maximum segments lengths, respectively. A
+minimum segment length of 2.5 the radius is enforced: If segments get
+shorter, the thin-wire asumption is violated and results will be wrong.
+The tapering starts out with the shortest possible segment under the
+constraints of minimum and maximum segment length and doubles the
+segment length until the maximum is reached, it also stops making
+segments longer when subsequent segments would have to be shorter than
+the current segment to keep the number of segments.
+
+Geometry transformation
++++++++++++++++++++++++
+
+Sometimes it is necessary to modify parts of the geometry. Three
+geometry transformation options are available. To rotate part or all of
+an antenna the ``--geo-rotate`` option is used. It gets 4-5 comma
+separated parameters. The first is a numeric key for sorting geo
+transformations: The order of transformations matters, so it is
+necessary to specify the order. The next three options are the rotations
+around X- Y- and Z-axis. An optional fifth parameter specifies the geo
+object tag (e.g. wire tag) to rotate. If no tag is given the whole
+antenna is rotated. If more than one rotation is non-zero, the X-axis
+rotation is performed first, then the Y-axis rotation and finally the
+Z-axis rotation.
+
+The ``--geo-translate`` option again gets 4-5 comma separated
+parameters. The first is again a sort key. The next three parameters
+specify displacement in X- Y- and Z-direction. Finally again a tag can
+be specified to define the geometry object to translate. If left out the
+whole antenna is moved. This is often useful for modifying the height
+above ground of an antenna: The whole antenna can be shifted up without
+having to edit all the Z-components of all geometry elements.
+
+Finally the ``--geo-scale`` option scales all geometry parameters
+(including the radius) by a given factor. The factor is the first
+parameter, an optional second parameter again gives a geometry tag. If
+the tag is omitted the whole antenna is scaled. The scaling is always
+applied last so that the ``--geo-translate`` applies to the original
+lengths.
+
+An example is in ``test/vdipole-rot-trans.pym``: This has the geo
+transformation options::
+
+    --geo-rotate=1,0,0,90
+    --geo-rotate=2,90,0,0
+    --geo-translate=3,0,0,7.33
+
+This first rotates the antenna around the Z-axis by 90° (sort-key 1),
+then around the X-axis by 90° (sort-key 2), and finally the whole
+antenna is shifted up by 7.33m (sort-key 3). Note that in this case we
+cannot combine the rotation around Z- and X-axes into a single
+``--geo-rotate`` option because this would rotate first around the
+X-axis which would get a different result than first rotating around the
+Z-axis.
+
+Pulses
+++++++
+
+Mininec uses the concept of a *pulse* for defining where feed voltages
+and loads apply. Think of a pulse as the point between two segments.
+This means that at the *end* of wires (unless a second or third wire
+connects there) there is no pulse. So a single wire consisting of 3
+segments contains only 2 pulses, or generally a wire with ``N`` segments
+contains ``N-1`` pulses. Pulses are automatically numbered starting with 1.
+
+When a new wire is defined joining the endpoint of an already-existing
+wire which has no connections yet, the pulse at the wire junction is
+"owned" by the new wire: It becomes the first pulse on the new wire.
+
+If more than two wires join at a coordinate, it is not a good idea to
+allocate a feedpoint or load to that pulse: The feedpoint or load
+would be only between two of the three or more wires. In such a case it
+is better to insert a small length of wire where the feedpoint or load
+is placed as in the following picture.
+
+.. figure:: https://raw.githubusercontent.com/schlatterbeck/pymininec/master/feed.png
+    :align: center
+
+
+Feedpoint(s)
+++++++++++++
+
+For an antenna at least one feedpoint needs to be defined. This is done
+using the ``--excitation-pulse`` option. The pulse number is either
+absolute over *all* pulses of the antenna or a comma-separated sequence
+of two values can be specified where the first is the pulse number
+*relative to* the wire specified by the second number, the wire tag.
+By default the excitation voltage is 1V but this can be changed by
+specifying a ``--excitation-voltage`` option which gets a complex number
+in volts. If multiple feedpoints are defined this is done by multiple
+``--excitation-pulse`` and ``--excitation-voltage`` options.
+
+Ground and Radials
+++++++++++++++++++
+
+Ground can be specified with the ``--medium`` option. If not given, free
+space is asumed. Multiple ``--medium`` options can be specified in which
+case the subsequent media are either concentric around the first ground
+or linearly allocated in X-direction. The ``--boundary`` option
+specifies if the media are concentric (``--boundary=circular``) or in
+X-direction (``--boundary=linear``) the default is a linear boundary.
+The ``--medium`` option gets 3-4 comma-separated parameters, the
+permittivity (dielectric constant), the conductivity, and the height.
+If the first three are zero, ideal ground is asumed. With ideal ground
+only a single ``--medium`` option is allowed.
+
+The fourth parameter gives the width of the ground (the distance to the
+next medium), this is a length in X-direction for linear boundary and a
+radius for circular boundary. The fourth parameter is not used for the
+last `--medium`` option. Note that it only makes sense to define
+multiple grounds that are *down* from the last ground (i.e. specifying a
+negative height) because the pymininec engine currently will not take
+refraction from a higher ground into account. The first medium must
+always be at height zero.
+
+For the first medium, radials can be specified. Radials are allowed only
+for non-ideal ground. The option ``--radial-count`` gives the number of
+radials. The option ``--radial-radius`` gives the radius of the
+radial-wires. Specifying radials will automatically select circular
+boundary. The length of the radials is defined by the distance to the
+next medium. So with radials at least two ``--medium`` options are
+required.
+
+Specifying what is computed
++++++++++++++++++++++++++++
+
+With the ``--option`` option it can be specified what outputs are
+computed and printed. This option can be specified multiple times.
+It can take the arguments ``far-field``, ``far-field-absolute``,
+``near-field``, and ``none``. When ``none`` is specified as the only
+option, only currents and feed point impedance are printed.
+
+The ``far-field`` options selects printing of the far field in dBi.
+The ``far-field-absolute`` option selects printing of the far field in
+V/m. This option can be modified by specifying a different power level
+using the `--ff-power`` option and the ``--ff-distance`` option to
+specify the distance in radial direction of the far field measurement
+point. Far field measurements are taken at elevation and azimuth angles
+specified with the ``--theta`` and ``--phi`` options, respectively.
+The elevation angle theta is measured from the zenith while the azimuth
+angle phi is measured from the X-axis. Both, the ``--theta`` and the
+``--phi`` option take tree comma-separated arguments: The start angle,
+the angle increment, and the number of angles. By default, theta is
+"0,10,10", so it runs from the zenith to ground in 10 degree steps. The
+default for phi is "0,10,37", so it runs around the azimuth circle in 10
+degree steps, computing the 0° and 360° on the X-axis value twice. This
+is needed for some 3d-plotting tools for plotting a closed surface for
+the 3d gain pattern.
+
+The ``--option=near-field`` specifies printing of the near field.
+This also needs specification of the ``--near-field`` option which gets
+6 comma-separated parameters: The first three define the start (x, y, z)
+coordinate of near-field measurements, the next three define the
+increment of far field measurements. With the ``--nf-power`` option it
+is possible to modify the power level for the near field computation.
+
+Without any ``--option``, far field is printed if no near field
+options are present.
+
+Miscellaneous options
++++++++++++++++++++++
+
+With the option ``--output-cmdline`` the given command-line options can
+be printed. This is useful for tests and when using the API: All options
+can be written out to reproduce the current settings. The option takes a
+file name as an argument.
+
+With the option ``--output-basic-input``, input for the original Mininec
+code in Basic can be printed. The Basic code uses prompts to ask the
+user for input. With this option the complete user input can be
+generated. Running the Basic code with Yabasi_, the user input can be
+fed into the Basic program with the ``-i`` option which is useful for
+comparing the values computed by pymininec to the values computed by the
+original Basic code. The option takes a file name as an argument.
+
+With the ``-T`` or ``--timing`` option, printing of runtimes of various
+parts of the computation is requested. The option takes no arguments.
 
 Measuring Timings
 -----------------
