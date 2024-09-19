@@ -4457,7 +4457,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '--taper-wire'
         , help    = "Taper a wire from end 1, 2 or both (3) and "
                     "optionally set min and max segment length, gets "
-                    "2-4 parameters: wire number (1-based), taper (1-3) "
+                    "2-4 parameters: wire tag, taper (1-3) "
                     "and optionally min and max segment length"
 
         , action  = 'append'
