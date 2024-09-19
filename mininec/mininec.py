@@ -4147,6 +4147,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     23
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.extend (['--medium=0,0,5'])
+    >>> r = main (args, sys.stdout)
+    First medium must have height 0
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--excitation-pulse=1'])
     >>> args.extend (['--theta=0,45,3', '--phi=0,180'])
     >>> r = main (args, sys.stdout)
@@ -4638,6 +4645,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         if len (p) > 3:
             d.update (coord = p [3])
         p = p [:3]
+        if n == 0 and p [2] != 0:
+            print ("First medium must have height 0")
+            return 23
         media.append (Medium (*p, **d))
     media = media or None
 
