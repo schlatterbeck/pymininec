@@ -111,7 +111,7 @@ Segment length tapering
 +++++++++++++++++++++++
 
 An alternative is to use segments that are not equal-length. This can be
-done using the ``--taper-wire`` option. It gets 2-4 parameters. The first
+done using the ``--taper-wire`` option. It gets 2 |__| 4 parameters. The first
 is the wire tag to identify the wire that should be length-tapered. The
 second parameter specifies from which end of the wire tapering should be
 performed. The end can either be ``1``, ``2`` for first and second end,
@@ -130,7 +130,7 @@ Geometry transformation
 
 Sometimes it is necessary to modify parts of the geometry. Three
 geometry transformation options are available. To rotate part or all of
-an antenna the ``--geo-rotate`` option is used. It gets 4-5 comma
+an antenna the ``--geo-rotate`` option is used. It gets 4 |__| 5 comma
 separated parameters. The first is a numeric key for sorting geo
 transformations: The order of transformations matters, so it is
 necessary to specify the order. The next three options are the rotations
@@ -140,7 +140,7 @@ antenna is rotated. If more than one rotation is non-zero, the X-axis
 rotation is performed first, then the Y-axis rotation and finally the
 Z-axis rotation.
 
-The ``--geo-translate`` option again gets 4-5 comma separated
+The ``--geo-translate`` option again gets 4 |__| 5 comma separated
 parameters. The first is again a sort key. The next three parameters
 specify displacement in X- Y- and Z-direction. Finally again a tag can
 be specified to define the geometry object to translate. If left out the
@@ -152,8 +152,8 @@ Finally the ``--geo-scale`` option scales all geometry parameters
 (including the radius) by a given factor. The factor is the first
 parameter, an optional second parameter again gives a geometry tag. If
 the tag is omitted the whole antenna is scaled. The scaling is always
-applied last so that the ``--geo-translate`` applies to the original
-lengths.
+applied last so that the ``--geo-translate`` option applies to the
+original lengths.
 
 An example is in ``test/vdipole-rot-trans.pym``: This has the geo
 transformation options::
@@ -207,6 +207,75 @@ specifying a ``--excitation-voltage`` option which gets a complex number
 in volts. If multiple feedpoints are defined this is done by multiple
 ``--excitation-pulse`` and ``--excitation-voltage`` options.
 
+Lumped Loads
+++++++++++++
+
+Adding loads to an antenna structure is a two-step process. In the first
+step the loads are defined. In the second step they are attached to
+pulses.
+
+The easiest load type is specified with the ``-l`` or ``--load`` option.
+It gets a complex number as argument. Note that this simple load type
+does not change with frequency. Simple loads are sorted first when
+attaching loads.
+
+Laplace loads are the most general type of load. With it combinations of
+`lumped element loads`_ can be modeled. In a combination of serial and
+parallel lumped components, an inductance is modeled with L*s, a
+capacitance is modeled with 1/(C*s) and a resistance with R. After
+analyzing a complex circuit, a polynomial of s results in the numerator
+and denominator of a fraction. The denominator is specified with the
+``--laplace-load-a`` option and the numerator with the
+``--laplace-load-b`` option. Both take a comma-separated list of real
+numbers, representing the coefficients of the polynomial in increasing
+order of exponentials. Laplace loads are sorted last when attaching
+loads.
+
+Another load type that is internally based on laplace loads is specified
+with the ``--rlc-load`` option. It gets three parameters, the resistance
+in Ohm, the inductance in Henry and the capacitance in Farad. A zero
+in the Farad position indicates a short instead of a capacitance.  All
+three lumped components are connected in series.  RLC loads are sorted
+second when attaching loads.
+
+Finally trap loads |--| which are also based on laplace loads internally
+|--| allow the specification of traps in an antenna. They
+consist of a serial connection of a resistor with an inductance
+(modeling the non-zero resistance of a real inductance) in parallel with
+a capacitance. The ``--trap-load`` option gets three comma-separated
+real numbers, the resistance, the inductance, and the capacitance in
+Ohm, Henry, and Farad, respectively. Trap loads are sorted third when
+attaching loads.
+
+Loads are attached to pulses with the ``--attach-load`` option. The
+option takes 2 |__| 3 comma separated parameters. The first is the load
+index. The load indeces are computed by iterating over all simple loads,
+then all RLC loads, then all trap loads and finally all laplace loads
+assigning them a load index starting with one.
+
+Distributed Load on Wires
++++++++++++++++++++++++++
+
+Non-ideal wires have distributed conductivity. With the option
+``--skin-effect-conductivity`` distributed conductivity of a wire can be
+specified. Alternatively the ``--skin-effect-resistivity`` option can be
+used if the resistivity of the wire is known. Both option get one or two
+parameters. The first parameter is the conductivity or resistivity,
+respectively. The second optional parameter specifies the geometry
+(e.g. wire) tag. If no tag is given, the skin effect load is attached to
+*all* geometry objects.
+
+Wires can have insulation. The effect of insulation on the distributed
+impedance of a wire is modeled with the ``--insulation-load`` option. It
+gets 2 |__| 3 parameters. The first parameter specifies the radius of the
+wire *including* insulation. The second specifies the relative
+permittivity of the insulation. The third optional parameter specifies
+the geometry (e.g. wire) tag. If no tag is given the insulation load is
+attached to all wires.
+
+At most one insulation load and at most one skin effect load can be
+specified per wire.
+
 Ground and Radials
 ++++++++++++++++++
 
@@ -216,7 +285,7 @@ case the subsequent media are either concentric around the first ground
 or linearly allocated in X-direction. The ``--boundary`` option
 specifies if the media are concentric (``--boundary=circular``) or in
 X-direction (``--boundary=linear``) the default is a linear boundary.
-The ``--medium`` option gets 3-4 comma-separated parameters, the
+The ``--medium`` option gets 3 |__| 4 comma-separated parameters, the
 permittivity (dielectric constant), the conductivity, and the height.
 If the first three are zero, ideal ground is asumed. With ideal ground
 only a single ``--medium`` option is allowed.
@@ -224,11 +293,13 @@ only a single ``--medium`` option is allowed.
 The fourth parameter gives the width of the ground (the distance to the
 next medium), this is a length in X-direction for linear boundary and a
 radius for circular boundary. The fourth parameter is not used for the
-last `--medium`` option. Note that it only makes sense to define
-multiple grounds that are *down* from the last ground (i.e. specifying a
-negative height) because the pymininec engine currently will not take
-refraction from a higher ground into account. The first medium must
-always be at height zero.
+last ``--medium`` option.
+
+Note that you typically want *negative* heights for media further out,
+this allows modelling of summits. Mininec *allows* the specification of
+*higher* grounds but the results will be questionable as no reflection
+at the higher ground is modelled. The first medium must always be at
+height zero.
 
 For the first medium, radials can be specified. Radials are allowed only
 for non-ideal ground. The option ``--radial-count`` gives the number of
@@ -296,10 +367,10 @@ parts of the computation is requested. The option takes no arguments.
 Measuring Timings
 -----------------
 
-In the latest version there is a command-line option -T which outputs
-computation timings on the standard error output. This was used for
-measuring the results of recent vectorization of computations.
-Speed ups are roughly:
+Starting with version 1 there is a command-line option ``-T`` which
+outputs computation timings on the standard error output. This was used
+for measuring the results of recent vectorization of computations.
+Speedups are roughly:
 
 - About a factor of 50 for computation of the impedance matrix.
   So we're down from around 23 seconds to 0.44 seconds for a 12 element
@@ -324,25 +395,6 @@ with ``pymininec`` but was moved to its own project. You can currently
 plot elevation and azimuth diagram of an antenna, a 3D-plot, the
 geometry and VSWR. All either as a standalone program (using matplotlib)
 or exported as HTML to the browser (using plotly).
-
-Ground (Media)
---------------
-
-The latest version implements the option parsing for the mininec ground
-model for more than one medium. You also need to specify the
-``--boundary`` option to set the type of boundary between media: The
-default ``linear`` boundary appends grounds in X-direction with the
-distance in the 4th parameter of the ``--medium`` option. The
-``circular`` boundary has concentric media with the radius of each
-medium given in the 4th parameter of the ``--medium`` option. The third
-parameter of the ``--medium`` option is the height. Note that you
-typically want *negative* heights for media further out, this allows
-modelling of summits. Mininec *allows* the specification of *higher*
-grounds but the results will be questionable as no reflection at the
-higher ground is modelled. The ground implementation was not yet tested
-against the originally basic code (or any other modelling program
-implementing the mininec engine).
-
 
 Test coverage and code quality
 ------------------------------
@@ -1048,3 +1100,4 @@ Literature
 .. _`Blog Post`: https://blog.runtux.com/posts/2024/07/28/
 .. _`Wikipedia article on skin effect`:
     https://en.wikipedia.org/wiki/Skin_effect
+.. _`lumped element loads`: https://en.wikipedia.org/wiki/Lumped-element_model
