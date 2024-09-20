@@ -797,6 +797,33 @@ ready-made tables for Kelvin functions. Lookup of complex arguments to
 functions via tables was not possible, so a solution that was computable
 with books of mathematical tables was preferred...
 
+Insulated Wires
+---------------
+
+Insulated wires use a distributed inductance and equivalent radius:
+
+.. math::
+    a_e &= a \left(\frac{b}{a}\right)^{\left(1-
+        \frac{1}{\varepsilon_r}\right)}
+        = b \left(\frac{a}{b}\right)^\left(\frac{1}{\varepsilon_r}\right) \\
+    L   &= \frac{\mu_0}{2\pi}\left(1-\frac{1}{\varepsilon_r}
+      \right)\log\left(\frac{b}{a}\right) \\
+
+where :math:`a` is the original radius of the wire, :math:`b` is the
+radius of the wire *including insulation*, :math:`\varepsilon_r` is the
+relative dieelectric constant of the insulation, :math:`\mu_0` is the
+vacuum permeability, and :math:`a_e` is the equivalent radius.  The
+inductance :math:`L` is the inductance per length of the insulated wire
+(or wire segment).
+
+This formula originally appeared in a paper by Wu [12]_. I discovered it
+via a note by Steve Stearns, K6OIK which turned out to be a supplement
+to the ARRL Antenna Book [13]_.
+
+I had first tried a formulation by Richmond [15]_ suggested to me by Roy
+Lewallen, W7EL (the author of EZNEC). But that formulation turned out to
+be numerically instable for small segments. More details are in my blog [16]_.
+
 Notes on Elliptic Integral Parameters
 -------------------------------------
 
@@ -1093,6 +1120,18 @@ Literature
 .. [11] G. J. Burke and A. J. Poggio. Numerical electromagnetics code (NEC)
    |--| method of moments, Part I: Program description |--| theory.
    January 1981.
+.. [12] Tai Tsun Wu. Theory of the dipole antenna and the two-wire
+   transmission line. Journal of Mathematical Physics, 2(4):550–574,
+   July 1961.
+.. [13] Steve Stearns. `Modeling insulated wire`_. In Silver [11]_.
+   Supplement to Antenna Book, page visited 2024-08-26.
+.. [14] H. Ward Silver, editor. The ARRL Antenna Book for Radio
+   Communications. American Radio Relay League (ARRL), 25th edition, 2023.
+.. [15] J. H. Richmond. Radiation and scattering by thin-wire structures
+   in the complex frequency domain. Contractor Report CR-2396, NASA,
+   Columbia, Ohio, May 1974. Available as `CR-2936`_
+.. [16] Ralf Schlatterbeck. Modeling a wire antenna with insulation.
+   `Blog post, Open Source Consulting, September 2024`_.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
@@ -1123,3 +1162,8 @@ Literature
 .. _`Wikipedia article on skin effect`:
     https://en.wikipedia.org/wiki/Skin_effect
 .. _`lumped element loads`: https://en.wikipedia.org/wiki/Lumped-element_model
+.. _`Modeling insulated wire`:
+    http://www.arrl.org/files/file/Modeling%20Insulated%20Wire%20-%20K6OIK.pdf
+.. _`Blog post, Open Source Consulting, September 2024`:
+    https://blog.runtux.com/posts/2024/09/17/
+.. _`CR-2936`: https://ntrs.nasa.gov/citations/19740013743
