@@ -22,10 +22,12 @@
 # ****************************************************************************
 
 import os
+import sys
 import pytest
 import doctest
 import numpy as np
 import mininec
+from io import StringIO
 from mininec.mininec import *
 from mininec.mininec import main
 from zmatrix import *
@@ -461,7 +463,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         wire = Wire (7, 0, 0, -1, 1, 1, -1, 0.01)
         with pytest.raises (ValueError):
             wire.compute_ground (0, ideal)
-    # end def test_excitation
+    # end def test_wire
+
+    def test_wire_connection (self):
+        w = Wire (7, 1, 1, 1, 2, 2, 2, 0.1)
+        assert w.is_connected (w)
+    # end def test_wire_connection
 
     def test_source_index (self):
         w = []
@@ -865,6 +872,28 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         imp = (66.21636203467537-1.2609487888760895j)
         self.compare_impedance (m, imp)
     # end def test_dip_coat
+
+    def test_timing (self):
+        expected = \
+            [ ('for compute_impedance_matrix', 0.1)
+            , ('for compute_rhs',              0.01)
+            , ('for compute_currents',         0.1)
+            , ('for compute_far_field',        0.1)
+            ]
+        old_stderr = sys.stderr
+        sio = StringIO ()
+        sys.stderr = sio
+        m = self.setup_generic_file ('vloop20-time')
+        sys.stderr = old_stderr
+        for n, line in enumerate (sio.getvalue ().split ('\n')):
+            line = line.strip ()
+            if not line:
+                continue
+            t, num, r = line.split (None, 2)
+            assert t == 'Time'
+            assert r == expected [n][0]
+            assert float (num) < expected [n][1]
+    # end def test_timing
 
 # end class Test_Case_Known_Structure
 
@@ -1550,6 +1579,13 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         self.mini_compare (bn, mini)
     # end def test_dip_coat
 
+    def test_dipv_14st_t2s (self):
+        bn   = 'dipv-14st-t2s'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare (bn, mini)
+    # end def test_dipv_14st_t2s
+
 # end class Test_Case_Basic_Input_File
 
 class Test_Doctest:
@@ -1571,12 +1607,12 @@ class Test_Doctest:
     # end def run_test
 
     def test_mininec (self):
-        num_tests = 390
+        num_tests = 504
         self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
 
     def test_util (self):
-        num_tests = 1
+        num_tests = 2
         self.run_test (mininec.util, num_tests)
     # end def test_util
 

@@ -445,7 +445,8 @@ extension ``.bout`` while the output of the Python code is in files
 with the extension ``.pout``. The ``.pout`` files are compared in the
 regression tests. The ``.pym`` files in the ``test`` directory are the
 command-line arguments to recreate the ``.pout`` files with
-``mininec.py``.
+``mininec.py``. An uppercase ``.Bout`` extension is used for output
+generated with Yabasi_ where the distinction matters.
 
 In his thesis [5]_, Zeineddin investigates numerical instabilities when
 comparing near and far field. He solves this by doing certain

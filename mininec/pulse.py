@@ -337,14 +337,4 @@ class Pulse:
         return self.point, self.endseg (ds)
     # end def dvecs
 
-    def geo_unconnected (self, other):
-        """ Check if the wires to which the given pulses belong are
-            *not* connected.
-        """
-        w1 = self.wire
-        w2 = other.wire
-        # Well this should really be symmetric, so one should be enough :-)
-        return not w1.is_connected (w2) and not w2.is_connected (w1)
-    # end def geo_unconnected
-
 # end class Pulse

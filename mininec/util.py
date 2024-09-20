@@ -29,6 +29,8 @@ def format_float (floats, use_e = 0):
     Test special case with large number, should usually set 'use_e':
     >>> print ('%s' % format_float ((3e7,)))
      30000000
+    >>> print ('%s' % format_float ((-1e-16,)))
+     0       
     """
     r = []
     for f in floats:

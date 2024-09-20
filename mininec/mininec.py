@@ -42,7 +42,7 @@ try:
     legendre_cache [2] = [x / 2 for x in _cached_roots_legendre (2)]
     legendre_cache [4] = [x / 2 for x in _cached_roots_legendre (4)]
     legendre_cache [8] = [x / 2 for x in _cached_roots_legendre (8)]
-except ImportError:
+except ImportError: # pragma: no cover
     pass
 
 # Constants
@@ -116,16 +116,8 @@ class Connected_Geobj:
     def __init__ (self):
         self.geo           = set ()
         self.list          = []
-        self.cached_pulses = None
         self.sgn_by_geobj  = {}
     # end def __init__
-
-    @property
-    def pulses (self):
-        if self.cached_pulses is None:
-            self.cached_pulses = set (x [0] for x in self.pulse_iter ())
-        return self.cached_pulses
-    # end def pulses
 
     def add (self, geobj, other_geobj, end_idx, sign, sign2):
         assert geobj not in self.geo
@@ -235,7 +227,10 @@ class Excitation:
     def as_cmdline (self):
         r = []
         if self.voltage != 1+0j:
-            r.append ('--excitation-voltage=%g' % self.voltage)
+            r.append \
+                ( '--excitation-voltage=%g%+gj'
+                % (self.voltage.real, self.voltage.imag)
+                )
         if not self.is_default:
             if self.geo_tag is not None and self.geo_idx is not None:
                 r.append \
@@ -436,7 +431,7 @@ class Impedance_Load (_Load):
 
     def as_basic_input (self, is_s = False):
         r = []
-        if is_s:
+        if is_s: # pragma: no cover
             raise NotImplementedError \
                 ('Output of Impedance load as S-parameters not yet implemented')
         for pulse in self.pulses:
@@ -653,13 +648,14 @@ class Skin_Effect_Load (_Load):
         self.conductivity = conductivity
         if geobj.skin_load is not None and geobj.skin_load is not self:
             raise ValueError \
-                ("Can assign only one skin-effect load per geo object")
+                ("Only one skin-effect load per geo object")
         geobj.skin_load = self
     # end def __init__
 
     def add_pulse (self, pulse):
         # Allow adding only to our own geobj
-        if self.geobj != pulse.geobj:
+        if self.geobj != pulse.geobj: # pragma: no cover
+            # This is not reachable via command-line
             raise ValueError \
                 ('Skin-effect load can only be attached to pulses of its'
                  ' geo objects'
@@ -669,7 +665,7 @@ class Skin_Effect_Load (_Load):
 
     def as_basic_input (self, is_s = False):
         r = []
-        if is_s:
+        if is_s: # pragma: no cover
             raise NotImplementedError \
                 ('Output of Skin effect load as S-parameters not implemented')
         for pulse in self.geobj.pulses:
@@ -742,16 +738,17 @@ class Insulation_Load (_Load):
         if  (   geobj.coat_load is not None
             and geobj.coat_load is not self
             ):
-            raise ValueError ("Can assign only one insulation-load per geobj")
+            raise ValueError ("Only one insulation-load per geo object")
         if geobj.r >= radius:
-            raise ValueError ("Insulation radius must be > geobj radius")
+            raise ValueError ("Insulation radius must be > geo object radius")
         geobj.coat_load = self
         self.f = None
     # end def __init__
 
     def add_pulse (self, pulse):
         # Allow adding only to our own geobj
-        if self.geobj != pulse.geobj:
+        if self.geobj != pulse.geobj: # pragma: no cover
+            # Not reachable via command line
             raise ValueError \
                 ('Insulation-load can only be attached to pulses of its '
                  'geo objects'
@@ -761,7 +758,7 @@ class Insulation_Load (_Load):
 
     def as_basic_input (self, is_s = False):
         r = []
-        if is_s:
+        if is_s: # pragma: no cover
             raise NotImplementedError \
                 ('Output of Insulation load as S-parameters not implemented')
         for pulse in self.geobj.pulses:
@@ -1003,7 +1000,8 @@ class Geo_Container:
                 if geobj.tag <= 0:
                     raise ValueError ('Tag "%s" not allowed' % geobj.tag)
                 if geobj.tag in tags_seen:
-                    raise ValueError ('Duplicate tag "%s" in geobj' % geobj.tag)
+                    raise ValueError \
+                        ('Duplicate tag "%s" in geo object' % geobj.tag)
                 tags_seen.add (geobj.tag)
         max_tag = 0
         if tags_seen:
@@ -1032,7 +1030,7 @@ class Geo_Container:
         rmatrix = Rotation_Matrix (rotation)
         if tag is None:
             for g in self:
-                g.rotate    (rmatrix)
+                g.rotate (rmatrix)
         else:
             self.by_tag [tag].rotate (rmatrix)
     # end def rotate
@@ -1416,7 +1414,7 @@ class Wire (Geobj):
         elif self.segtype == 1 or self.segtype == 2:
             try:
                 self.compute_taper1_segments ()
-            except Taper_Error:
+            except Taper_Error: # pragma: no cover
                 # We may want to issue a warning here, maybe when there
                 # is a warning framework
                 assert len (self.segments) == 0
@@ -1425,7 +1423,7 @@ class Wire (Geobj):
         else:
             try:
                 self.compute_taper2_segments ()
-            except Taper_Error:
+            except Taper_Error: # pragma: no cover
                 # We may want to issue a warning here, maybe when there
                 # is a warning framework
                 assert len (self.segments) == 0
@@ -4038,26 +4036,31 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Append-load needs 2-3 parameters
     >>> r
     23
+
     >>> args = ['--attach-load=1,2,3,4']
     >>> r = main (args, sys.stdout)
     Append-load needs 2-3 parameters
     >>> r
     23
+
     >>> args = ['--attach-load=1,notanint']
     >>> r = main (args, sys.stdout)
     Attach-load: invalid literal for int() with base 10: 'notanint'
     >>> r
     23
+
     >>> args = ['--attach-load=1,2']
     >>> r = main (args, sys.stdout)
     Load index 1 out of range
     >>> r
     23
+
     >>> args = ['--load=1+1j']
     >>> r = main (args, sys.stdout)
     Error: Not all loads were used
     >>> r
     23
+
     >>> args = ['--load=1+1j', '--attach-load=1,all', '--attach-load=5,all']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4065,6 +4068,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Load index 5 out of range
     >>> r
     23
+
     >>> args = ['--load=1+1j', '--attach-load=1,1', '--attach-load=1,7']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4072,6 +4076,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error attaching load: Invalid pulse tag 7
     >>> r
     23
+
     >>> args = ['--load=1+1j', '--attach-load=1,1,7']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4079,6 +4084,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error attaching load: Invalid geo object tag 7
     >>> r
     23
+
     >>> args = ['--load=1+1j', '--attach-load=1,7,1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4086,6 +4092,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error attaching load: Invalid pulse tag 7 for geo object 1
     >>> r
     23
+
+    >>> args = ['-w', '2,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--excitation-pulse=1,5')
+    >>> r = main (args, sys.stdout)
+    Invalid source: 1,5: Invalid geo object: "5"
+    >>> r
+    23
+
+    >>> args = ['-w', '2,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--excitation-pulse=7,1')
+    >>> r = main (args, sys.stdout)
+    Invalid source: 7,1: Invalid pulse tag 7 for geo object 1
+    >>> r
+    23
+
     >>> args = ['--load=1+1j', '--attach-load=1,0']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4101,6 +4122,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error in Laplace load: At least one denominator parameter required
     >>> r
     23
+
     >>> args = ['--laplace-load-a=1', '--laplace-load-b=1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4108,6 +4130,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error: Not all loads were used
     >>> r
     23
+
     >>> args = ['--laplace-load-a=1', '--laplace-load-b=1']
     >>> args = ['--laplace-load-a=1,2']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
@@ -4116,6 +4139,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error: Not all loads were used
     >>> r
     23
+
     >>> args = ['--laplace-load-a=1', '--laplace-load-b=1,b']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4123,6 +4147,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Error in Laplace load B: could not convert string to float: 'b'
     >>> r
     23
+
     >>> args = ['--laplace-load-a=1,a', '--laplace-load-b=1']
     >>> args.extend (['-w', '2,0,0,0,0,0,10.0838,0.0127'])
     >>> args.extend (['--excitation-pulse=1'])
@@ -4183,18 +4208,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Expecting 9 near-field parameters
     >>> r
     23
+
     >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--near-field=1,2,3,4,5,6,7,8,zz'])
     >>> r = main (args, sys.stdout)
     Error near-field counts: invalid literal for int() with base 10: 'zz'
     >>> r
     23
+
     >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--near-field=1,2,3,4,5,aa,7,8,9'])
     >>> r = main (args, sys.stdout)
     Error near-field inc: could not convert string to float: 'aa'
     >>> r
     23
+
     >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--near-field=1,2,bb,4,5,6,7,8,9'])
     >>> r = main (args, sys.stdout)
@@ -4219,6 +4247,190 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> args = ['--trap-load=a,b,c']
     >>> r = main (args, sys.stdout)
     Error in trap load: could not convert string to float: 'a'
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--skin-effect-conductivity=2.5e+06,1')
+    >>> args.append ('--skin-effect-resistivity=4e-07,1')
+    >>> r = main (args, sys.stdout)
+    Error in skin-effect resistivity: Only one skin-effect load per geo object
+    >>> r
+    23
+
+    >>> args = ['--wire=10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--skin-effect-resistivity=4e-07,1,2')
+    >>> r = main (args, sys.stdout)
+    Error in skin-effect-resistivity: Invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--skin-effect-conductivity=2.5e+06,1')
+    >>> args.append ('--skin-effect-conductivity=2.5e+06,1')
+    >>> r = main (args, sys.stdout)
+    Error in skin-effect conductivity: Only one skin-effect load per geo object
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--skin-effect-conductivity=2.5e+06,1,e')
+    >>> r = main (args, sys.stdout)
+    Error in skin-effect-conductivity: Invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--insulation-load=0.0047625,3.2,1,5')
+    >>> r = main (args, sys.stdout)
+    Error in insulation-load: Invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--insulation-load=0.0047625,3.2,1')
+    >>> r = main (args, sys.stdout)
+    Error in insulation-load: Insulation radius must be > geo object radius
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--insulation-load=0.02,3.2,1')
+    >>> args.append ('--insulation-load=0.02,3.2,1')
+    >>> r = main (args, sys.stdout)
+    Error in insulation-load: Only one insulation-load per geo object
+    >>> r
+    23
+
+    >>> args = ['-w', '0,10,0,0,0,0,0,10.0838,0.0127']
+    >>> r = main (args, sys.stdout)
+    Error in Geo: Tag "0" not allowed
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--wire=4711,10,0,0,0,0,0,-10.0838,0.0127')
+    >>> r = main (args, sys.stdout)
+    Error in Geo: Duplicate tag "4711" in geo object
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-translate=1,1,1,1,1,4711')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-translate option: 1,1,1,1,1,4711, invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-rotate=1,1,1,1,1,4711')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-rotate option: 1,1,1,1,1,4711, invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--taper=4711,5,1,1,42')
+    >>> r = main (args, sys.stdout)
+    Invalid taper option: 4711,5,1,1,42, invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--taper=4711,5,a,1')
+    >>> r = main (args, sys.stdout)
+    Invalid taper option: 4711,5,a,1, could not convert string to float: 'a'
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--taper=4711,5,1,1')
+    >>> r = main (args, sys.stdout)
+    Invalid taper option: unknown taper 5
+    >>> r
+    23
+
+    >>> args = ['--wire=4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--taper=4712,1,1,1')
+    >>> r = main (args, sys.stdout)
+    Invalid wire in taper option: 4712
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--excitation-pulse=a')
+    >>> r = main (args, sys.stdout)
+    Invalid pulse for excitation: "a"
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--excitation-pulse=1,1,5')
+    >>> r = main (args, sys.stdout)
+    Invalid number of pulse index parameters: "1,1,5"
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-scale=a,b')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-scale option: a,b, invalid literal for int() with base 10: 'b'
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-scale=1,2,3')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-scale option: 1,2,3, invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-translate=1,1,2,3,4711')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-transformation: 1,1,2,3,4711, KeyError(4711)
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-rotate=1,1,2,3,4711')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-transformation: 1,1,2,3,4711, KeyError(4711)
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-scale=2,4711')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-scale option: 2,4711, KeyError(4711)
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-translate=1,1,2,1.1.')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-translate option: 1,1,2,1.1., could not convert string to float: '1.1.'
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-translate=1,1,2,3,4,5')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-translate option: 1,1,2,3,4,5, invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-rotate=1,1,2,1.1.')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-rotate option: 1,1,2,1.1., could not convert string to float: '1.1.'
+    >>> r
+    23
+
+    >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--geo-rotate=1,1,2,3,4,5')
+    >>> r = main (args, sys.stdout)
+    Invalid geo-rotate option: 1,1,2,3,4,5, invalid number of parameters
     >>> r
     23
     """
@@ -4504,12 +4716,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         try:
             seg = int (wparams [0])
             r = [float (x) for x in wparams [1:]]
+            geo.append (Wire (seg, *r, tag = tag))
         except ValueError as err:
             print ("Invalid wire %d: %s" % (n + 1, str (err)), file = f_err)
             return 23
-        geo.append (Wire (seg, *r, tag = tag))
 
-    geo.compute_tags ()
+    try:
+        geo.compute_tags ()
+    except ValueError as err:
+        print ("Error in Geo: %s" % str (err))
+        return 23
 
     geo_transforms = []
 
@@ -4551,14 +4767,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             translation = np.array (translation)
             geo_transforms.append ((key, geo.translate, translation, tag, tr))
         except ValueError as err:
-            print ("Invalid geo-translation option: %s, %s" % (tr, err))
+            print ("Invalid geo-translate option: %s, %s" % (tr, err))
             return 23
 
     for t in sorted (geo_transforms, key = lambda x: x [0]):
         try:
             t [1] (t [2], t [3])
-        except ValueError as err:
-            print ("Invalid geo-transformation: %s, %s" % (t [-1], err))
+        except (ValueError, KeyError) as err:
+            print ("Invalid geo-transformation: %s, %s" % (t [-1], repr (err)))
             return 23
 
     for scl in args.geo_scale:
@@ -4579,6 +4795,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         except ValueError as err:
             print ("Invalid geo-scale option: %s, %s" % (scl, err))
             return 23
+        except KeyError as err:
+            print ("Invalid geo-scale option: %s, %s" % (scl, repr (err)))
+            return 23
 
     for t in args.taper_wire:
         tparam = t.split (',')
@@ -4598,13 +4817,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
 
         if not 0 <= taper <= 3:
             print ("Invalid taper option: unknown taper %s" % taper)
+            return 23
         try:
             wire = geo.by_tag [tag]
         except KeyError as err:
-            print ("Invalid wire: %s" % err)
+            print ("Invalid wire in taper option: %s" % err)
             return 23
         if not isinstance (wire, Wire):
-            print ('Invalid wire: "%s" is no wire' % tag)
+            print ('Invalid wire in taper option: "%s" is no wire' % tag)
             return 23
         wire.segtype = taper
         wire.taper_min = taper_min
@@ -4662,10 +4882,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         if default_excitation:
             assert len (args.excitation_pulse) == 1
             s.is_default = True
-        if len (ep) > 1:
-            m.register_source (s, ep [0] - 1, ep [1])
-        else:
-            m.register_source (s, ep [0] - 1)
+        try:
+            if len (ep) > 1:
+                m.register_source (s, ep [0] - 1, ep [1])
+            else:
+                m.register_source (s, ep [0] - 1)
+        except ValueError as err:
+            print ('Invalid source: %s: %s' % (p, err))
+            return 23
     loads = []
     for l in args.load:
         loads.append (Impedance_Load (l))
@@ -4775,7 +4999,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         tag = None
         try:
             if len (ld) == 2:
-                tag = int (tag)
+                tag = int (ld [-1])
             res = float (ld [0])
             if tag is None:
                 for w in m.geo:
@@ -4902,7 +5126,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
 # end def main
 
 if __name__ == '__main__':
-    main ()
+    main () # pragma: no cover
 
 __all__ = \
     [ 'Angle'

@@ -1,0 +1,251 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                       2024-09-20              22:24:44
+                   ****************************************
+ 
+FREQUENCY (MHZ): 299.8
+    WAVE LENGTH =  1 METERS
+ 
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
+ NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
+ 
+NO. OF WIRES: 14
+ 
+WIRE NO.1
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             0             .5                          0
+-.01049863    -.00434868     .5            .001          0             1
+ 
+WIRE NO.2
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.01049863    -.00434868     .5                          1
+-.03149589    -.01304603     .5            .001          0             1
+ 
+WIRE NO.3
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.03149589    -.01304603     .5                          2
+-.07349042    -.03044073     .5            .001          0             1
+ 
+WIRE NO.4
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.07349042    -.03044073     .5                          3
+-.15747946    -.06523013     .5            .001          0             1
+ 
+WIRE NO.5
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.15747946    -.06523013     .5                          4
+-.19947399    -.08262483     .5            .001          0             1
+ 
+WIRE NO.6
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.19947399    -.08262483     .5                          5
+-.22047125    -.09132218     .5            .001          0             1
+ 
+WIRE NO.7
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.22047125    -.09132218     .5                          6
+-.23096988    -.09567086     .5            .001          0             1
+ 
+WIRE NO.8
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             0             .5                         -1
+-.01049863     .00434868     .5            .001          0             1
+ 
+WIRE NO.9
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.01049863     .00434868     .5                          8
+-.03149589     .01304603     .5            .001          0             1
+ 
+WIRE NO.10
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.03149589     .01304603     .5                          9
+-.07349042     .03044073     .5            .001          0             1
+ 
+WIRE NO.11
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.07349042     .03044073     .5                          10
+-.15747946     .06523013     .5            .001          0             1
+ 
+WIRE NO.12
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.15747946     .06523013     .5                          11
+-.19947399     .08262483     .5            .001          0             1
+ 
+WIRE NO.13
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.19947399     .08262483     .5                          12
+-.22047125     .09132218     .5            .001          0             1
+ 
+WIRE NO.14
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+-.22047125     .09132218     .5                          13
+-.23096988     .09567086     .5            .001          0             1
+ 
+                  **** ANTENNA GEOMETRY ****
+ 
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-             -             -                 -          -    -    0
+ 
+WIRE NO.  2 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.01049863    -.00434868     .5            .001           1    0    1
+ 
+WIRE NO.  3 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.03149589    -.01304603     .5            .001           2    0    2
+ 
+WIRE NO.  4 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.07349042    -.03044073     .5            .001           3    0    3
+ 
+WIRE NO.  5 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.15747946    -.06523013     .5            .001           4    0    4
+ 
+WIRE NO.  6 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.19947399    -.08262483     .5            .001           5    0    5
+ 
+WIRE NO.  7 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.22047125    -.09132218     .5            .001           6    0    6
+ 
+WIRE NO.  8 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+ 0             0             .5            .001          -1    0    7
+ 
+WIRE NO.  9 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.01049863     .00434868     .5            .001           8    0    8
+ 
+WIRE NO.  10 COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.03149589     .01304603     .5            .001           9    0    9
+ 
+WIRE NO.  11 COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.07349042     .03044073     .5            .001          10    0   10
+ 
+WIRE NO.  12 COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.15747946     .06523013     .5            .001          11    0   11
+ 
+WIRE NO.  13 COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.19947399     .08262483     .5            .001          12    0   12
+ 
+WIRE NO.  14 COORDINATES                                CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+-.22047125     .09132218     .5            .001          13    0   13
+ 
+NO. OF SOURCES :  1
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  7, 1, 0
+NUMBER OF LOADS 0
+ 
+********************    SOURCE DATA     ********************
+PULSE  7      VOLTAGE = ( 1, 0J)
+              CURRENT = ( .00511308, .02063443J)
+              IMPEDANCE = ( 11.314044,-45.659131J)
+              POWER =  .00255654 WATTS
+ 
+********************    CURRENT DATA    ********************
+ 
+WIRE NO. 1:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -.00511308    -.02063443     .02125849    -103.9172
+J             -.00510951    -.0202124      .02084822    -104.18665
+ 
+WIRE NO. 2:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -.00510951    -.0202124      .02084822    -104.18665
+J             -.00503452    -.01954073     .02017887    -104.4476
+ 
+WIRE NO. 3:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -.00503452    -.01954073     .02017887    -104.4476
+J             -.00461463    -.01745094     .01805076    -104.81194
+ 
+WIRE NO. 4:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -.00461463    -.01745094     .01805076    -104.81194
+J             -.00267508    -.00973371     .01009461    -105.36702
+ 
+WIRE NO. 5:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -.00267508    -.00973371     .01009461    -105.36702
+J             -.00131136    -.00469896     .00487851    -105.59306
+ 
+WIRE NO. 6:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -.00131136    -.00469896     .00487851    -105.59306
+J             -5.185561E-04 -.00184443     .00191594    -105.70314
+ 
+WIRE NO. 7:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J             -5.185561E-04 -.00184443     .00191594    -105.70314
+E              0             0             0             0
+ 
+WIRE NO. 8:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              .00511308     .02063443     .02125849     76.082795
+J              .00510951     .0202124      .02084822     75.813345
+ 
+WIRE NO. 9:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              .00510951     .0202124      .02084822     75.813345
+J              .00503452     .01954073     .02017887     75.552397
+ 
+WIRE NO. 10:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              .00503452     .01954073     .02017887     75.552397
+J              .00461463     .01745094     .01805076     75.188058
+ 
+WIRE NO. 11:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              .00461463     .01745094     .01805076     75.188058
+J              .00267508     .00973371     .01009461     74.632979
+ 
+WIRE NO. 12:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              .00267508     .00973371     .01009461     74.632979
+J              .00131136     .00469896     .00487851     74.406945
+ 
+WIRE NO. 13:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              .00131136     .00469896     .00487851     74.406945
+J              5.185561E-04  .00184443     .00191594     74.296855
+ 
+WIRE NO. 14:
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+J              5.185561E-04  .00184443     .00191594     74.296855
+E              0             0             0             0

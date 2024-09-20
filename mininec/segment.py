@@ -49,8 +49,4 @@ class Segment:
         self.i6 = (1 + np.log (16 * geobj.r / self.seg_len)) / np.pi / geobj.r
     # end def __init__
 
-    def __len__ (self):
-        return self.seg_len
-    # end def __len__
-
 # end class Segment

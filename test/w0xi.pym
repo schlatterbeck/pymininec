@@ -9,6 +9,7 @@
 -f 14.05
 -w 32,0,0,0,0,0,5.35,0.0015
 -w 8,0,0,5.35,0,0,6.864,0.0015
+--excitation-voltage=2+0j
 --excitation-pulse=1
 --medium=20,0.0303,0,5.05968
 --boundary=circular

@@ -134,7 +134,8 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
     min_t = max (2.5 * r, min_t)
     assert n > 1
     if l / n < min_t:
-        raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t))
+        raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t)) \
+            # pragma: no cover
     assert max_t is None or min_t <= max_t
     assert max_t is None or l / n <= max_t
     if n & 1:
@@ -174,7 +175,7 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
             # We've already subtracted too much, should not happen
             assert x <= 2 * last
         else:
-            assert 0
+            assert 0 # pragma: no cover
         assert nminl > maxl
         if nminl > minl:
             minl = nminl
@@ -307,7 +308,8 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     min_t = max (2.5 * r, min_t)
     assert n > 1
     if l / n < min_t:
-        raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t))
+        raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t)) \
+            # pragma: no cover
     assert max_t is None or min_t <= max_t
     assert max_t is None or l / n <= max_t
     npieces = (1 << n) - 1
@@ -334,7 +336,7 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
             if last <= x <= 2 * last:
                 break
         else:
-            assert 0
+            assert 0 # pragma: no cover
         assert nminl > maxl
         if nminl > minl:
             minl = nminl
@@ -360,14 +362,3 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
             yield (p, p + inc)
         p = p + inc
 # end def taper1
-
-if __name__ == '__main__':
-    p0 = np.array ([0,0,0.5])
-    p1 = np.array ([-0.23096988312782168,-0.09567085809127245,0.5])
-    p2 = np.array ([-0.23096988312782168,0.09567085809127245,0.5])
-    for x1, x2 in taper2 (p0, p1, 7, 0.001):
-        print (x1, x2)
-    print ()
-    for x1, x2 in taper2 (p0, p2, 7, 0.001):
-        print (x1, x2)
-
