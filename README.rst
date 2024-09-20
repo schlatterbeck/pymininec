@@ -337,9 +337,10 @@ the 3d gain pattern.
 
 The ``--option=near-field`` specifies printing of the near field.
 This also needs specification of the ``--near-field`` option which gets
-6 comma-separated parameters: The first three define the start (x, y, z)
+9 comma-separated parameters: The first three define the start (x, y, z)
 coordinate of near-field measurements, the next three define the
-increment of far field measurements. With the ``--nf-power`` option it
+increment of far field measurements and the last three define the number
+of increments in each direction. With the ``--nf-power`` option it
 is possible to modify the power level for the near field computation.
 
 Without any ``--option``, far field is printed if no near field
@@ -976,6 +977,27 @@ statements use too much memory.
 
 Release Notes
 -------------
+
+v1.1: Feature improvements
+
+- Lay the groundwork for implementation of further geometry objects not
+  just wires
+- Wires (and future geometry objects) can have tags, all usage of wires,
+  segments, pulses, and loads now use a tag which is a 1-based auto-computed
+  number which can be explicitly specified for wires; the tag is used in
+  all error messages
+- Add segment length tapering: Wires can now be split into segments of
+  unequal length
+- Add skin effect loads
+- Add insulated wire loads
+- Add geometry transformations rotation, translation, and scaling
+- Implement round-tripping of command-line parameters, allow to output
+  the current settings as command-line options
+- Implement output of the Basic input to test an antenna model against
+  the original Basic implementation
+- The ``--excitation-segment`` option has been renamed to
+  ``--excitation-pulse`` and it now allows specification of the pulse
+  relative to a geometry object (e.g. wire)
 
 v1.0: Speed improvement by vectorization
 
