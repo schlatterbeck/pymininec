@@ -4226,11 +4226,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     cmd = ArgumentParser ()
     cmd.add_argument \
         ( '--attach-load'
-        , help    = 'Attach load with given index to pulse, needs '
-                    'load-index, pulse-index, optional geobj index. If '
-                    'geobj index is given, pulse index is relative to '
-                    'geobj. To attach a load to all pulses use "all" for '
-                    'the pulse index (and leave the geobj index blank).'
+        , help    = 'Attach load with given tag to pulse, needs'
+                    ' load-tag, pulse-tag, optional geo object tag. If'
+                    ' a geo object tag is given, pulse tag is relative to'
+                    ' the geo object. To attach a load to all pulses use'
+                    ' "all" for the pulse tag (and leave the geobj tag'
+                    ' blank).'
         , action  = 'append'
         , default = []
         )
@@ -4242,9 +4243,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         )
     cmd.add_argument \
         (  '--excitation-pulse'
-        , help    = "Pulse number for excitation, either an absolute pulse"
-                    " number or pulse number and geobj tag separated by a"
-                    " comma, can be specified "
+        , help    = "Pulse tag for excitation, either an absolute pulse"
+                    " tag or pulse tag and geo object tag separated by a"
+                    " comma; can be specified "
                     "more than once, default is the single pulse 5"
         , action  = 'append'
         , default = []
@@ -4316,7 +4317,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '--laplace-load-a'
         , help    = 'Laplace load, A (denominator) parameters (comma-separated)'
                     ' if multiple load-types are given, Laplace loads'
-                    ' are numbered last.'
+                    ' are tagged last.'
         , action  = 'append'
         , default = []
         )
@@ -4324,7 +4325,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '--laplace-load-b'
         , help    = 'Laplace load, B (numerator) parameters (comma-separated)'
                     ' if multiple load-types are given, Laplace loads'
-                    ' are numbered last.'
+                    ' are tagged last.'
         , action  = 'append'
         , default = []
         )
@@ -4332,14 +4333,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '-l', '--load'
         , type    = complex
         , help    = 'Complex load, specify complex impedance, e.g.  50+3j,'
-                    ' complex loads are numbered first'
+                    ' complex loads are tagged first'
         , action  = 'append'
         , default = []
         )
     cmd.add_argument \
         ( '--rlc-load'
         , help    = 'RLC (series) load, specify R,L,C in Ohm, Henry, Farad,'
-                    ' RLC loads are numbered second'
+                    ' RLC loads are tagged second'
         , action  = 'append'
         , default = []
         )
@@ -4371,7 +4372,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '--trap-load'
         , help    = 'Trap load, R+L in series parallel to C, '
                     'specify R,L,C in Ohm, Henry, Farad,'
-                    ' Trap loads are numbered third'
+                    ' Trap loads are tagged third'
         , action  = 'append'
         , default = []
         )
@@ -4442,10 +4443,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         )
     cmd.add_argument \
         ( '--taper-wire'
-        , help    = "Taper a wire from end 1, 2 or both (3) and "
-                    "optionally set min and max segment length, gets "
-                    "2-4 parameters: wire tag, taper (1-3) "
-                    "and optionally min and max segment length"
+        , help    = "Taper a wire from end 1, 2 or both (3) and"
+                    " optionally set min and max segment length, gets"
+                    " 2-4 parameters: wire tag, taper (1-3)"
+                    " and optionally min and max segment length"
 
         , action  = 'append'
         , default = []
@@ -4464,9 +4465,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         ( '-w', '--wire'
         , help    = 'Wire definition 8 values delimited with ",":'
                     " Number of segments,"
-                    " x,y,z coordinates of wire endpoints plus wire radius, "
-                    "can be specified more than once, default is a "
-                    "single wire with length 21.414285"
+                    " x,y,z coordinates of wire endpoints plus wire radius,"
+                    " can be specified more than once, default is a"
+                    " single wire with length 21.414285"
         , action  = 'append'
         , default = []
         )
