@@ -638,7 +638,34 @@ class Trap_Load (Laplace_Load):
 
 # end class Trap_Load
 
-class Skin_Effect_Load (_Load):
+class Distributed_Load (_Load):
+
+    def add_pulse (self, pulse):
+        # Allow adding only to our own geobj
+        n = self.__class__.__name__.replace ('_', ' ')
+        if self.geobj not in pulse.geo: # pragma: no cover
+            # Not reachable via command line
+            raise ValueError \
+                ('%s can only be attached to pulses of its geo objects'
+                % n
+                )
+        super ().add_pulse (pulse)
+    # end def add_pulse
+
+    def as_basic_input (self, is_s = False):
+        r = []
+        if is_s: # pragma: no cover
+            raise NotImplementedError ('Output as S-parameters not implemented')
+        for pulse in self.pulses:
+            # PULSE NO.,RESISTANCE,REACTANCE:
+            z = self.impedance (self.geobj.parent.parent.f, pulse)
+            r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
+        return '\n'.join (r)
+    # end def as_basic_input
+
+# end class Distributed_Load
+
+class Skin_Effect_Load (Distributed_Load):
     """ Ohmic loss due to skin effect
     """
 
@@ -651,29 +678,6 @@ class Skin_Effect_Load (_Load):
                 ("Only one skin-effect load per geo object")
         geobj.skin_load = self
     # end def __init__
-
-    def add_pulse (self, pulse):
-        # Allow adding only to our own geobj
-        if self.geobj != pulse.geobj: # pragma: no cover
-            # This is not reachable via command-line
-            raise ValueError \
-                ('Skin-effect load can only be attached to pulses of its'
-                 ' geo objects'
-                )
-        super ().add_pulse (pulse)
-    # end def add_pulse
-
-    def as_basic_input (self, is_s = False):
-        r = []
-        if is_s: # pragma: no cover
-            raise NotImplementedError \
-                ('Output of Skin effect load as S-parameters not implemented')
-        for pulse in self.geobj.pulses:
-            # PULSE NO.,RESISTANCE,REACTANCE:
-            z = self.impedance (self.geobj.parent.parent.f, pulse)
-            r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
-        return '\n'.join (r)
-    # end def as_basic_input
 
     def as_cmdline (self, parent, by_geo = False):
         r = []
@@ -725,7 +729,7 @@ class Skin_Effect_Load (_Load):
 
 # end class Skin_Effect_Load
 
-class Insulation_Load (_Load):
+class Insulation_Load (Distributed_Load):
     """ Impedance due to insulation of geobj
     """
 
@@ -745,29 +749,6 @@ class Insulation_Load (_Load):
         self.f = None
     # end def __init__
 
-    def add_pulse (self, pulse):
-        # Allow adding only to our own geobj
-        if self.geobj != pulse.geobj: # pragma: no cover
-            # Not reachable via command line
-            raise ValueError \
-                ('Insulation-load can only be attached to pulses of its '
-                 'geo objects'
-                )
-        super ().add_pulse (pulse)
-    # end def add_pulse
-
-    def as_basic_input (self, is_s = False):
-        r = []
-        if is_s: # pragma: no cover
-            raise NotImplementedError \
-                ('Output of Insulation load as S-parameters not implemented')
-        for pulse in self.geobj.pulses:
-            # PULSE NO.,RESISTANCE,REACTANCE:
-            z = self.impedance (self.geobj.parent.parent.f, pulse)
-            r.append ('%d, %g, %g' % (pulse.idx + 1, z.real, z.imag))
-        return '\n'.join (r)
-    # end def as_basic_input
-
     def as_cmdline (self, parent, by_geo = False):
         r = []
         tag = self.geobj.tag
@@ -786,6 +767,8 @@ class Insulation_Load (_Load):
             # Not both segments may be from same geobj
             geobj = seg.geobj
             ld    = geobj.coat_load
+            if not ld:
+                continue
             if geobj.zins is None:
                 geobj.zins = \
                     ( mu_0 * (ld.epsilon_r - 1) / ld.epsilon_r
@@ -5033,6 +5016,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
                 , file = f_err
                 )
             return 23
+    # Loop over *all* pulses and check if some are not yet attached to a
+    # skin load
+    for p in m.pulses:
+        # Only if wires are different and only one wire has a skin load
+        g1 = p.segs [0].geobj
+        g2 = p.segs [1].geobj
+        if  ( g1 != g2
+            and (  (g1.skin_load and not g2.skin_load)
+                or (not g1.skin_load and g2.skin_load)
+                )
+            ):
+            skin_load = g1.skin_load or g2.skin_load
+            if p not in skin_load.pulses:
+                m.register_load (skin_load, p.idx)
+
     # Insulation-loads are last and attached automagically
     for l in args.insulation_load:
         try:
@@ -5055,6 +5053,21 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         except (KeyError, ValueError) as err:
             print ("Error in insulation-load: %s" % err, file = f_err)
             return 23
+    # Loop over *all* pulses and check if some are not yet attached to
+    # an insulation load
+    for p in m.pulses:
+        # Only if wires are different and only one wire has a skin load
+        g1 = p.segs [0].geobj
+        g2 = p.segs [1].geobj
+        if  ( g1 != g2
+            and (  (g1.coat_load and not g2.coat_load)
+                or (not g1.coat_load and g2.coat_load)
+                )
+            ):
+            coat_load = g1.coat_load or g2.coat_load
+            if p not in coat_load.pulses:
+                m.register_load (coat_load, p.idx)
+
     p = args.phi.split (',')
     if len (p) != 3:
         print \

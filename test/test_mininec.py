@@ -893,6 +893,12 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_impedance (m, imp)
     # end def test_dip_coat
 
+    def test_dip_coat_yn (self):
+        m = self.setup_generic_file ('dip_coat_yn')
+        imp = 63.575-13.123j
+        self.compare_impedance (m, imp)
+    # end def test_dip_coat_yn
+
     def test_timing (self):
         expected = \
             [ ('for compute_impedance_matrix', 0.1)
@@ -1348,6 +1354,13 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare ('dip_coat_scaled', cmd)
     # end def test_dip_coat
 
+    def test_dip_coat_yn (self):
+        bn = 'dip_coat_yn'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare (bn, cmd)
+    # end def test_dip_coat_yn
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1661,6 +1674,13 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         mini = m.as_basic_input ()
         self.mini_compare (bn, mini)
     # end def test_dip_coat
+
+    def test_dip_coat_yn (self):
+        bn   = 'dip_coat_yn'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare (bn, mini)
+    # end def test_dip_coat_yn
 
     def test_dipv_14st_t2s (self):
         bn   = 'dipv-14st-t2s'
