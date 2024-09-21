@@ -2856,6 +2856,32 @@ class Mininec:
             return r / b
     # end def fast_quad
 
+    def fix_distributed_loads (self):
+        """ Loop over *all* pulses and check if some are not yet
+            attached to an skin/insulation load
+            This can happen when we have a wire with skin/coat load
+            where an adjacent pulse belongs to another wire without
+            load.
+        """
+        for p in self.pulses:
+            # Only if wires are different and only one wire has a skin load
+            g1 = p.segs [0].geobj
+            g2 = p.segs [1].geobj
+            if  g1 != g2:
+                if  (  (g1.coat_load and not g2.coat_load)
+                    or (not g1.coat_load and g2.coat_load)
+                    ):
+                    coat_load = g1.coat_load or g2.coat_load
+                    if p not in coat_load.pulses:
+                        self.register_load (coat_load, p.idx)
+                if  (  (g1.skin_load and not g2.skin_load)
+                    or (not g1.skin_load and g2.skin_load)
+                    ):
+                    skin_load = g1.skin_load or g2.skin_load
+                    if p not in skin_load.pulses:
+                        self.register_load (skin_load, p.idx)
+    # end def fix_distributed_loads
+
     def psi (self, vec2, vecv, k, scale, pidx, exact = False, fvs = 0):
         """ Common code for entry points at 56, 87, and 102.
             This code starts at line 135.
@@ -5016,20 +5042,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
                 , file = f_err
                 )
             return 23
-    # Loop over *all* pulses and check if some are not yet attached to a
-    # skin load
-    for p in m.pulses:
-        # Only if wires are different and only one wire has a skin load
-        g1 = p.segs [0].geobj
-        g2 = p.segs [1].geobj
-        if  ( g1 != g2
-            and (  (g1.skin_load and not g2.skin_load)
-                or (not g1.skin_load and g2.skin_load)
-                )
-            ):
-            skin_load = g1.skin_load or g2.skin_load
-            if p not in skin_load.pulses:
-                m.register_load (skin_load, p.idx)
 
     # Insulation-loads are last and attached automagically
     for l in args.insulation_load:
@@ -5053,20 +5065,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         except (KeyError, ValueError) as err:
             print ("Error in insulation-load: %s" % err, file = f_err)
             return 23
-    # Loop over *all* pulses and check if some are not yet attached to
-    # an insulation load
-    for p in m.pulses:
-        # Only if wires are different and only one wire has a skin load
-        g1 = p.segs [0].geobj
-        g2 = p.segs [1].geobj
-        if  ( g1 != g2
-            and (  (g1.coat_load and not g2.coat_load)
-                or (not g1.coat_load and g2.coat_load)
-                )
-            ):
-            coat_load = g1.coat_load or g2.coat_load
-            if p not in coat_load.pulses:
-                m.register_load (coat_load, p.idx)
+
+    m.fix_distributed_loads ()
 
     p = args.phi.split (',')
     if len (p) != 3:
