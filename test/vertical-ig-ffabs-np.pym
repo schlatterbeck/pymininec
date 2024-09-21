@@ -1,0 +1,8 @@
+-f 7.15
+-w 20,0,0,0,0,0,10.0838,0.0127
+--excitation-pulse=1
+--medium=0,0,0
+--theta=0,5,19
+--phi=0,10,37
+--ff-distance=1000
+--option=far-field-absolute

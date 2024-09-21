@@ -724,6 +724,16 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         assert self.expected_output == actual_output
     # end def test_vertical_ideal_ground_far_abs
 
+    def test_vertical_ideal_ground_far_abs_np (self):
+        ideal = [ideal_ground]
+        opt = dict (dist = 1000)
+        m = self.vertical_quarterwave \
+            ('vertical-ig-ffabs-np.pout', ideal, opt = opt)
+        opts = set (('far-field-absolute',))
+        actual_output = m.as_mininec (opts).rstrip ()
+        assert self.expected_output == actual_output
+    # end def test_vertical_ideal_ground_far_abs_np
+
     def test_near_far (self):
         r = []
         nfc = Near_Far_Comparison ()
@@ -1230,6 +1240,17 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_vertical_ig_ffabs
 
+    def test_vertical_ig_ffabs_np (self):
+        bn  = 'vertical-ig-ffabs-np'
+        m   = self.setup_generic_file (bn, compute = False)
+        opt = ('far-field-absolute',)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0,  5, 19)
+        cmd = m.as_cmdline \
+            (azi = azi, zen = zen, ff_dist = 1e3, opt = opt)
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_ig_ffabs_np
+
     def test_vertical_ig_near (self):
         bn  = 'vertical-ig-near'
         m   = self.setup_generic_file (bn, compute = False)
@@ -1538,6 +1559,20 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
             )
         self.mini_compare (bn, mini)
     # end def test_vertical_ig_ffabs
+
+    def test_vertical_ig_ffabs_np (self):
+        bn   = 'vertical-ig-ffabs-np'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0,  5, 19)
+        mini= m.as_basic_input \
+            ( 'VERTIG.OUT'
+            , azi = azi, zen = zen
+            , ff_dist = 1e3, ff_abs = True
+            , gainfile = 'VERTIG.GNN'
+            )
+        self.mini_compare (bn, mini)
+    # end def test_vertical_ig_ffabs_np
 
     def test_vertical_ig_near (self):
         bn   = 'vertical-ig-near'
