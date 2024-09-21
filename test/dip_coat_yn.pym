@@ -4,4 +4,5 @@
 --excitation-pulse=19
 --skin-effect-conductivity=5.96e+07,1
 --insulation-load=0.0047625,3.2,1
---option=none
+--theta=0,10,10
+--phi=0,10,37

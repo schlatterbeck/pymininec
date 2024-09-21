@@ -4463,8 +4463,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
                     ' load-tag, pulse-tag, optional geo object tag. If'
                     ' a geo object tag is given, pulse tag is relative to'
                     ' the geo object. To attach a load to all pulses use'
-                    ' "all" for the pulse tag (and leave the geobj tag'
-                    ' blank).'
+                    ' "all" for the pulse tag, this attaches the load to'
+                    ' all pulses if no geo tag is given, otherwise to all'
+                    ' pulses of the geo object'
         , action  = 'append'
         , default = []
         )
@@ -4964,10 +4965,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         if not 2 <= len (att) <= 3:
             print ("Append-load needs 2-3 parameters", file = f_err)
             return 23
-        if len (att) == 2 and att [-1] == 'all':
-            att.pop ()
+        if len (att) >= 2 and att [1] == 'all':
+            att [1] = None
         try:
-            att = [int (a) for a in att]
+            att = [(None if a is None else int (a)) for a in att]
         except ValueError as err:
             print ("Attach-load: %s" % err, file = f_err)
             return 23
@@ -4977,7 +4978,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             return 23
         used_loads.add (lidx)
         # Pulse index is 0-based
-        if len (att) > 1:
+        if len (att) > 1 and att [1] is not None:
             att [1] = att [1] - 1
         try:
             m.register_load (loads [lidx], *att [1:])

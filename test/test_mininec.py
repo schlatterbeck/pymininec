@@ -908,9 +908,13 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
 
     def test_dip_coat_yn (self):
         m = self.setup_generic_file ('dip_coat_yn')
-        imp = 63.575-13.123j
-        self.compare_impedance (m, imp)
+        self.compare_far_field_data (m)
     # end def test_dip_coat_yn
+
+    def test_dip_loadwire (self):
+        m = self.setup_generic_file ('dip_loadwire')
+        self.compare_far_field_data (m)
+    # end def test_dip_loadwire
 
     def test_timing (self):
         expected = \
@@ -1379,9 +1383,20 @@ class Test_Case_Cmdline (_Test_Base_With_File):
     def test_dip_coat_yn (self):
         bn = 'dip_coat_yn'
         m   = self.setup_generic_file (bn, compute = False)
-        cmd = m.as_cmdline (opt = ('none',))
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
         self.pym_compare (bn, cmd)
     # end def test_dip_coat_yn
+
+    def test_dip_loadwire (self):
+        bn = 'dip_loadwire'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_dip_loadwire
 
 # end class Test_Case_Cmdline
 
@@ -1713,6 +1728,13 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         mini = m.as_basic_input ()
         self.mini_compare (bn, mini)
     # end def test_dip_coat_yn
+
+    def test_dip_loadwire (self):
+        bn   = 'dip_loadwire'
+        m    = self.setup_generic_file (bn, compute = False)
+        mini = m.as_basic_input ()
+        self.mini_compare (bn, mini)
+    # end def test_dip_loadwire
 
     def test_dipv_14st_t2s (self):
         bn   = 'dipv-14st-t2s'
