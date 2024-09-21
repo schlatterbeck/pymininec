@@ -383,7 +383,7 @@ class _Load:
             r.append ('--attach-load=%d,all' % (self.n + 1))
         elif geo_all:
             for w in geo_all:
-                r.append ('--attach-load=%d,all,%d' % (self.n + 1, w.n + 1))
+                r.append ('--attach-load=%d,all,%d' % (self.n + 1, w.tag))
         for pulse in self.pulses:
             if pulse.geobj in geo_all:
                 continue

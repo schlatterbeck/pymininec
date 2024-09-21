@@ -628,6 +628,19 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         assert self.expected_output == m.as_mininec ()
     # end def test_vdipole_wiredia_01_ground_loaded
 
+    def test_vdipole_wiredia_01_ground_loaded_j (self):
+        ideal = [ideal_ground]
+        load  = Impedance_Load (2e-6+2e-6j)
+        m = self.vertical_dipole \
+            ( wire_dia = 0.01
+            , filename = 'vdipole-01g0l-j.pout'
+            , media    = ideal
+            , load     = load
+            )
+        # Attach to *all* segments
+        assert self.expected_output == m.as_mininec ()
+    # end def test_vdipole_wiredia_01_ground_loaded_j
+
     def test_vdipole_wiredia_001_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_dipole \
@@ -1222,6 +1235,15 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_vdipole_01g0l
 
+    def test_vdipole_01g0l_j (self):
+        bn  = 'vdipole-01g0l-j'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 10, 37)
+        zen = Angle (0, 10, 10)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_vdipole_01g0l_j
+
     def test_vdipole_01gavg (self):
         bn  = 'vdipole-01gavg'
         m   = self.setup_generic_file (bn, compute = False)
@@ -1550,6 +1572,16 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
             ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
         self.mini_compare (bn, mini)
     # end def test_vdipole_01g0l
+
+    def test_vdipole_01g0l_j (self):
+        bn   = 'vdipole-01g0l-j'
+        m    = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input \
+            ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
+        self.mini_compare (bn, mini)
+    # end def test_vdipole_01g0l_j
 
     def test_vdipole_01gavg (self):
         bn   = 'vdipole-01gavg'
