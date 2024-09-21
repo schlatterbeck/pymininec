@@ -352,16 +352,21 @@ class _Test_Base_With_File:
         return path + ext
     # end def pym_path
 
-    def setup_generic_file \
-        (self, basename, azi = None, ele = None, no_ff = False, compute = True):
+    def read_pym (self, basename, ext = '.pym'):
         args = []
-        with open (self.pym_path (basename), 'r') as f:
+        with open (self.pym_path (basename, ext), 'r') as f:
             for line in f:
                 if line.startswith ('#'):
                     continue
                 args.append (line)
         args = ' '.join (args)
         args = args.split ()
+        return args
+    # end def read_pym
+
+    def setup_generic_file \
+        (self, basename, azi = None, ele = None, no_ff = False, compute = True):
+        args = self.read_pym (basename)
         m    = main (args, return_mininec = True)
         if compute:
             self.simple_setup (basename + '.pout')
@@ -951,6 +956,18 @@ class Test_Case_Cmdline (_Test_Base_With_File):
                  next (c_itr)
     # end def pym_compare
 
+    def test_cmdline (self):
+        bn   = 'vertical-rad'
+        cm   = self.pym_path (bn, '.cmdline')
+        args = self.read_pym (bn)
+        carg = args [:]
+        args.append ('--output-cmdline=%s' % cm)
+        main (args)
+        narg = self.read_pym ('vertical-rad', '.cmdline')
+        assert carg == narg
+        os.unlink (cm)
+    # end def test_cmdline
+
     def test_12_el (self):
         bn  = '12-el'
         m   = self.setup_generic_file (bn, compute = False)
@@ -1323,6 +1340,17 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
                 next (itr)
     # end def mini_compare
 
+    def test_basic_output (self):
+        bn   = 'vertical-rad'
+        args = self.read_pym (bn)
+        fn   = 'test/vertical-rad.basic'
+        args.append ('--output-basic-input=%s' % fn)
+        main (args)
+        with open (fn) as f:
+            mini = f.read ()
+        self.mini_compare (bn, mini)
+    # end def test_basic_output
+
     def test_dip_10s (self):
         bn   = 'dip-10s'
         m    = self.setup_generic_file (bn, compute = False)
@@ -1534,8 +1562,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0,  5, 19)
-        mini = m.as_basic_input \
-            ('VERTRAD.OUT', azi = azi, zen = zen, gainfile = 'VERTRAD.GNN')
+        mini = m.as_basic_input (azi = azi, zen = zen)
         self.mini_compare (bn, mini)
     # end def test_vertical_rad
 
