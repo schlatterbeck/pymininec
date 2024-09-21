@@ -4258,10 +4258,25 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> r
     23
 
+    >>> args = ['-w', '4711,10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--skin-effect-resistivity=4e-07,4712')
+    >>> r = main (args, sys.stdout)
+    Error in skin-effect resistivity: Invalid tag: 4712
+    >>> r
+    23
+
     >>> args = ['--wire=10,0,0,0,0,0,10.0838,0.0127']
     >>> args.append ('--skin-effect-resistivity=4e-07,1,2')
     >>> r = main (args, sys.stdout)
     Error in skin-effect-resistivity: Invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-w', '10,0,0,0,0,0,10.0838,0.0127']
+    >>> args.append ('--skin-effect-resistivity=4e-07,1')
+    >>> args.append ('--skin-effect-resistivity=4e-07,1')
+    >>> r = main (args, sys.stdout)
+    Error in skin-effect resistivity: Only one skin-effect load per geo object
     >>> r
     23
 
@@ -4824,6 +4839,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ("Invalid wire in taper option: %s" % err)
             return 23
         if not isinstance (wire, Wire):
+            # This can currently never happen, so it's not covered by
+            # the tests. It will become possible when we have more
+            # geometry objects in addition to Wire
             print ('Invalid wire in taper option: "%s" is no wire' % tag)
             return 23
         wire.segtype = taper
@@ -5009,8 +5027,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
                 w  = m.geo.by_tag [tag]
                 ld = Skin_Effect_Load (w, 1 / res)
                 m.register_load (ld, None, w.tag)
-        except (KeyError, ValueError) as err:
+        except ValueError as err:
             print ("Error in skin-effect resistivity: %s" % err, file = f_err)
+            return 23
+        except KeyError as err:
+            print \
+                ("Error in skin-effect resistivity: Invalid tag: %s" % err
+                , file = f_err
+                )
             return 23
     # Insulation-loads are last and attached automagically
     for l in args.insulation_load:
