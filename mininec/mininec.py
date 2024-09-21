@@ -3063,19 +3063,9 @@ class Mininec:
                 if not self.geo.by_tag.get (geo_tag):
                     raise ValueError ('Invalid geo object tag %d' % (geo_tag))
                 w = self.geo.by_tag [geo_tag]
-                if w.end_segs [0] is None or w.end_segs [1] is None:
-                    if w.end_segs [0] is None and w.end_segs [1] is None:
-                        raise ValueError (err)
-                    if pulse > 0:
-                        raise ValueError (err)
-                    if w.end_segs [0] is None:
-                        p = w.end_segs [1]
-                    else:
-                        p = w.end_segs [0]
-                else:
-                    p = w.end_segs [0] + pulse
-                    if p > w.end_segs [1]:
-                        raise ValueError (err)
+                if pulse >= len (w.pulses):
+                    raise ValueError (err)
+                p = w.pulses [pulse].idx
             elif pulse >= len (self.pulses):
                 raise ValueError ('Invalid pulse tag %d' % (pulse + 1))
             else:
@@ -4446,6 +4436,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> args.append ('--geo-rotate=1,1,2,3,4,5')
     >>> r = main (args, sys.stdout)
     Invalid geo-rotate option: 1,1,2,3,4,5, invalid number of parameters
+    >>> r
+    23
+
+    >>> args = ['-w', '1,0,0,0,0,0.5,0,0.001', '--excitation-pulse=1']
+    >>> args.extend (['--load=2e-06', '--attach-load=1,1,1'])
+    >>> r = main (args, sys.stdout)
+    Invalid source: 1: Invalid pulse tag 1
     >>> r
     23
     """
