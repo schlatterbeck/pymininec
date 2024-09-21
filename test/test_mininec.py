@@ -668,6 +668,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         assert self.expected_output == m.as_mininec ()
     # end def test_vertical_ideal_ground
 
+    def test_vertical_linear_boundary (self):
+        m = self.setup_generic_file ('vertical-ig-lin')
+        self.compare_far_field_data (m)
+    # end def test_vertical_linear_boundary
+
     def test_vertical_ideal_ground_upside_down (self):
         ideal = [ideal_ground]
         m = self.vertical_quarterwave ('vertical-ig-ud.pout', ideal, inv = True)
@@ -1229,6 +1234,13 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_vertical_ig
 
+    def test_vertical_linear_boundary (self):
+        bn  = 'vertical-ig-lin'
+        m   = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline ()
+        self.pym_compare (bn, cmd)
+    # end def test_vertical_linear_boundary
+
     def test_vertical_ig_ffabs (self):
         bn  = 'vertical-ig-ffabs'
         m   = self.setup_generic_file (bn, compute = False)
@@ -1545,6 +1557,15 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
             ('VERTIG.OUT', azi = azi, zen = zen, gainfile = 'VERTIG.GNN')
         self.mini_compare (bn, mini)
     # end def test_vertical_ig
+
+    def test_vertical_linear_boundary (self):
+        bn  = 'vertical-ig-lin'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 10)
+        mini = m.as_basic_input (azi = azi, zen = zen)
+        self.mini_compare (bn, mini)
+    # end def test_vertical_linear_boundary
 
     def test_vertical_ig_ffabs (self):
         bn   = 'vertical-ig-ffabs'

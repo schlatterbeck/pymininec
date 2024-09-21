@@ -870,7 +870,7 @@ class Medium:
         if self.prev:
             # HEIGHT OF MEDIA:
             r.append ('%g' % self.height)
-        elif self.next:
+        elif self.next and self.boundary == 'circular':
             # NUMBER OF RADIAL WIRES IN GROUND SCREEN:
             r.append (str (self.nradials))
             if self.nradials:
