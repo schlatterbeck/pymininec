@@ -261,7 +261,7 @@ NUMBER OF LOADS 0
 ********************    SOURCE DATA     ********************
 PULSE 31      VOLTAGE = ( 1 , 0 J)
               CURRENT = ( 9.604732E-07 ,  1.289252E-02 J)
-              IMPEDANCE = ( .005778  , -77.56433 J)
+              IMPEDANCE = ( 5.778424E-03 , -77.56433 J)
               POWER =  4.802366E-07  WATTS
 
 ********************    CURRENT DATA    ********************

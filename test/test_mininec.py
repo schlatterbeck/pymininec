@@ -1808,7 +1808,7 @@ class Test_Doctest:
     # end def test_mininec
 
     def test_util (self):
-        num_tests = 2
+        num_tests = 4
         self.run_test (mininec.util, num_tests)
     # end def test_util
 

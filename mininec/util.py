@@ -31,6 +31,10 @@ def format_float (floats, use_e = 0):
      30000000
     >>> print ('%s' % format_float ((-1e-16,)))
      0       
+    >>> print ('%s' % format_float ((-2.347928E-06,)))
+    -.000002
+    >>> print ('%s' % format_float ((-2.347928E-06,), use_e = 1))
+    -2.347928E-06
     """
     r = []
     for f in floats:

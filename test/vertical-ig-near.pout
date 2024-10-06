@@ -52,7 +52,7 @@ NUMERATOR, DENOMINATOR COEFFICIENTS OF S^1 : 0.225998 , 0
 ********************    SOURCE DATA     ********************
 PULSE  1      VOLTAGE = ( 1 , 0 J)
               CURRENT = ( 2.884737E-02 ,  1.953881E-09 J)
-              IMPEDANCE = ( 34.6652  , -.000002  J)
+              IMPEDANCE = ( 34.6652  , -2.347932E-06 J)
               POWER =  1.442369E-02  WATTS
 
 ********************    CURRENT DATA    ********************

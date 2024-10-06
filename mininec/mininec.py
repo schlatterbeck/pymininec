@@ -261,8 +261,8 @@ class Excitation:
         r.append \
             ( '%sIMPEDANCE = (%s , %s J)'
             % ( ' ' * 14
-              , format_float ([self.impedance.real]) [0]
-              , format_float ([self.impedance.imag]) [0]
+              , format_float ([self.impedance.real], use_e = True) [0]
+              , format_float ([self.impedance.imag], use_e = True) [0]
               )
             )
         r.append \
@@ -403,7 +403,9 @@ class _Load:
             imp = self.impedance (parent.f, pulse)
             r.append \
                 ( 'PULSE NO.,RESISTANCE,REACTANCE: %2d , %s , %s'
-                % ((pulse.idx + 1,) + format_float ([imp.real, imp.imag]))
+                % ( (pulse.idx + 1,)
+                  + format_float ([imp.real, imp.imag])
+                  )
                 )
         return '\n'.join (r)
     # end def as_mininec
