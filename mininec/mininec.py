@@ -429,7 +429,7 @@ class Impedance_Load (_Load):
         super ().__init__ ()
     # end def __init__
 
-    def as_basic_input (self, is_s = False):
+    def as_basic_input (self, args, is_s = False):
         r = []
         if is_s: # pragma: no cover
             raise NotImplementedError \
@@ -494,15 +494,17 @@ class Laplace_Load (_Load):
         super ().__init__ ()
     # end def __init__
 
-    def as_basic_input (self, is_s):
+    def as_basic_input (self, args, is_s):
         r = []
         assert is_s
         for pulse in self.pulses:
             # PULSE NO., ORDER OF S-PARAMETER FUNCTION:
             r.append ('%d, %d' % (pulse.idx + 1, self.degree))
             for d in range (self.degree + 1):
-                # Factor, L, C are in µH, µF
+                # Factor, L, C are in µH, µF up to version 9
                 f = 10 ** (6 * d)
+                if args.mininec_version != '9':
+                    f = 1
                 # NUMERATOR, DENOMINATOR COEFFICIENTS OF S^[d]:
                 r.append ('%g, %g' % (self.b [d] * f, self.a [d] * f))
         return '\n'.join (r)
@@ -652,7 +654,7 @@ class Distributed_Load (_Load):
         super ().add_pulse (pulse)
     # end def add_pulse
 
-    def as_basic_input (self, is_s = False):
+    def as_basic_input (self, args, is_s = False):
         r = []
         if is_s: # pragma: no cover
             raise NotImplementedError ('Output as S-parameters not implemented')
@@ -1717,6 +1719,7 @@ class Mininec:
 
     def as_basic_input \
         ( self
+        , args
         , filename = 'MININEC.OUT'
         , azi = None, zen = None
         , near = None, pwr_nf = None
@@ -1779,7 +1782,7 @@ class Mininec:
             # S-PARAMETER (S=jw) IMPEDANCE LOAD (Y/N):
             r.append ('Y' if is_s else 'N')
         for l in self.loads:
-            r.append (l.as_basic_input (is_s))
+            r.append (l.as_basic_input (args, is_s))
         # C - COMPUTE/DISPLAY CURRENTS
         r.append ('C')
         # SAVE CURRENTS TO A FILE (Y/N):
@@ -4626,6 +4629,13 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
+        ( '--mininec-version'
+        , help    = "Version of MININEC for which to produce the input"
+                    " for the Basic implementation"
+        , choices = ('9', '12', '13')
+        , default = '9'
+        )
+    cmd.add_argument \
         ( '--near-field'
         , help    = "Near-field definition, give three comma-separated "
                     "start values, then three comma-separated "
@@ -5130,7 +5140,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             far_field = True
     if args.output_basic_input:
         with open (args.output_basic_input, 'w') as f:
-            f.write (m.as_basic_input (azi = azimuth, zen = zenith))
+            f.write (m.as_basic_input (args, azi = azimuth, zen = zenith))
     if args.output_cmdline:
         with open (args.output_cmdline, 'w') as f:
             f.write (m.as_cmdline (azi = azimuth, zen = zenith))

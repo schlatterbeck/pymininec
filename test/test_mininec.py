@@ -1404,6 +1404,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
     """ This tests creation of inputs for the old Basic implementation.
     """
 
+    class args: mininec_version = '9'
+
     def mini_compare (self, basename, mini):
         with open (self.pym_path (basename, '.mini')) as f:
             itr = iter (mini.split ('\n'))
@@ -1437,14 +1439,14 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
     def test_dip_10s (self):
         bn   = 'dip-10s'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ('D10.OUT')
+        mini = m.as_basic_input (self.args, 'D10.OUT')
         self.mini_compare (bn, mini)
     # end def test_dip_10s
 
     def test_dip_50s (self):
         bn   = 'dip-50s'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ('D50.OUT')
+        mini = m.as_basic_input (self.args, 'D50.OUT')
         self.mini_compare (bn, mini)
     # end def test_dip_50s
 
@@ -1453,7 +1455,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 19)
-        mini = m.as_basic_input ('DP001.OUT', azi, zen, gainfile = 'DP001.GNN')
+        mini = m.as_basic_input \
+            (self.args, 'DP001.OUT', azi, zen, gainfile = 'DP001.GNN')
         self.mini_compare (bn, mini)
     # end def test_dipole_001
 
@@ -1461,7 +1464,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         bn   = 'dipole-01-near'
         m    = self.setup_generic_file (bn, compute = False)
         nf   = [-2, -2, 0, 1, 1, 1, 5, 5, 5]
-        mini = m.as_basic_input ('DIPOLE01.OUT', near = nf, pwr_nf = 100)
+        mini = m.as_basic_input \
+            (self.args, 'DIPOLE01.OUT', near = nf, pwr_nf = 100)
         self.mini_compare (bn, mini)
     # end def test_dipole_01_near
 
@@ -1471,21 +1475,21 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 19)
         mini = m.as_basic_input \
-            ('DIPOLE01.OUT', azi, zen, gainfile = 'DIPOLE01.GNN')
+            (self.args, 'DIPOLE01.OUT', azi, zen, gainfile = 'DIPOLE01.GNN')
         self.mini_compare (bn, mini)
     # end def test_dipole_01
 
     def test_dipv_10s (self):
         bn   = 'dipv-10s'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ('D10V.OUT')
+        mini = m.as_basic_input (self.args, 'D10V.OUT')
         self.mini_compare (bn, mini)
     # end def test_dipv_10s
 
     def test_dipv_50s (self):
         bn   = 'dipv-50s'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ('D50V.OUT')
+        mini = m.as_basic_input (self.args, 'D50V.OUT')
         self.mini_compare (bn, mini)
     # end def test_dipv_50s
 
@@ -1494,8 +1498,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 19)
-        mini  = m.as_basic_input \
-            ('FDP18.OUT', azi = azi, zen = zen, gainfile = 'FDP18.GNN')
+        fn   = 'FDP18.GNN'
+        mini = m.as_basic_input \
+            (self.args, 'FDP18.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_folded_18
 
@@ -1504,7 +1509,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         zen  = Angle (0, 11,  9)
         azi  = Angle (0, 10, 37)
-        mini = m.as_basic_input (azi = azi, zen = zen)
+        mini = m.as_basic_input (self.args, azi = azi, zen = zen)
         self.mini_compare (bn, mini)
     # end def test_inve802B
 
@@ -1514,7 +1519,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         azi  = Angle (0, 5, 73)
         zen  = Angle (0, 5, 19)
         mini = m.as_basic_input \
-            ('INVL.OUT', azi = azi, zen = zen, gainfile = 'INVL.GNN')
+            (self.args, 'INVL.OUT', azi = azi, zen = zen, gainfile = 'INVL.GNN')
         self.mini_compare (bn, mini)
     # end def test_inv_l
 
@@ -1523,8 +1528,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'LZH20.GNN'
         mini = m.as_basic_input \
-            ('LZH20.OUT', azi = azi, zen = zen, gainfile = 'LZH20.GNN')
+            (self.args, 'LZH20.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_lzh20
 
@@ -1534,7 +1540,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         azi  = Angle (0, 90,  2)
         zen  = Angle (0, 10, 10)
         mini = m.as_basic_input \
-            ('TANT.OUT', azi = azi, zen = zen, gainfile = 'TANT.GNN')
+            (self.args, 'TANT.OUT', azi = azi, zen = zen, gainfile = 'TANT.GNN')
         self.mini_compare (bn, mini)
     # end def test_t_ant
 
@@ -1544,7 +1550,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         azi  = Angle (0, 90,  2)
         zen  = Angle (0, 10, 10)
         mini = m.as_basic_input \
-            ('TANT.OUT', azi = azi, zen = zen, gainfile = 'TANT.GNN')
+            (self.args, 'TANT.OUT', azi = azi, zen = zen, gainfile = 'TANT.GNN')
         self.mini_compare (bn, mini)
     # end def test_t_ant_thin
 
@@ -1553,8 +1559,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'VDI001G0.GNN'
         mini = m.as_basic_input \
-            ('VDI001G0.OUT', azi = azi, zen = zen, gainfile = 'VDI001G0.GNN')
+            (self.args, 'VDI001G0.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_001g0
 
@@ -1563,8 +1570,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 19)
+        fn   = 'VDIP01.GNN'
         mini = m.as_basic_input \
-            ('VDIP01.OUT', azi = azi, zen = zen, gainfile = 'VDIP01.GNN')
+            (self.args, 'VDIP01.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_01
 
@@ -1573,8 +1581,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'VDIP01G0.GNN'
         mini = m.as_basic_input \
-            ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
+            (self.args, 'VDIP01G0.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_01g0
 
@@ -1583,8 +1592,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'VDIP01G0.GNN'
         mini = m.as_basic_input \
-            ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
+            (self.args, 'VDIP01G0.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_01g0l
 
@@ -1593,8 +1603,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'VDIP01G0.GNN'
         mini = m.as_basic_input \
-            ('VDIP01G0.OUT', azi = azi, zen = zen, gainfile = 'VDIP01G0.GNN')
+            (self.args, 'VDIP01G0.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_01g0l_j
 
@@ -1603,8 +1614,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'VD01GA.GNN'
         mini = m.as_basic_input \
-            ('VD01GA.OUT', azi = azi, zen = zen, gainfile = 'VD01GA.GNN')
+            (self.args, 'VD01GA.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_01gavg
 
@@ -1613,8 +1625,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0,  5, 19)
+        fn   = 'VERTIG.GNN'
         mini = m.as_basic_input \
-            ('VERTIG.OUT', azi = azi, zen = zen, gainfile = 'VERTIG.GNN')
+            (self.args, 'VERTIG.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vertical_ig
 
@@ -1623,7 +1636,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m   = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
-        mini = m.as_basic_input (azi = azi, zen = zen)
+        mini = m.as_basic_input (self.args, azi = azi, zen = zen)
         self.mini_compare (bn, mini)
     # end def test_vertical_linear_boundary
 
@@ -1633,7 +1646,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         azi  = Angle (0, 10, 37)
         zen  = Angle (0,  5, 19)
         mini= m.as_basic_input \
-            ( 'VERTIG.OUT'
+            ( self.args
+            , 'VERTIG.OUT'
             , azi = azi, zen = zen
             , pwr_ff = 100, ff_dist = 1e3, ff_abs = True
             , gainfile = 'VERTIG.GNN'
@@ -1647,7 +1661,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         azi  = Angle (0, 10, 37)
         zen  = Angle (0,  5, 19)
         mini= m.as_basic_input \
-            ( 'VERTIG.OUT'
+            ( self.args
+            , 'VERTIG.OUT'
             , azi = azi, zen = zen
             , ff_dist = 1e3, ff_abs = True
             , gainfile = 'VERTIG.GNN'
@@ -1659,7 +1674,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         bn   = 'vertical-ig-near'
         m    = self.setup_generic_file (bn, compute = False)
         nf   = [-1, -1, 0, 1, 1, 1, 3, 3, 2]
-        mini = m.as_basic_input ('VERTIG.OUT', near = nf)
+        mini = m.as_basic_input (self.args, 'VERTIG.OUT', near = nf)
         self.mini_compare (bn, mini)
     # end def test_vertical_ig_near
 
@@ -1668,8 +1683,9 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0,  5, 19)
+        fn   = 'VERTIGUD.GNN'
         mini = m.as_basic_input \
-            ('VERTIGUD.OUT', azi = azi, zen = zen, gainfile = 'VERTIGUD.GNN')
+            (self.args, 'VERTIGUD.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vertical_ig_ud
 
@@ -1678,7 +1694,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0,  5, 19)
-        mini = m.as_basic_input (azi = azi, zen = zen)
+        mini = m.as_basic_input (self.args, azi = azi, zen = zen)
         self.mini_compare (bn, mini)
     # end def test_vertical_rad
 
@@ -1687,21 +1703,21 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
-        mini = m.as_basic_input (azi = azi, zen = zen)
+        mini = m.as_basic_input (self.args, azi = azi, zen = zen)
         self.mini_compare (bn, mini)
     # end def test_w0xi
 
     def test_skin_effect (self):
         bn   = 'dip_skin'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ()
+        mini = m.as_basic_input (self.args)
         self.mini_compare (bn, mini)
     # end def test_skin_effect
 
     def test_skin_effect (self):
         bn   = 'dip_skin2'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ()
+        mini = m.as_basic_input (self.args)
         self.mini_compare ('dip_skin', mini)
     # end def test_skin_effect
 
@@ -1710,36 +1726,37 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         m    = self.setup_generic_file (bn, compute = False)
         azi  = Angle (0, 10, 37)
         zen  = Angle (0, 10, 10)
+        fn   = 'VDI001G0.GNN'
         mini = m.as_basic_input \
-            ('VDI001G0.OUT', azi = azi, zen = zen, gainfile = 'VDI001G0.GNN')
+            (self.args, 'VDI001G0.OUT', azi = azi, zen = zen, gainfile = fn)
         self.mini_compare (bn, mini)
     # end def test_vdipole_rot_trans
 
     def test_dip_coat (self):
         bn   = 'dip_coat'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ()
+        mini = m.as_basic_input (self.args)
         self.mini_compare (bn, mini)
     # end def test_dip_coat
 
     def test_dip_coat_yn (self):
         bn   = 'dip_coat_yn'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ()
+        mini = m.as_basic_input (self.args)
         self.mini_compare (bn, mini)
     # end def test_dip_coat_yn
 
     def test_dip_loadwire (self):
         bn   = 'dip_loadwire'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ()
+        mini = m.as_basic_input (self.args)
         self.mini_compare (bn, mini)
     # end def test_dip_loadwire
 
     def test_dipv_14st_t2s (self):
         bn   = 'dipv-14st-t2s'
         m    = self.setup_generic_file (bn, compute = False)
-        mini = m.as_basic_input ()
+        mini = m.as_basic_input (self.args)
         self.mini_compare (bn, mini)
     # end def test_dipv_14st_t2s
 
