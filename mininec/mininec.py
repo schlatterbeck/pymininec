@@ -529,8 +529,8 @@ class Laplace_Load (_Load):
             for d in range (self.degree + 1):
                 # Factor, L, C are in µH, µF
                 f = 10 ** (6 * d)
-                s = 'NUMERATOR, DENOMINATOR COEFFICIENTS OF S^ %d : %g , %g'
-                r.append (s % (d + 1, self.b [d] * f, self.a [d] * f))
+                s = 'NUMERATOR, DENOMINATOR COEFFICIENTS OF S^%d : %g , %g'
+                r.append (s % (d, self.b [d] * f, self.a [d] * f))
         return '\n'.join (r)
     # end def as_mininec
 

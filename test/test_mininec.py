@@ -938,6 +938,28 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
             assert float (num) < expected [n][1]
     # end def test_timing
 
+    def test_laplace_load (self):
+        # 100pF
+        a = [0, 100e-12]
+        b = [1]
+        l = mininec.mininec.Laplace_Load (a, b)
+        f = (7, 14, 21)
+        e = (-227.364, -113.682, -75.788)
+        for exp, frq in zip (e, f):
+            imp = l.impedance (frq)
+            assert imp.real == 0
+            assert imp.imag == pytest.approx (exp, abs = 1e-3)
+        # 100nH
+        a = [1]
+        b = [0, 100e-9]
+        e = (4.398, 8.796, 13.195)
+        l = mininec.mininec.Laplace_Load (a, b)
+        for exp, frq in zip (e, f):
+            imp = l.impedance (frq)
+            assert imp.real == 0
+            assert imp.imag == pytest.approx (exp, abs = 1e-3)
+    # end def test_laplace_load
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
