@@ -35,15 +35,11 @@ from mininec.util    import format_float
 from mininec.pulse   import Pulse_Container, Pulse
 from mininec.segment import Segment
 from mininec.taper   import taper1, taper2, Taper_Error
+from numpy.polynomial.legendre import leggauss
 
 legendre_cache = {}
-try:
-    from scipy.integrate._quadrature import _cached_roots_legendre
-    legendre_cache [2] = [x / 2 for x in _cached_roots_legendre (2)]
-    legendre_cache [4] = [x / 2 for x in _cached_roots_legendre (4)]
-    legendre_cache [8] = [x / 2 for x in _cached_roots_legendre (8)]
-except ImportError: # pragma: no cover
-    pass
+for k in (2, 4, 8):
+    legendre_cache [k] = [x / 2 for x in leggauss (k)]
 
 # Constants
 mu_0      = 1.25663706127e-6
@@ -2808,16 +2804,15 @@ class Mininec:
     def fast_quad (self, a, b, args, n):
         """ This uses the idea of the original pre-scaled gauss
             parameters. Computation of the integrals in psi is a little
-            faster that way. Note that fixed_quad is a pure python
-            implementation which does the necessary integral bounds
-            scaling. Since we're always integrating from 0 to 1/f we can
-            speed things up here and avoid some multiplications.
-            Note that this needs access to the internals of
-            scipy.integral and we fall back to fixed_quad if this
-            interface changes. Also this is a special case that works
-            only for the lower bound being 0.
-            The test uses a non-cached order of integration to test the
-            else part of the if statement.
+            faster that way. Note that fixed_quad from scipy.integrate
+            is a pure python implementation which does the necessary
+            integral bounds scaling. Since we're always integrating from
+            0 to 1/f we can speed things up here and avoid some
+            multiplications.  Note that we fall back to fixed_quad if
+            the order is not in our pre-computed legendre_cache.  Also
+            this is a special case that works only for the lower bound
+            being 0.  The test uses a non-cached order of integration to
+            test the else part of the if statement.
         >>> w = []
         >>> w.append (Wire (10, 0, 0, 0, 21.414285, 0, 0, 0.01))
         >>> s = Excitation (1, 0)
