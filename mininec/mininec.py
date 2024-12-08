@@ -1241,45 +1241,51 @@ class Wire (Geobj):
             raise ValueError ("height cannot not be negative with ground")
     # end def compute_ground
 
+    def _add_conn (self, parent, ep_tuple, n1):
+        n2, other = parent.end_dict [ep_tuple]
+        s = -1 if (n2 == n1) else 1
+        other.conn [n2].add (self,  self, n1, s, s)
+        self.conn  [n1].add (other, self, n1, 1, s)
+    # end def _add_conn
+
     def compute_connections (self, parent):
         """ Compute links to connected geo objects
             Also compute sets of indeces of pulses.
             Note that we're using a dictionary for matching endpoints,
-            this reduces two nested loops over the geo which is O(N**2)
-            to a single loop O(N).
+            so in the case of a match we find an existing matching
+            endpoint quickly. When not matching we still need to search
+            all existing geo objects.
 
-            We do not use a second loop but instead put each geobj end
-            into a dictionary linking to the geobj. That way the
-            algorithm is O(N) not O(N^2). The dictionaries for the geobj
-            ends is end_dict, we store a tuple of end index and geobj in
-            this dictionary.
-
-            In the future we may want to introduce fuzzy matching of
-            endpoints (similar to how NEC does it). This means that we
-            would probably first try to match via dictionary and only if
-            that doesn't return a match we might use a binary search via
-            one of the coordinates (and then determine the euclidian
-            distance).
+            We adopt NEC's algorithm for matching wire ends: If the
+            separation of two endpoints is less than 1e-3 of the
+            shortest segment, the endpoints match. (See Part III, User's
+            guide p.4).
 
             Also compute pulses.
         """
-        self.compute_segments ()
-
         # This rolls the end-matching computation of 4
         # explicitly-programmed cases in the Basic program lines
         # 1325-1356 into a few statements.
         # The idea is to use a dictionary of end-point coordinates.
+        # But for fuzzy matching we still need to iterate over existing
+        # segments if we do not find a match in the dictionary.
         for n1, current_end in enumerate (self.endpoints):
             if self.is_ground [n1]:
                 continue
             ep_tuple = tuple (current_end)
             if ep_tuple in parent.end_dict:
-                n2, other = parent.end_dict [ep_tuple]
-                s = -1 if (n2 == n1) else 1
-                other.conn [n2].add (self,  self, n1, s, s)
-                self.conn  [n1].add (other, self, n1, 1, s)
+                self._add_conn (parent, ep_tuple, n1)
             else:
-                parent.end_dict [ep_tuple] = (n1, self)
+                minlen = parent.min_seglen * 1e-3
+                for tpl in parent.end_dict:
+                    end_coord = np.array (list (tpl))
+                    if np.linalg.norm (current_end - end_coord) <= minlen:
+                        # Copy dict entry so that future ends can be found
+                        parent.end_dict [ep_tuple] = parent.end_dict [tpl]
+                        self._add_conn (parent, ep_tuple, n1)
+                        break
+                else:
+                    parent.end_dict [ep_tuple] = (n1, self)
         self.end_segs [0] = parent.pulses.pulse_idx
         if self.n_segments == 1 and self.idx_1 == 0:
             self.end_segs [0] = None
@@ -1382,6 +1388,7 @@ class Wire (Geobj):
             # currents computed, even if slightly off!
             self.segments [-1].seg_len = seg_len
             self.segments [-1].dirvec  = dirvec
+        self.min_seglen = seg_len
     # end def compute_equal_segments
 
     def compute_segments (self):
@@ -1421,8 +1428,11 @@ class Wire (Geobj):
             d.update (max_t = self.taper_max)
         if self.taper_min is not None:
             d.update (min_t = self.taper_min)
+        self.min_seglen = None
         for p1, p2 in taper1 (self.p1, self.p2, self.n_segments, self.r, **d):
             self.segments.append (Segment (p1, p2, self, len (self.segments)))
+            if self.min_seglen is None:
+                self.min_seglen = self.segments [-1].seg_len
     # end def compute_taper1_segments
 
     def compute_taper2_segments (self):
@@ -1431,8 +1441,11 @@ class Wire (Geobj):
             d.update (max_t = self.taper_max)
         if self.taper_min is not None:
             d.update (min_t = self.taper_min)
+        self.min_seglen = None
         for p1, p2 in taper2 (self.p1, self.p2, self.n_segments, self.r, **d):
             self.segments.append (Segment (p1, p2, self, len (self.segments)))
+            if self.min_seglen is None:
+                self.min_seglen = self.segments [-1].seg_len
     # end def compute_taper2_segments
 
     def connections (self):
@@ -1924,6 +1937,9 @@ class Mininec:
         """ In the original code this is done while parsing the
             individual wires from the geometry information.
         """
+        for w in self.geo:
+            w.compute_segments ()
+        self.min_seglen = min (w.min_seglen for w in self.geo)
         for w in self.geo:
             w.compute_connections (self)
     # end def compute_connectivity

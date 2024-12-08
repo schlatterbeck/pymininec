@@ -199,11 +199,14 @@ class _Test_Base_With_File:
         return m
     # end def inverted_l
 
-    def t_antenna (self, filename, r = .004):
+    def t_antenna (self, filename, r = .004, fuzzy = False):
         w  = []
-        w.append (Wire ( 8, 0,        0,      0, 0, 0, .07958, r))
-        w.append (Wire (17, 0, -.170423, .07958, 0, 0, .07958, r))
-        w.append (Wire (17, 0,  .170423, .07958, 0, 0, .07958, r))
+        h  = .07958
+        if fuzzy:
+            h  = .079581
+        w.append (Wire ( 8, 0,        0, 0, 0, 0, .07958, r))
+        w.append (Wire (17, 0, -.170423, h, 0, 0,      h, r))
+        w.append (Wire (17, 0,  .170423, h, 0, 0,      h, r))
         m  = Mininec (299.8, w, media = [ideal_ground])
         ex = Excitation (1, 0)
         m.register_source (ex, 0)
@@ -709,6 +712,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         m = self.t_antenna ('t-ant.pout')
         self.compare_far_field_data (m)
     # end def test_t_ant
+
+    def test_t_fuzzy (self):
+        m = self.t_antenna ('t-fuzzy.pout', fuzzy = True)
+        self.compare_far_field_data (m)
+    # end def test_t_fuzzy
 
     def test_t_ant_thin (self):
         m = self.t_antenna ('t-ant-thin.pout', r = 5e-5)
