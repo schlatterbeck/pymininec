@@ -29,6 +29,7 @@ import copy
 import time
 import numpy as np
 from datetime        import datetime
+from itertools       import pairwise
 from scipy.special   import ellipk, jv
 from scipy.integrate import fixed_quad
 from mininec.util    import format_float
@@ -154,9 +155,9 @@ class Connected_Geobj:
     # end def __bool__
 
     def __str__ (self):
-        r = []
+        r = ['Connected_Ojb:']
         for geobj, ow, idx, s in self._iter ():
-            r.append ('geo: %d idx: %d s:%d' % (geobj.n, ow.end_segs [idx], s))
+            r.append (' geo: %d idx: %s s:%d' % (geobj.n, ow.end_segs [idx], s))
         return '\n'.join (r)
     __repr__ = __str__
 
@@ -947,9 +948,13 @@ ideal_ground = Medium (0, 0)
 class Geo_Container:
 
     def __init__ (self, parent = None, geo = None):
-        self.parent = parent
-        self.geo    = geo or []
-        self.by_tag = {}
+        self.parent     = parent
+        self.geo        = []
+        self.by_tag     = {}
+        self.min_seglen = None
+        if geo is not None:
+            for g in geo:
+                self.append (g)
     # end def __init__
 
     def __getitem__ (self, idx):
@@ -975,6 +980,13 @@ class Geo_Container:
         for n, geobj in enumerate (self.geo):
             geobj.compute_ground (n, self.parent.media)
     # end def compute_ground
+
+    def compute_segments (self):
+        for w in self:
+            w.compute_segments ()
+        self.min_seglen = min (w.min_seglen for w in self.geo)
+        self.parent.min_seglen = self.min_seglen
+    # end def compute_segments
 
     def compute_tags (self):
         tags_seen = set ()
@@ -1066,7 +1078,24 @@ class Geobj:
         self.coat_load = None
         self.pulses    = []
         self.had_tag   = tag is not None
+
+        self.end_segs  = [None, None]
+        # Links to previous/next connected wire (at start/end)
+        # conn [0] contains wires that link to our first end
+        # while conn [1] contains wires that link to our second end.
+        self.conn = (Connected_Geobj (), Connected_Geobj ())
+        self.n    = None # index into parent.geo
     # end def __init__
+
+    @property
+    def idx_1 (self):
+        return self.idx (0)
+    # end def idx_1
+
+    @property
+    def idx_2 (self):
+        return self.idx (1)
+    # end def idx_2
 
     @property
     def r (self):
@@ -1087,87 +1116,13 @@ class Geobj:
         return self._r
     # end def r_orig
 
-# end class Geobj
-
-class Wire (Geobj):
-    """ A NEC-like wire
-        The original variable names are
-        x1, y1, z1, x2, y2, z2 (X1, Y1, Z1, X2, Y2, Z2)
-        n_segments (S1)
-        wire_len (D)
-        seg_len  (S)
-        dirvec (CA, CB, CG)
-    >>> wire = Wire (1, 0, 0, 0, 0, 0, 25, 0.001)
-    >>> wire
-    Wire [0 0 0]-[ 0  0 25], r=0.001
-    >>> wire.n = 23
-    >>> wire
-    Wire 23 [0 0 0]-[ 0  0 25], r=0.001
-    """
-    def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r, tag = None):
-        super ().__init__ (r, tag)
-        self.n_segments = n_segments
-        # whenever we need to access both ends by index we use endpoints
-        self.p1        = np.array ([x1, y1, z1])
-        self.p2        = np.array ([x2, y2, z2])
-        self._segtype  = 0
-        self.taper_min = None
-        self.taper_max = None
-        self.compute_endpoints ()
-
-        self.end_segs = [None, None]
-        # Links to previous/next connected wire (at start/end)
-        # conn [0] contains wires that link to our first end
-        # while conn [1] contains wires that link to our second end.
-        self.conn = (Connected_Geobj (), Connected_Geobj ())
-        self.n    = None # index into parent.geo
-    # end def __init__
-
-    @property
-    def idx_1 (self):
-        return self.idx (0)
-    # end def idx_1
-
-    @property
-    def idx_2 (self):
-        return self.idx (1)
-    # end def idx_2
-
-    @property
-    def n_emulated_wires (self):
-        """ If we have non-equal segmentation we return the number of
-            segments (emulated in the Basic implementation as
-            single-segment wires). Otherwise we return 1.
-        """
-        if self.segtype == 0:
-            return 1
-        return self.n_segments
-    # end def n_emulated_wires
-
-    @property
-    def segtype (self):
-        return self._segtype
-    # end def segtype
-
-    @segtype.setter
-    def segtype (self, stype):
-        """ Segmentation type:
-            - 0 for equal segment lengths
-            - 1 for tapered segmentation from end 1
-            - 2 for tapered segmentation from end 2
-            - 3 for tapered segmentation from *both* ends
-        """
-        assert 0 <= stype <= 3
-        self._segtype = stype
-    # end def segtype
-
     def as_basic_input (self):
         """ Output in the input format of original Basic implementation.
             If we emulate several wires we iterate over all segments
             here.
         """
         r = []
-        if self.segtype == 0:
+        if self.n_emulated_wires == 1:
             # NO. OF SEGMENTS:
             r.append (str (self.n_segments))
             # END ONE COORDINATES (X,Y,Z):
@@ -1202,44 +1157,6 @@ class Wire (Geobj):
                 r.append ('N')
         return '\n'.join (r)
     # end def as_basic_input
-
-    def as_cmdline (self):
-        r = []
-        tpl = (self.n_segments,) + tuple (self.endpoints.flat) + (self.r_orig,)
-        if self.had_tag:
-            tpl = (self.tag,) + tpl
-            r.append \
-                ('-w %d,%d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
-        else:
-            r.append \
-                ('-w %d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
-        if self.segtype:
-            tpr = '--taper-wire=%d,%d' % (self.n + 1, self.segtype)
-            if self.taper_min or self.taper_max:
-                if self.taper_max is not None:
-                    mn   = self.taper_min or 0
-                    tpr += ',%.11g,%.11g' % (mn, self.taper_max)
-                else:
-                    tpr += ',%.11g' % self.taper_min
-            r.append (tpr)
-        return '\n'.join (r)
-    # end def as_cmdline
-
-    def compute_ground (self, n, media):
-        self.n = n
-        # If we are in free space, nothing to do here
-        if media is None:
-            self.is_ground = (False, False)
-            return
-        # Wire end is grounded if Z coordinate is 0
-        # In the original implementation this is kept in J1
-        # with: 0: not grounded -1: start grounded 1: end grounded
-        self.is_ground = ((self.p1 [-1] == 0), (self.p2 [-1] == 0))
-        if self.is_ground [0] and self.is_ground [1]:
-            raise ValueError ("Both ends of a wire may not be grounded")
-        if self.p1 [-1] < 0 or self.p2 [-1] < 0:
-            raise ValueError ("height cannot not be negative with ground")
-    # end def compute_ground
 
     def _add_conn (self, parent, ep_tuple, n1):
         n2, other = parent.end_dict [ep_tuple]
@@ -1290,6 +1207,10 @@ class Wire (Geobj):
         if self.n_segments == 1 and self.idx_1 == 0:
             self.end_segs [0] = None
         npulse = self.n_segments - (not self.idx_1) - (not self.idx_2)
+        # If structure is connected to itself, deduct one from pulse count
+        if self.conn [0].list and self.conn [0].list [0][0] is self:
+            assert self.conn [1].list [0][0] is self
+            npulse -= 1
         self.end_segs [1] = parent.pulses.pulse_idx + npulse
         if self.n_segments == 1 and self.idx_2 == 0:
             self.end_segs [1] = None
@@ -1336,7 +1257,13 @@ class Wire (Geobj):
         lseg = self.segments [-1]
         p1   = lseg.p1
         p2   = lseg.p2
-        if self.idx_2 != 0 and abs (self.idx_2) - 1 != self.n:
+        if self.is_ground [1]:
+            end2 = p2 - lseg.dirvec * lseg.seg_len * invz
+            p = Pulse (pu, self.p2, p1, end2, lseg, lseg, gnd = 1)
+            p.n = pc
+            pc += 1
+            self.pulses.append (p)
+        elif self.idx_2 != 0:
             assert not self.is_ground [1]
             other = parent.geo [abs (self.idx_2) - 1]
             sgn   = [1, np.sign (self.idx_2)]
@@ -1352,13 +1279,307 @@ class Wire (Geobj):
             p.n = pc
             pc += 1
             self.pulses.append (p)
-        elif self.is_ground [1]:
-            end2 = p2 - lseg.dirvec * lseg.seg_len * invz
-            p = Pulse (pu, self.p2, p1, end2, lseg, lseg, gnd = 1)
-            p.n = pc
-            pc += 1
-            self.pulses.append (p)
     # end def compute_connections
+
+    def compute_ground (self, n, media):
+        self.n = n
+        # If we are in free space, nothing to do here
+        if media is None:
+            self.is_ground = (False, False)
+            return
+        # Wire end is grounded if Z coordinate is 0
+        # In the original implementation this is kept in J1
+        # with: 0: not grounded -1: start grounded 1: end grounded
+        eps = self.parent.min_seglen * 1e-3
+        self.is_ground = (abs (self.p1 [-1]) < eps, abs (self.p2 [-1]) < eps)
+        if self.p1 [-1] < -eps or self.p2 [-1] < -eps:
+            tg = ''
+            if self.tag is not None:
+                tg = ' %d' % self.tag
+            raise ValueError \
+                ( "Geo object%s: height cannot not be negative with ground"
+                % tg
+                )
+    # end def compute_ground
+
+    def conn_as_str (self):
+        """ Mostly for debugging connections
+        """
+        r = []
+        r.append ('W: %d' % self.n)
+        for n, c in enumerate (self.conn):
+            r.append ('conn %s:' % 'lr' [n])
+            r.append (str (c))
+        return '\n'.join (r)
+    # end def conn_as_str
+
+    def connections (self):
+        return self.conn [0].geo.union (self.conn [1].geo)
+    # end def connections
+
+    def idx (self, end_idx):
+        """ The indeces I1, I2 from the Basic code, this was -self.n when
+            the end is grounded, the index of a connected wire (negative
+            if the direction of the wire is reversed) if connected and 0
+            otherwise. Used mainly when printing wires in mininec format.
+            We now use the tag of the wire.
+        """
+        if self.is_ground [end_idx]:
+            return -(self.tag)
+        return self.conn [end_idx].tag (self)
+    # end def idx
+
+    def is_connected (self, other):
+        if other is self:
+            return True
+        for c in self.conn:
+            if c.is_connected (other):
+                return True
+        return bool (self.connections ().intersection (other.connections ()))
+    # end def is_connected
+
+    def pulse_idx_iter (self, yield_ends = True):
+        for p in self.pulse_iter (yield_ends):
+            yield p.idx
+    # end def pulse_idx_iter
+
+    def pulse_iter (self, yield_ends = True):
+        for p in self.pulses:
+            if p.geo [0] != p.geo [1] and not yield_ends:
+                continue
+            yield p
+    # end def pulse_iter
+
+# end class Geobj
+
+class Arc (Geobj):
+    """ A NEC-like wire arc (GA card in NEC)
+        The given segments form a polygon *inscribed* within the arc.
+        The arcs center is located at the origin and the axis is the
+        Y-axis. If an arc of a different position or orientation is
+        desired the object can be moved with one or several of the geo
+        transformations.
+        The first radius parameter is the radius of the arc. The r
+        parameter is the wire radius. The ang1 and ang2 parameters give
+        the start and end arcs measured from the X-axis in a left hand
+        direction about the Y-axis in degree.
+        We require at least 3 wire segments, otherwise arcs degenerate
+        to a wire.
+    >>> arc = Arc (6, 1, 0, 90, 0.002)
+    >>> arc
+    Arc radius=1, [0, 90], r=0.002
+    >>> arc.n = 42
+    >>> arc
+    Arc 42 radius=1, [0, 90], r=0.002
+    """
+
+    name = 'ARC'
+
+    def __init__ (self, n_segments, radius, ang1, ang2, r, tag = None):
+        super ().__init__ (r, tag)
+        if n_segments < 3:
+            raise ValueError ('Arc needs at least three segments')
+        if radius <= 0:
+            raise ValueError ('Arc radius must be > 0')
+        if ang1 == ang2:
+            raise ValueError ('Arc angles must be different')
+        if ang2 - ang1 > 360:
+            raise ValueError ('Arcs must not exceed a full circle')
+        self.n_segments = n_segments
+        self.radius     = radius
+        self.ang1       = ang1
+        self.ang2       = ang2
+        # We *always* need to emulate segments as wires in Basic
+        self.n_emulated_wires = self.n_segments
+        # Compute segments. On geo transformation these must be adapted.
+        segends = []
+        a1 = ang1 / 180 * np.pi
+        a2 = ang2 / 180 * np.pi
+        for i in range (n_segments):
+            a = a1 + (a2 - a1) / n_segments * i
+            segends.append ([radius * np.cos (a), 0.0, radius * np.sin (a)])
+        segends.append ([radius * np.cos (a2), 0.0, radius * np.sin (a2)])
+        self.segends = np.array (segends)
+    # end def __init__
+
+    @property
+    def endpoints (self):
+        return np.array ([self.segends [0], self.segends [-1]])
+    # end def endpoints
+
+    @property
+    def p1 (self):
+        return self.segends [0]
+    # end def p1
+
+    @property
+    def p2 (self):
+        return self.segends [-1]
+    # end def p2
+
+    def as_cmdline (self):
+        r = []
+        tpl = (self.n_segments, self.radius, self.ang1, self.ang2, self.r_orig)
+        if self.had_tag:
+            tpl = (self.tag,) + tpl
+            r.append ('-w %d,%d,%.11g,%.11g,%.11g,%.11g' % tpl)
+        else:
+            r.append ('-w %d,%.11g,%.11g,%.11g,%.11g' % tpl)
+        return '\n'.join (r)
+    # end def as_cmdline
+
+    def compute_ground (self, n, media):
+        """ It *is* allowed that both ends are grounded but no
+            intermediate segments may below ground
+        """
+        super ().compute_ground (n, media)
+        if media is None:
+            return
+        gnd_prev  = False
+        eps = self.parent.min_seglen * 1e-3
+        for s in self.segends:
+            if s [-1] < -eps:
+                raise ValueError ('Arc may not be partially below ground')
+            if abs (s [-1]) < eps:
+                if gnd_prev:
+                    raise ValueError \
+                        ('Arc: No two adjacent segments may be grounded')
+                gnd_prev  = True
+                s [-1] = 0.0
+            else:
+                gnd_prev  = False
+    # end def compute_ground
+
+    def compute_segments (self):
+        """ Loop over our segment ends and create segments.
+        """
+        self.segments = []
+        for e1, e2 in pairwise (self.segends):
+            self.segments.append (Segment (e1, e2, self, len (self.segments)))
+        self.min_seglen = self.segments [0].seg_len
+    # end def compute_segments
+
+    def rotate (self, rmatrix):
+        assert not getattr (self, 'segments', None)
+        self.segends = rmatrix.apply (self.segends.T).T
+    # end def rotate
+
+    def scale (self, factor):
+        """ Scale everything by factor including radius
+            Similar to the NEC GS card "Scale Structure Dimensions"
+        """
+        assert not getattr (self, 'segments', None)
+        self.segends = self.segends * factor
+        self.radius  = self.radius  * factor
+        self._r      = self._r      * factor
+    # end def scale
+
+    def translate (self, translation):
+        assert not getattr (self, 'segments', None)
+        self.segends = self.segends + translation
+    # end def translate
+
+    def __str__ (self):
+        s = 'radius=%.11g, [%.11g, %.11g], r=%.11g' \
+          % (self.radius, self.ang1, self.ang2, self.r_orig)
+        if self.n is None:
+            return 'Arc ' + s
+        return 'Arc %d ' % self.n + s
+    __repr__ = __str__
+
+# end class Arc
+
+class Wire (Geobj):
+    """ A NEC-like wire
+        The original variable names are
+        x1, y1, z1, x2, y2, z2 (X1, Y1, Z1, X2, Y2, Z2)
+        n_segments (S1)
+        wire_len (D)
+        seg_len  (S)
+        dirvec (CA, CB, CG)
+    >>> wire = Wire (1, 0, 0, 0, 0, 0, 25, 0.001)
+    >>> wire
+    Wire [0 0 0]-[ 0  0 25], r=0.001
+    >>> wire.n = 23
+    >>> wire
+    Wire 23 [0 0 0]-[ 0  0 25], r=0.001
+    """
+
+    name = 'WIRE'
+
+    def __init__ (self, n_segments, x1, y1, z1, x2, y2, z2, r, tag = None):
+        super ().__init__ (r, tag)
+        self.n_segments = n_segments
+        # whenever we need to access both ends by index we use endpoints
+        self.p1        = np.array ([x1, y1, z1])
+        self.p2        = np.array ([x2, y2, z2])
+        self._segtype  = 0
+        self.taper_min = None
+        self.taper_max = None
+        self.compute_endpoints ()
+    # end def __init__
+
+    @property
+    def n_emulated_wires (self):
+        """ If we have non-equal segmentation we return the number of
+            segments (emulated in the Basic implementation as
+            single-segment wires). Otherwise we return 1.
+        """
+        if self.segtype == 0:
+            return 1
+        return self.n_segments
+    # end def n_emulated_wires
+
+    @property
+    def segtype (self):
+        return self._segtype
+    # end def segtype
+
+    @segtype.setter
+    def segtype (self, stype):
+        """ Segmentation type:
+            - 0 for equal segment lengths
+            - 1 for tapered segmentation from end 1
+            - 2 for tapered segmentation from end 2
+            - 3 for tapered segmentation from *both* ends
+        """
+        assert 0 <= stype <= 3
+        self._segtype = stype
+    # end def segtype
+
+    def as_cmdline (self):
+        r = []
+        tpl = (self.n_segments,) + tuple (self.endpoints.flat) + (self.r_orig,)
+        if self.had_tag:
+            tpl = (self.tag,) + tpl
+            r.append \
+                ('-w %d,%d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
+        else:
+            r.append \
+                ('-w %d,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g,%.11g' % tpl)
+        if self.segtype:
+            tpr = '--taper-wire=%d,%d' % (self.n + 1, self.segtype)
+            if self.taper_min or self.taper_max:
+                if self.taper_max is not None:
+                    mn   = self.taper_min or 0
+                    tpr += ',%.11g,%.11g' % (mn, self.taper_max)
+                else:
+                    tpr += ',%.11g' % self.taper_min
+            r.append (tpr)
+        return '\n'.join (r)
+    # end def as_cmdline
+
+    def compute_ground (self, n, media):
+        super ().compute_ground (n, media)
+        eps = self.parent.min_seglen * 1e-3
+        if abs (self.p1 [-1]) < eps:
+            self.p1 [-1] = 0.0
+        if abs (self.p2 [-1]) < eps:
+            self.p2 [-1] = 0.0
+        self.compute_endpoints ()
+        if self.is_ground [0] and self.is_ground [1]:
+            raise ValueError ("Both ends of a wire may not be grounded")
+    # end def compute_ground
 
     def compute_endpoints (self):
         self.endpoints = np.array ([self.p1, self.p2])
@@ -1447,54 +1668,6 @@ class Wire (Geobj):
             if self.min_seglen is None:
                 self.min_seglen = self.segments [-1].seg_len
     # end def compute_taper2_segments
-
-    def connections (self):
-        return self.conn [0].geo.union (self.conn [1].geo)
-    # end def connections
-
-    def idx (self, end_idx):
-        """ The indeces I1, I2 from the Basic code, this was -self.n when
-            the end is grounded, the index of a connected wire (negative
-            if the direction of the wire is reversed) if connected and 0
-            otherwise. Used mainly when printing wires in mininec format.
-            We now use the tag of the wire.
-        """
-        if self.is_ground [end_idx]:
-            return -(self.tag)
-        return self.conn [end_idx].tag (self)
-    # end def idx
-
-    def is_connected (self, other):
-        if other is self:
-            return True
-        for c in self.conn:
-            if c.is_connected (other):
-                return True
-        return bool (self.connections ().intersection (other.connections ()))
-    # end def is_connected
-
-    def conn_as_str (self):
-        """ Mostly for debugging connections
-        """
-        r = []
-        r.append ('W: %d' % self.n)
-        for n, c in enumerate (self.conn):
-            r.append ('conn %s:' % 'lr' [n])
-            r.append (str (c))
-        return '\n'.join (r)
-    # end def conn_as_str
-
-    def pulse_idx_iter (self, yield_ends = True):
-        for p in self.pulse_iter (yield_ends):
-            yield p.idx
-    # end def pulse_idx_iter
-
-    def pulse_iter (self, yield_ends = True):
-        for p in self.pulses:
-            if p.geo [0] != p.geo [1] and not yield_ends:
-                continue
-            yield p
-    # end def pulse_iter
 
     def rotate (self, rmatrix):
         assert not getattr (self, 'segments', None)
@@ -1666,14 +1839,16 @@ class Mininec:
         >>> print (m.geo_as_str ())
         W: 0
         conn l:
-        <BLANKLINE>
+        Connected_Ojb:
         conn r:
-        geo: 1 idx: 9 s:1
+        Connected_Ojb:
+         geo: 1 idx: 9 s:1
         W: 1
         conn l:
-        geo: 0 idx: 9 s:1
+        Connected_Ojb:
+         geo: 0 idx: 9 s:1
         conn r:
-        <BLANKLINE>
+        Connected_Ojb:
         """
         self.do_timing    = t
         self.f            = f
@@ -1696,6 +1871,7 @@ class Mininec:
         self.print_opts   = print_opts or set (('far-field',))
         if not self.media or len (self.media) == 1:
             self.boundary = 'linear'
+        self.geo.compute_segments ()
         self.geo.compute_ground ()
         self.compute_connectivity ()
     # end __init__
@@ -1937,9 +2113,6 @@ class Mininec:
         """ In the original code this is done while parsing the
             individual wires from the geometry information.
         """
-        for w in self.geo:
-            w.compute_segments ()
-        self.min_seglen = min (w.min_seglen for w in self.geo)
         for w in self.geo:
             w.compute_connections (self)
     # end def compute_connectivity
@@ -3689,7 +3862,7 @@ class Mininec:
         r.append ('NO. OF WIRES: %d' % len (self.geo))
         r.append ('')
         for geobj in self.geo:
-            r.append ('WIRE NO. %d' % (geobj.tag))
+            r.append ('%-4s NO. %d' % (geobj.name, geobj.tag))
             r.append \
                 ( '%sCOORDINATES%sEND%sNO. OF'
                 % (' ' * 12, ' ' * 33, ' ' * 9)
@@ -3714,8 +3887,8 @@ class Mininec:
         for geobj in self.geo:
             r.append ('')
             r.append \
-                ( 'WIRE NO.%3d  COORDINATES%sCONNECTION PULSE'
-                % (geobj.tag, ' ' * 32)
+                ( '%-4s NO.%3d  COORDINATES%sCONNECTION PULSE'
+                % (geobj.name, geobj.tag, ' ' * 32)
                 )
             r.append \
                 (('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS'))
@@ -4470,9 +4643,53 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     Invalid source: 1: Invalid pulse tag 1
     >>> r
     23
+
+    >>> args = ['-a', '2,2,1,0,90,0.001,bla']
+    >>> r = main (args, sys.stdout)
+    Invalid number of parameters for arc 1
+
+    >>> args = ['-a', '2,1,0,90']
+    >>> r = main (args, sys.stdout)
+    Invalid number of parameters for arc 1
+
+    >>> args = ['-a', '2,1,0,90,0.001']
+    >>> r = main (args, sys.stdout)
+    Invalid arc 1: Arc needs at least three segments
+
+    >>> args = ['-a', '3,0,0,90,0.001']
+    >>> r = main (args, sys.stdout)
+    Invalid arc 1: Arc radius must be > 0
+
+    >>> args = ['-a', '3,1,0,0,0.001']
+    >>> r = main (args, sys.stdout)
+    Invalid arc 1: Arc angles must be different
+
+    >>> args = ['-a', '3,1,0,361,0.001']
+    >>> r = main (args, sys.stdout)
+    Invalid arc 1: Arcs must not exceed a full circle
+
+    >>> args = '-a 3,1,0,90,0.001 --medium=0,0,0 --geo-rotate=1,0,90,0'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid config: Geo object 1: height cannot not be negative with ground
+
+    >>> args = '-a 3,1,0,90,0.001 --medium=0,0,0 --geo-rotate=1,90,0,0'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid config: Arc: No two adjacent segments may be grounded
+
     """
     from argparse import ArgumentParser
     cmd = ArgumentParser ()
+    cmd.add_argument \
+        ( '-a', '--arc'
+        , help    = 'Arc definition, 5-6 values delimited with ",":'
+                    " Optional tag, Number of segments, arc radius,"
+                    " arc start angle, arc end angle, wire radius;"
+                    " can be specified more than once."
+        , action  = 'append'
+        , default = []
+        )
     cmd.add_argument \
         ( '--attach-load'
         , help    = 'Attach load with given tag to pulse, needs'
@@ -4720,8 +4937,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         )
     cmd.add_argument \
         ( '-w', '--wire'
-        , help    = 'Wire definition 8 values delimited with ",":'
-                    " Number of segments,"
+        , help    = 'Wire definition 8-9 values delimited with ",":'
+                    " Optional tag, Number of segments,"
                     " x,y,z coordinates of wire endpoints plus wire radius,"
                     " can be specified more than once, default is a"
                     " single wire with length 21.414285"
@@ -4729,7 +4946,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     args = cmd.parse_args (argv)
-    if not args.wire:
+    if not args.wire and not args.arc:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     default_excitation = False
     if not args.excitation_pulse:
@@ -4738,6 +4955,34 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     if not args.excitation_voltage:
         args.excitation_voltage = [1]
     geo = Geo_Container ()
+    for n, arc in enumerate (args.arc):
+        aparams = arc.strip ().split (',')
+        if not 5 <= len (aparams) <= 6:
+            print \
+                ( "Invalid number of parameters for arc %d" % (n + 1)
+                , file = f_err
+                )
+            return 23
+        tag = None
+        if len (aparams) == 6:
+            tag = aparams.pop (0)
+            try:
+                tag = int (tag)
+            except ValueError as err:
+                print \
+                    ( 'Invalid arc tag "%s": %s'
+                    % (tag, str (err))
+                    , file = f_err
+                    )
+                return 23
+        try:
+            seg = int (aparams [0])
+            r = [float (x) for x in aparams [1:]]
+            geo.append (Arc (seg, *r, tag = tag))
+        except ValueError as err:
+            print ("Invalid arc %d: %s" % (n + 1, str (err)), file = f_err)
+            return 23
+
     for n, wire in enumerate (args.wire):
         wparams = wire.strip ().split (',')
         if not 8 <= len (wparams) <= 9:
@@ -4912,7 +5157,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         media.append (Medium (*p, **d))
     media = media or None
 
-    m = Mininec (args.frequency, geo, media = media, t = args.timing)
+    try:
+        m = Mininec (args.frequency, geo, media = media, t = args.timing)
+    except ValueError as err:
+        print ("Invalid config: %s" % str (err), file = f_err)
+        return 23
 
     for p, v in zip (args.excitation_pulse, args.excitation_voltage):
         try:
@@ -5188,9 +5437,11 @@ if __name__ == '__main__':
 
 __all__ = \
     [ 'Angle'
+    , 'Arc'
     , 'Excitation'
     , 'Far_Field_Pattern'
     , 'Gauge_Wire'
+    , 'Geo_Container'
     , 'Impedance_Load'
     , 'Medium'
     , 'Mininec'

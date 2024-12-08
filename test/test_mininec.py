@@ -464,11 +464,15 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
             Wire (7, 1, 1, 1, 2, 2, 2, 0)
         with pytest.raises (ValueError):
             Wire (7, 1, 1, 1, 1, 1, 1, 1)
-        wire = Wire (7, 0, 0, 0, 1, 1, 0, 0.01)
+        wire  = Wire (7, 0, 0, 0, 1, 1, 0, 0.01)
+        geo   = Geo_Container (geo = [wire])
+        geo.min_seglen = 1e-6
         ideal = ideal_ground
         with pytest.raises (ValueError):
             wire.compute_ground (0, ideal)
         wire = Wire (7, 0, 0, -1, 1, 1, -1, 0.01)
+        geo  = Geo_Container (geo = [wire])
+        geo.min_seglen = 1e-6
         with pytest.raises (ValueError):
             wire.compute_ground (0, ideal)
     # end def test_wire
@@ -1811,7 +1815,7 @@ class Test_Doctest:
     # end def run_test
 
     def test_mininec (self):
-        num_tests = 517
+        num_tests = 539
         self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
 
