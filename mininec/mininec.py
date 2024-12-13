@@ -1422,9 +1422,9 @@ class Arc (Geobj):
         tpl = (self.n_segments, self.radius, self.ang1, self.ang2, self.r_orig)
         if self.had_tag:
             tpl = (self.tag,) + tpl
-            r.append ('-w %d,%d,%.11g,%.11g,%.11g,%.11g' % tpl)
+            r.append ('-a %d,%d,%.11g,%.11g,%.11g,%.11g' % tpl)
         else:
-            r.append ('-w %d,%.11g,%.11g,%.11g,%.11g' % tpl)
+            r.append ('-a %d,%.11g,%.11g,%.11g,%.11g' % tpl)
         return '\n'.join (r)
     # end def as_cmdline
 
