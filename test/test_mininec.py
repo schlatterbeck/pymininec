@@ -1,4 +1,4 @@
-# Copyright (C) 2022-24 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2022-25 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
@@ -1440,8 +1440,8 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
 
     class args: mininec_version = '9'
 
-    def mini_compare (self, basename, mini):
-        with open (self.pym_path (basename, '.mini')) as f:
+    def mini_compare (self, basename, mini, ext = '.mini'):
+        with open (self.pym_path (basename, ext)) as f:
             itr = iter (mini.split ('\n'))
             for ln, (la, lb) in enumerate (zip (f, itr)):
                 la = la.strip ()
@@ -1450,7 +1450,7 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
                     la = ', '.join (x.strip () for x in la.split (','))
                 if la != lb:
                     raise ValueError \
-                        ( 'Comparison failed in line %d\n%s\n%s'
+                        ( 'Comparison failed in line %d\nexp: %s\ngot: %s'
                         % (ln + 1, la, lb)
                         )
             with pytest.raises (StopIteration):
@@ -1711,6 +1711,16 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         mini = m.as_basic_input (self.args, 'VERTIG.OUT', near = nf)
         self.mini_compare (bn, mini)
     # end def test_vertical_ig_near
+
+    def test_vertical_ig_near_mini12 (self):
+        bn   = 'vertical-ig-near'
+        m    = self.setup_generic_file (bn, compute = False)
+        nf   = [-1, -1, 0, 1, 1, 1, 3, 3, 2]
+        self.args.mininec_version = '12'
+        mini = m.as_basic_input (self.args, 'VERTIG.OUT', near = nf)
+        self.mini_compare (bn, mini, ext = '.mini12')
+        self.args.mininec_version = '9'
+    # end def test_vertical_ig_near_mini12
 
     def test_vertical_ig_ud (self):
         bn   = 'vertical-ig-ud'

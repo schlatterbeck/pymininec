@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Copyright (C) 2022-24 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2022-25 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
