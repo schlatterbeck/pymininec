@@ -1850,7 +1850,7 @@ class Test_Doctest:
     # end def run_test
 
     def test_mininec (self):
-        num_tests = 556
+        num_tests = 560
         self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
 

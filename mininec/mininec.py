@@ -4717,7 +4717,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> args = args.split ()
     >>> args.append ('--taper=1,1,1,1')
     >>> r = main (args, sys.stdout)
-    Invalid wire in taper option: "1" is no wire
+    Invalid wire in taper option: Geo object 1 is no wire
+    >>> r
+    23
+
+    >>> args = '-a 1,3,1,0,360,0.001 --medium=0,0,0'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid config: Arc may not be partially below ground
     >>> r
     23
 
@@ -5157,7 +5164,8 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ("Invalid wire in taper option: %s" % err)
             return 23
         if not isinstance (wire, Wire):
-            print ('Invalid wire in taper option: "%s" is no wire' % tag)
+            print \
+                ('Invalid wire in taper option: Geo object %s is no wire' % tag)
             return 23
         wire.segtype = taper
         wire.taper_min = taper_min
