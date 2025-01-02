@@ -1448,6 +1448,15 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_loop
 
+    def test_loop_tag (self):
+        bn = 'looptag'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 5, 73)
+        zen = Angle (0, 5, 37)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_loop_tag
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
