@@ -984,6 +984,11 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_far_field_data (m)
     # end def test_loop_scale
 
+    def test_loop_translate (self):
+        m = self.setup_generic_file ('loop-trans')
+        self.compare_far_field_data (m)
+    # end def test_loop_translate
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
