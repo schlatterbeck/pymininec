@@ -1124,7 +1124,7 @@ Literature
 .. [12] Tai Tsun Wu. Theory of the dipole antenna and the two-wire
    transmission line. Journal of Mathematical Physics, 2(4):550–574,
    July 1961.
-.. [13] Steve Stearns. `Modeling insulated wire`_. In Silver [11]_.
+.. [13] Steve Stearns. `Modeling insulated wire`_. In Silver [14]_.
    Supplement to Antenna Book, page visited 2024-08-26.
 .. [14] H. Ward Silver, editor. The ARRL Antenna Book for Radio
    Communications. American Radio Relay League (ARRL), 25th edition, 2023.
