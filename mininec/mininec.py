@@ -1116,7 +1116,7 @@ class Geobj:
         return self._r
     # end def r_orig
 
-    def as_basic_input (self):
+    def as_basic_input (self, parent):
         """ Output in the input format of original Basic implementation.
             If we emulate several wires we iterate over all segments
             here.
@@ -1126,9 +1126,9 @@ class Geobj:
             # NO. OF SEGMENTS:
             r.append (str (self.n_segments))
             # END ONE COORDINATES (X,Y,Z):
-            r.append ('%.15g, %.15g, %.15g' % tuple (self.p1))
+            r.append ('%.15g, %.15g, %.15g' % parent.endpoint (self.p1))
             # END TWO COORDINATES (X,Y,Z):
-            r.append ('%.15g, %.15g, %.15g' % tuple (self.p2))
+            r.append ('%.15g, %.15g, %.15g' % parent.endpoint (self.p2))
             # RADIUS:
             r.append ('%.8g' % self.r)
             # CHANGE WIRE NO.  x  (Y/N):
@@ -1137,7 +1137,7 @@ class Geobj:
             # NO. OF SEGMENTS:
             r.append ('1')
             # END ONE COORDINATES (X,Y,Z):
-            r.append ('%.15g, %.15g, %.15g' % tuple (self.p1))
+            r.append ('%.15g, %.15g, %.15g' % parent.endpoint (self.p1))
             # END TWO COORDINATES (X,Y,Z):
             r.append ('%.15g, %.15g, %.15g' % tuple (self.segments [0].p2))
             # RADIUS:
@@ -1150,7 +1150,7 @@ class Geobj:
                 # END ONE COORDINATES (X,Y,Z):
                 r.append ('%.15g, %.15g, %.15g' % tuple (s.p1))
                 # END TWO COORDINATES (X,Y,Z):
-                r.append ('%.15g, %.15g, %.15g' % tuple (s.p2))
+                r.append ('%.15g, %.15g, %.15g' % parent.endpoint (s.p2))
                 # RADIUS:
                 r.append ('%.8g' % self.r)
                 # CHANGE WIRE NO.  x  (Y/N):
@@ -1949,7 +1949,7 @@ class Mininec:
         nw = sum (w.n_emulated_wires for w in self.geo)
         r.append (str (nw))
         for w in self.geo:
-            r.append (w.as_basic_input ())
+            r.append (w.as_basic_input (self))
         # CHANGE GEOMETRY (Y/N):
         r.append ('N')
         # NO. OF SOURCES:
@@ -2607,6 +2607,18 @@ class Mininec:
                 # negated, the contribution to the imag part not
                 self.Z [j][j] += -f2 * l.impedance (self.f, pulse) * 1j
     # end def compute_impedance_matrix_loads
+
+    def endpoint (self, point):
+        """ Get consolidated endpoint of a geo object (after matching
+            points we may map several slightly different points to a
+            single point)
+        """
+        point = tuple (point)
+        if point not in self.end_dict:
+            return point
+        idx, geobj = self.end_dict [point]
+        return tuple (geobj.endpoints [idx])
+    # end def endpoint
 
     def geo_as_str (self):
         r = []

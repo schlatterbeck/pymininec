@@ -972,6 +972,13 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
             assert imp.imag == pytest.approx (exp, abs = 1e-3)
     # end def test_laplace_load
 
+    def test_loop (self):
+        elevation = Angle (0, 5, 37)
+        azimuth   = Angle (0, 5, 73)
+        m = self.setup_generic_file ('loop', azi = azimuth, ele = elevation)
+        self.compare_far_field_data (m)
+    # end def test_loop
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
@@ -1432,6 +1439,15 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_dip_loadwire
 
+    def test_loop (self):
+        bn = 'loop'
+        m   = self.setup_generic_file (bn, compute = False)
+        azi = Angle (0, 5, 73)
+        zen = Angle (0, 5, 37)
+        cmd = m.as_cmdline (azi = azi, zen = zen)
+        self.pym_compare (bn, cmd)
+    # end def test_loop
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1803,6 +1819,15 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         mini = m.as_basic_input (self.args)
         self.mini_compare (bn, mini)
     # end def test_dipv_14st_t2s
+
+    def test_loop (self):
+        bn   = 'loop'
+        m    = self.setup_generic_file (bn)
+        azi  = Angle (0, 10, 37)
+        zen  = Angle (0, 10, 19)
+        mini = m.as_basic_input (self.args, azi = azi, zen = zen)
+        self.mini_compare (bn, mini)
+    # end def test_loop
 
 # end class Test_Case_Basic_Input_File
 
