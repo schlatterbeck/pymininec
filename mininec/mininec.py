@@ -4647,36 +4647,67 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> args = ['-a', '2,2,1,0,90,0.001,bla']
     >>> r = main (args, sys.stdout)
     Invalid number of parameters for arc 1
+    >>> r
+    23
 
     >>> args = ['-a', '2,1,0,90']
     >>> r = main (args, sys.stdout)
     Invalid number of parameters for arc 1
+    >>> r
+    23
 
     >>> args = ['-a', '2,1,0,90,0.001']
     >>> r = main (args, sys.stdout)
     Invalid arc 1: Arc needs at least three segments
+    >>> r
+    23
 
     >>> args = ['-a', '3,0,0,90,0.001']
     >>> r = main (args, sys.stdout)
     Invalid arc 1: Arc radius must be > 0
+    >>> r
+    23
 
     >>> args = ['-a', '3,1,0,0,0.001']
     >>> r = main (args, sys.stdout)
     Invalid arc 1: Arc angles must be different
+    >>> r
+    23
 
     >>> args = ['-a', '3,1,0,361,0.001']
     >>> r = main (args, sys.stdout)
     Invalid arc 1: Arcs must not exceed a full circle
+    >>> r
+    23
 
     >>> args = '-a 3,1,0,90,0.001 --medium=0,0,0 --geo-rotate=1,0,90,0'
     >>> args = args.split ()
     >>> r = main (args, sys.stdout)
     Invalid config: Geo object 1: height cannot not be negative with ground
+    >>> r
+    23
 
     >>> args = '-a 3,1,0,90,0.001 --medium=0,0,0 --geo-rotate=1,90,0,0'
     >>> args = args.split ()
     >>> r = main (args, sys.stdout)
     Invalid config: Arc: No two adjacent segments may be grounded
+    >>> r
+    23
+
+    >>> args = '-a a,3,1,0,90,0.001 --medium=0,0,0 --geo-rotate=1,90,0,0'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid arc tag "a": invalid literal for int() with base 10: 'a'
+    >>> r
+    23
+
+    >>> args = '-a 1,3,1,0,90,0.001 --medium=0,0,0 --geo-rotate=1,90,0,0'
+    >>> args = args.split ()
+    >>> args.append ('--taper=1,1,1,1')
+    >>> r = main (args, sys.stdout)
+    Invalid wire in taper option: "1" is no wire
+    >>> r
+    23
 
     """
     from argparse import ArgumentParser
@@ -5114,9 +5145,6 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             print ("Invalid wire in taper option: %s" % err)
             return 23
         if not isinstance (wire, Wire):
-            # This can currently never happen, so it's not covered by
-            # the tests. It will become possible when we have more
-            # geometry objects in addition to Wire
             print ('Invalid wire in taper option: "%s" is no wire' % tag)
             return 23
         wire.segtype = taper
