@@ -305,13 +305,26 @@ class Pulse:
             self.gnd_sgn [self.ground] = -1
             self.sign    = self.sign * self.gnd_sgn
         idx = idx * self.sign
-        self.c_per = idx
+        self._c_per = [None, None]
     # end def __init__
+
+    @property
+    def c_per (self):
+        """ Used exclusively for printing mininec-compatible output
+        """
+        for k in range (2):
+            if self._c_per [k] is None:
+                if self.ground [k]:
+                    self._c_per [k] = -self.geo [k].tag
+                else:
+                    self._c_per [k] = self.sign [k] * self.geo [k].tag
+        return self._c_per
+    # end def c_per
 
     def as_mininec (self):
         l = []
         l.append (('%-13s ' * 3) % format_float (self.point))
-        l.append ('%-12s' % format_float ([self.geobj.r]))
+        l.append ('%-12s' % format_float ([self.geobj.r_orig]))
         l.append ('%4d %4d' % tuple (self.c_per))
         l.append ('%4d' % (self.idx + 1))
         return  ''.join (l)

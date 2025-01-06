@@ -6,4 +6,5 @@
 --insulation-load=4.7625e-3,3.2
 # Scale by 1/32 * wavelength @600MHz
 --geo-scale=0.015614583333333334
---option=none
+--theta=0,10,10
+--phi=0,10,37

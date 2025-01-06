@@ -146,6 +146,15 @@ class Connected_Geobj:
             yield (ow.end_segs [idx], s)
     # end def pulse_iter
 
+    def tag (self, geobj):
+        if self.list:
+            # Forward linked segments are printed as 0
+            if geobj.n < self.list [0][0].n:
+                return 0
+            return (self.list [0][0].tag) * self.sgn_by_geobj [geobj]
+        return 0
+    # end def tag
+
     def _iter (self):
         for geobj, ow, idx, s in sorted (self.list, key = lambda x: x [0].n):
             yield (geobj, ow, idx, s)
@@ -156,7 +165,7 @@ class Connected_Geobj:
     # end def __bool__
 
     def __str__ (self):
-        r = ['Connected_Ojb:']
+        r = ['%s:' % self.__class__.__name__]
         for geobj, ow, idx, s in self._iter ():
             r.append (' geo: %d idx: %s s:%d' % (geobj.n, ow.end_segs [idx], s))
         return '\n'.join (r)
@@ -1099,6 +1108,20 @@ class Geobj:
     # end def idx_2
 
     @property
+    def ltag (self):
+        if self.is_ground [0]:
+            return -self.tag
+        return self.conn [0].tag (self)
+    # end def ltag
+
+    @property
+    def rtag (self):
+        if self.is_ground [1]:
+            return -self.tag
+        return self.conn [1].tag (self)
+    # end def rtag
+
+    @property
     def r (self):
         """ Use equivalent radius if we have an insulation load
         """
@@ -1234,7 +1257,7 @@ class Geobj:
             prev = self.p1 - oinc
             p = Pulse (pu, self.p1, prev, seg0.p2, oseg, seg0, sgn = sgn)
             if self.n_segments == 1 and self.idx_2 == 0:
-                p.c_per [1] = 0
+                p._c_per [1] = 0
             p.n = pc
             pc += 1
             self.pulses.append (p)
@@ -1251,9 +1274,9 @@ class Geobj:
             pc += 1
             self.pulses.append (p)
             if i == 0 and self.idx_1 == 0:
-                p.c_per [0] = 0
+                p._c_per [0] = 0
             if i == self.n_segments - 2 and self.idx_2 == 0:
-                p.c_per [1] = 0
+                p._c_per [1] = 0
         # Connection to other geo object(s) at end 2
         lseg = self.segments [-1]
         p1   = lseg.p1
@@ -1276,7 +1299,7 @@ class Geobj:
             p3   = p2 + oinc
             p = Pulse (pu, p2, p1, p3, lseg, oseg, sgn = sgn)
             if self.n_segments == 1 and self.idx_1 == 0:
-                p.c_per [0] = 0
+                p._c_per [0] = 0
             p.n = pc
             pc += 1
             self.pulses.append (p)
@@ -2002,16 +2025,16 @@ class Mininec:
         >>> print (m.geo_as_str ())
         W: 0
         conn l:
-        Connected_Ojb:
+        Connected_Geobj:
         conn r:
-        Connected_Ojb:
+        Connected_Geobj:
          geo: 1 idx: 9 s:1
         W: 1
         conn l:
-        Connected_Ojb:
+        Connected_Geobj:
          geo: 0 idx: 9 s:1
         conn r:
-        Connected_Ojb:
+        Connected_Geobj:
         """
         self.do_timing    = t
         self.f            = f
@@ -4039,12 +4062,12 @@ class Mininec:
                 )
             l = []
             l.append (('%-13s ' * 3) % format_float (geobj.p1))
-            l.append ('%s%3d' % (' ' * 12, geobj.idx_1))
+            l.append ('%s%3d' % (' ' * 12, geobj.ltag))
             r.append (''.join (l))
             l = []
             l.append (('%-13s ' * 3) % format_float (geobj.p2))
-            l.append ('%-13s' % format_float ([geobj.r]))
-            l.append ('%2d%15d' % (geobj.idx_2, geobj.n_segments))
+            l.append ('%-13s' % format_float ([geobj.r_orig]))
+            l.append ('%2d%15d' % (geobj.rtag, geobj.n_segments))
             r.append (''.join (l))
             r.append ('')
         r.append (' ' * 18 + '**** ANTENNA GEOMETRY ****')

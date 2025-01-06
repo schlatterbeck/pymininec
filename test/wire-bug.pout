@@ -26,13 +26,13 @@ WIRE NO. 3
 WIRE NO. 4
             COORDINATES                                 END         NO. OF
    X             Y             Z          RADIUS     CONNECTION     SEGMENTS
--.033866       .107281       .0448                      2
+-.033866       .107281       .0448                      3
 -.09027        .067138       .059733       .00127       0              1
 
 WIRE NO. 5
             COORDINATES                                 END         NO. OF
    X             Y             Z          RADIUS     CONNECTION     SEGMENTS
--.09027        .067138       .059733                    3
+-.09027        .067138       .059733                    4
 -.112489       .00157        .074666       .00127       0              1
 
                   **** ANTENNA GEOMETRY ****
@@ -48,11 +48,11 @@ X             Y             Z             RADIUS        END1 END2  NO.
 
 WIRE NO.  4 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
--.033866       .107281       .0448         .00127        2    0   4
+-.033866       .107281       .0448         .00127        3    0   4
 
 WIRE NO.  5 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
--.09027        .067138       .059733       .00127        3    0   5
+-.09027        .067138       .059733       .00127        4    0   5
 
 NO. OF SOURCES :  1
 PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES):  1 , 1 , 0

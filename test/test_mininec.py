@@ -916,6 +916,8 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         # compute impedance from expected admittance
         imp = (66.21636203467537-1.2609487888760895j)
         self.compare_impedance (m, imp)
+        # Also compare far field
+        self.compare_far_field_data (m)
     # end def test_dip_coat
 
     def test_dip_coat_yn (self):
