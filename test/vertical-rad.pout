@@ -16,7 +16,7 @@ ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
  RELATIVE DIELECTRIC CONSTANT, CONDUCTIVITY:  5 , .001
  HEIGHT OF MEDIA: -5
 
-NO. OF WIRES: 1
+NO. OF GEO-OBJECTS: 1
 
 WIRE NO. 1
             COORDINATES                                 END         NO. OF
@@ -26,7 +26,7 @@ WIRE NO. 1
 
                   **** ANTENNA GEOMETRY ****
 
-WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             0             0             .0127        -1    1   1
  0             0             .50419        .0127         1    1   2

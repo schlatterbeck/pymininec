@@ -8,7 +8,7 @@ FREQUENCY (MHZ): 299.8
 
 ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): +1
 
-NO. OF WIRES: 1
+NO. OF GEO-OBJECTS: 1
 
 WIRE NO. 1
             COORDINATES                                 END         NO. OF
@@ -18,7 +18,7 @@ WIRE NO. 1
 
                   **** ANTENNA GEOMETRY ****
 
-WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             .01           0             .000066       0    1   1
  0             .02           0             .000066       1    1   2

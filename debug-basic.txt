@@ -1,3 +1,27 @@
+Using yabasi
+------------
+
+- Yabasi can redirect input from a file with the -i option. The line
+  endings are newlines, not carriage returns as in pcbasic
+- The -L <lineno> option can be used to stop at lineno of the Basic
+  program
+- normal variables are in self.var [name], DIMed variables are in
+  self.dim [name]
+- Use the following code-snippet to dump impedance matrix, for the
+  version-9 mininec you want to stop in line 340 (after giving the
+  command 'interact' in the python debugger to get a python shell)::
+
+    with open('matrix.b','w') as f:
+      for y in range(1,76):
+        for x in range(1,76):
+          print ('%3d %3d: % .5e% .5ej'
+              % (y-1,x-1,self.dim['ZR'][y,x],self.dim['ZI'][y,x]),file=f)
+
+
+
+Using pcbasic
+-------------
+
 - Change to directory with basic script
 - Use the conventional way without input redirection, instruct the basic
   interpreter to read from a file instead. Be sure to pre-convert the

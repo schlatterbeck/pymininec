@@ -10,7 +10,7 @@ ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
  NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  1
  RELATIVE DIELECTRIC CONSTANT, CONDUCTIVITY:  13 , .005
 
-NO. OF WIRES: 5
+NO. OF GEO-OBJECTS: 5
 
 WIRE NO. 1
             COORDINATES                                 END         NO. OF
@@ -44,7 +44,7 @@ WIRE NO. 5
 
                   **** ANTENNA GEOMETRY ****
 
-WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0            -4.8768        10            .001005       0    1   1
  0            -4.2672        10            .001005       1    1   2
@@ -55,7 +55,7 @@ X             Y             Z             RADIUS        END1 END2  NO.
  0            -1.2192        10            .001005       1    1   7
  0            -.6096         10            .001005       1    0   8
 
-WIRE NO.  2  COORDINATES                                CONNECTION PULSE
+WIRE NO.  2 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             4.8768        10            .001005       0    2   9
  0             4.2672        10            .001005       2    2  10
@@ -67,21 +67,21 @@ X             Y             Z             RADIUS        END1 END2  NO.
  0             .6096         10            .001005       2    2  16
  0             0             10            .001005       2   -1  17
 
-WIRE NO.  3  COORDINATES                                CONNECTION PULSE
+WIRE NO.  3 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             0             10            .001005       1    3  18
  0             0             10.6096       .001005       3    3  19
  0             0             11.2192       .001005       3    3  20
  0             0             11.8288       .001005       3    0  21
 
-WIRE NO.  4  COORDINATES                                CONNECTION PULSE
+WIRE NO.  4 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             0             12.4384       .001005       3    4  22
  0            -.6096         12.4384       .001005       4    4  23
  0            -1.2192        12.4384       .001005       4    4  24
  0            -1.8288        12.4384       .001005       4    0  25
 
-WIRE NO.  5  COORDINATES                                CONNECTION PULSE
+WIRE NO.  5 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             0             12.4384       .001005       3    5  26
  0             .6096         12.4384       .001005       5    5  27

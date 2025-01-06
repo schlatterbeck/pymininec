@@ -9,9 +9,9 @@ FREQUENCY (MHZ): 299.8
 ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
  NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
 
-NO. OF WIRES: 1
+NO. OF GEO-OBJECTS: 1
 
-ARC  NO. 1
+ARC NO. 1
             COORDINATES                                 END         NO. OF
    X             Y             Z          RADIUS     CONNECTION     SEGMENTS
  .159155       0             .5                         1
@@ -19,7 +19,7 @@ ARC  NO. 1
 
                   **** ANTENNA GEOMETRY ****
 
-ARC  NO.  1  COORDINATES                                CONNECTION PULSE
+ARC NO.  1 COORDINATES                                  CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  .152708       0             .544839       .00674        1    1   1
  .13389        0             .586046       .00674        1    1   2
@@ -56,7 +56,7 @@ PULSE 22      VOLTAGE = ( 1 , 0 J)
 
 ********************    CURRENT DATA    ********************
 
-WIRE NO.  1 :
+ARC NO.  1 :
 PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
  NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
 J              5.023784E-03  5.354191E-03  7.342055E-03  46.82352 

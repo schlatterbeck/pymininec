@@ -9,7 +9,7 @@ FREQUENCY (MHZ): 299.8
 ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
  NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
 
-NO. OF WIRES: 2
+NO. OF GEO-OBJECTS: 2
 
 WIRE NO. 1
             COORDINATES                                 END         NO. OF
@@ -25,7 +25,7 @@ WIRE NO. 2
 
                   **** ANTENNA GEOMETRY ****
 
-WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -.010498      -.004348       .5            .001          0    1   1
 -.031495      -.013046       .5            .001          1    1   2
@@ -34,7 +34,7 @@ X             Y             Z             RADIUS        END1 END2  NO.
 -.199474      -.082624       .5            .001          1    1   5
 -.220471      -.091322       .5            .001          1    0   6
 
-WIRE NO.  2  COORDINATES                                CONNECTION PULSE
+WIRE NO.  2 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  0             0             .5            .001         -1    2   7
 -.010498       .004348       .5            .001          2    2   8

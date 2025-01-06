@@ -1352,7 +1352,58 @@ class Geobj:
 
 # end class Geobj
 
-class Arc (Geobj):
+class Curve (Geobj):
+    """ Generalized Helix, Spiral, or Arc
+        Common code for Arc and Helix
+    """
+
+    @property
+    def endpoints (self):
+        return np.array ([self.segends [0], self.segends [-1]])
+    # end def endpoints
+
+    @property
+    def p1 (self):
+        return self.segends [0]
+    # end def p1
+
+    @property
+    def p2 (self):
+        return self.segends [-1]
+    # end def p2
+
+    def compute_segments (self):
+        """ Loop over our segment ends and create segments.
+        """
+        self.segments = []
+        for e1, e2 in pairwise (self.segends):
+            self.segments.append (Segment (e1, e2, self, len (self.segments)))
+        self.min_seglen = self.segments [0].seg_len
+    # end def compute_segments
+
+    def rotate (self, rmatrix):
+        assert not getattr (self, 'segments', None)
+        self.segends = rmatrix.apply (self.segends.T).T
+    # end def rotate
+
+    def scale (self, factor):
+        """ Scale everything by factor including wire radius
+            Similar to the NEC GS card "Scale Structure Dimensions"
+            This needs additional code in derived classes.
+        """
+        assert not getattr (self, 'segments', None)
+        self.segends = self.segends * factor
+        self._r      = self._r      * factor
+    # end def scale
+
+    def translate (self, translation):
+        assert not getattr (self, 'segments', None)
+        self.segends = self.segends + translation
+    # end def translate
+
+# end class Curve
+
+class Arc (Curve):
     """ A NEC-like wire arc (GA card in NEC)
         The given segments form a polygon *inscribed* within the arc.
         The arcs center is located at the origin and the axis is the
@@ -1402,21 +1453,6 @@ class Arc (Geobj):
         self.segends = np.array (segends)
     # end def __init__
 
-    @property
-    def endpoints (self):
-        return np.array ([self.segends [0], self.segends [-1]])
-    # end def endpoints
-
-    @property
-    def p1 (self):
-        return self.segends [0]
-    # end def p1
-
-    @property
-    def p2 (self):
-        return self.segends [-1]
-    # end def p2
-
     def as_cmdline (self):
         r = []
         tpl = (self.n_segments, self.radius, self.ang1, self.ang2, self.r_orig)
@@ -1430,7 +1466,7 @@ class Arc (Geobj):
 
     def compute_ground (self, n, media):
         """ It *is* allowed that both ends are grounded but no
-            intermediate segments may below ground
+            intermediate segments may be below ground
         """
         super ().compute_ground (n, media)
         if media is None:
@@ -1450,34 +1486,13 @@ class Arc (Geobj):
                 gnd_prev  = False
     # end def compute_ground
 
-    def compute_segments (self):
-        """ Loop over our segment ends and create segments.
-        """
-        self.segments = []
-        for e1, e2 in pairwise (self.segends):
-            self.segments.append (Segment (e1, e2, self, len (self.segments)))
-        self.min_seglen = self.segments [0].seg_len
-    # end def compute_segments
-
-    def rotate (self, rmatrix):
-        assert not getattr (self, 'segments', None)
-        self.segends = rmatrix.apply (self.segends.T).T
-    # end def rotate
-
     def scale (self, factor):
         """ Scale everything by factor including radius
             Similar to the NEC GS card "Scale Structure Dimensions"
         """
-        assert not getattr (self, 'segments', None)
-        self.segends = self.segends * factor
+        super ().scale (factor)
         self.radius  = self.radius  * factor
-        self._r      = self._r      * factor
     # end def scale
-
-    def translate (self, translation):
-        assert not getattr (self, 'segments', None)
-        self.segends = self.segends + translation
-    # end def translate
 
     def __str__ (self):
         s = 'radius=%.11g, [%.11g, %.11g], r=%.11g' \
@@ -1488,6 +1503,151 @@ class Arc (Geobj):
     __repr__ = __str__
 
 # end class Arc
+
+class Helix (Curve):
+    """ A NEC-like generalized Helix (GH card in NEC)
+        Note that the The given segments form a generalized helix
+        *inscribed* within helix.
+        The helix center is located at the origin and the axis is the
+        Z-axis.
+
+        If an arc of a different position or orientation is
+        desired the object can be moved with one or several of the geo
+        transformations.
+        The first radius parameter is the radius of the arc. The r
+        parameter is the wire radius. The ang1 and ang2 parameters give
+        the start and end arcs measured from the X-axis in a left hand
+        direction about the Y-axis in degree.
+        We require at least 3 wire segments, otherwise arcs degenerate
+        to a wire.
+    >>> helix = Helix (158, 1.12, 0.15, 0.0127, 0.1125, 0.1125)
+    >>> helix
+    Helix l=1.12 turn=0.15 [rx1=0.1125 rx2=0.1125 ry1=0.1125 ry2=0.1125] r=0.0127
+    >>> helix.n = 42
+    >>> helix
+    Helix 42 l=1.12 turn=0.15 [rx1=0.1125 rx2=0.1125 ry1=0.1125 ry2=0.1125] r=0.0127
+    """
+
+    name = 'HELIX'
+
+    def __init__ \
+        ( self, n_segments
+        , length, turnlen, r
+        , rx1, ry1
+        , rx2 = None
+        , ry2 = None
+        , tag = None
+        ):
+        super ().__init__ (r, tag)
+        if rx2 is None:
+            rx2 = rx1
+        if ry2 is None:
+            ry2 = ry1
+        if rx1 <= 0 or ry1 <= 0 or rx2 <= 0 or ry2 <= 0:
+            raise ValueError ('Helix radius must be > 0')
+        if turnlen == 0:
+            raise ValueError ('Helix turn length must be != 0')
+        if length == 0:
+            raise ValueError ('Helix length must be != 0')
+        n_turns = abs (length) / abs (turnlen)
+        minseg  = min (n_turns * 3, 3)
+        if n_segments < minseg:
+            raise ValueError ('Helix needs at least three segments per turn')
+        self.n_segments = n_segments
+        self.turnlen    = turnlen
+        self.length     = length
+        self.rx1        = rx1
+        self.rx2        = rx2
+        self.ry1        = ry1
+        self.ry2        = ry2
+        # We *always* need to emulate segments as wires in Basic
+        self.n_emulated_wires = self.n_segments
+        # Compute segments. On geo transformation these must be adapted.
+        segends = []
+        s = np.sign (length * turnlen)
+        for i in range (n_segments):
+            f  = i / n_segments
+            z  = f * abs (length)
+            xm = f * (rx2 - rx1) + rx1
+            ym = f * (ry2 - ry1) + ry1
+            a  = s * (z % abs (turnlen)) / abs (turnlen) * 2 * np.pi
+            x  = xm * np.cos (a)
+            y  = ym * np.sin (a)
+            if length < 0:
+                x  = -xm * np.sin (a)
+                y  =  ym * np.cos (a)
+            segends.append ([x, y, z])
+        a = s * (abs (length) % abs (turnlen)) / abs (turnlen) * 2 * np.pi
+        x = rx2 * np.cos (a)
+        y = ry2 * np.sin (a)
+        if length < 0:
+            x = -rx2 * np.sin (a)
+            y =  ry2 * np.cos (a)
+        segends.append ([x, y, abs (length)])
+        self.segends = np.array (segends)
+    # end def __init__
+
+    def as_cmdline (self):
+        r = []
+        tpl = ( self.n_segments, self.turnlen, self.length, self.r_orig
+              , self.rx1, self.ry1, self.rx2, self.ry2
+              )
+        flt = ','.join (['%.11g'] * 7)
+        fmt = '%d,' + flt
+        if self.had_tag:
+            tpl = (self.tag,) + tpl
+            fmt = '%d,' + fmt
+        r.append (('--helix ' + fmt) % tpl)
+        return '\n'.join (r)
+    # end def as_cmdline
+
+    def compute_ground (self, n, media):
+        """ Only one end may be grounded, no intermediate segment end
+            may be grounded.
+        """
+        super ().compute_ground (n, media)
+        if media is None:
+            return
+        ng  = 0
+        l   = len (self.segends)
+        eps = self.parent.min_seglen * 1e-3
+        for n, s in enumerate (self.segends):
+            if s [-1] < -eps:
+                raise ValueError ('Helix may not be partially below ground')
+            if abs (s [-1]) < eps:
+                if ng:
+                    raise ValueError ('Helix: No two segments may be grounded')
+                if 0 < n < l - 1:
+                    raise ValueError \
+                        ('Helix: No intermediate segment may be grounded')
+                ng += 1
+    # end def compute_ground
+
+    def scale (self, factor):
+        """ Scale everything by factor including radius
+            Similar to the NEC GS card "Scale Structure Dimensions"
+        """
+        super ().scale (factor)
+        self.turnlen = self.turnlen * factor
+        self.length  = self.length  * factor
+        self.rx1     = self.rx1     * factor
+        self.rx2     = self.rx2     * factor
+        self.ry1     = self.ry1     * factor
+        self.ry2     = self.ry2     * factor
+    # end def scale
+
+    def __str__ (self):
+        s = 'l=%.11g turn=%.11g ' \
+            '[rx1=%.11g rx2=%.11g ry1=%.11g ry2=%.11g] r=%.11g' \
+          % ( self.length, self.turnlen
+            , self.rx1, self.rx2, self.ry1, self.ry2, self.r_orig
+            )
+        if self.n is None:
+            return 'Helix ' + s
+        return 'Helix %d ' % self.n + s
+    __repr__ = __str__
+
+# end class Helix
 
 class Wire (Geobj):
     """ A NEC-like wire
@@ -1773,7 +1933,7 @@ class Mininec:
     >>> m = Mininec (20, w)
     >>> m.register_source (s, 4, 1)
     >>> print (m.wires_as_mininec ())
-    NO. OF WIRES: 1
+    NO. OF GEO-OBJECTS: 1
     <BLANKLINE>
     WIRE NO. 1
                 COORDINATES                                 END         NO. OF
@@ -2607,6 +2767,17 @@ class Mininec:
                 # negated, the contribution to the imag part not
                 self.Z [j][j] += -f2 * l.impedance (self.f, pulse) * 1j
     # end def compute_impedance_matrix_loads
+
+    def dump_matrix (self):
+        """ Debugging: Dump the impedance matrix in a format that can be
+            compared with other tools.
+        """
+        lines = []
+        for y, line in enumerate (self.Z):
+            for x, v in enumerate (line):
+                lines.append ('%3d %3d: % .5e% .5ej' % (y, x, v.real, v.imag))
+        return '\n'.join (lines)
+    # end def dump_matrix
 
     def endpoint (self, point):
         """ Get consolidated endpoint of a geo object (after matching
@@ -3511,7 +3682,7 @@ class Mininec:
         r.append ('*' * 20 + '    CURRENT DATA    ' + '*' * 20)
         r.append ('')
         for geobj in self.geo:
-            r.append ('WIRE NO.%3d :' % (geobj.tag))
+            r.append ('%s NO. %2d :' % (geobj.name, geobj.tag))
             r.append \
                 ( 'PULSE%sREAL%sIMAGINARY%sMAGNITUDE%sPHASE'
                 % tuple (' ' * x for x in (9, 10, 5, 5))
@@ -3871,10 +4042,10 @@ class Mininec:
 
     def wires_as_mininec (self):
         r = []
-        r.append ('NO. OF WIRES: %d' % len (self.geo))
+        r.append ('NO. OF GEO-OBJECTS: %d' % len (self.geo))
         r.append ('')
         for geobj in self.geo:
-            r.append ('%-4s NO. %d' % (geobj.name, geobj.tag))
+            r.append ('%s NO. %d' % (geobj.name, geobj.tag))
             r.append \
                 ( '%sCOORDINATES%sEND%sNO. OF'
                 % (' ' * 12, ' ' * 33, ' ' * 9)
@@ -3898,10 +4069,8 @@ class Mininec:
         j = 0
         for geobj in self.geo:
             r.append ('')
-            r.append \
-                ( '%-4s NO.%3d  COORDINATES%sCONNECTION PULSE'
-                % (geobj.name, geobj.tag, ' ' * 32)
-                )
+            s = '%s NO. %2d COORDINATES' % (geobj.name, geobj.tag)
+            r.append ('%-30s%sCONNECTION PULSE' % (s, ' ' * 26))
             r.append \
                 (('%-13s ' * 4 + 'END1 END2  NO.') % ('X', 'Y', 'Z', 'RADIUS'))
             if geobj.end_segs [0] is None and geobj.end_segs [1] is None:
@@ -3938,7 +4107,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
      NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
     <BLANKLINE>
-    NO. OF WIRES: 1
+    NO. OF GEO-OBJECTS: 1
     <BLANKLINE>
     WIRE NO. 1
                 COORDINATES                                 END         NO. OF
@@ -4055,7 +4224,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
      NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
     <BLANKLINE>
-    NO. OF WIRES: 1
+    NO. OF GEO-OBJECTS: 1
     <BLANKLINE>
     WIRE NO. 1
                 COORDINATES                                 END         NO. OF
@@ -4131,7 +4300,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): -1
      NUMBER OF MEDIA (0 FOR PERFECTLY CONDUCTING GROUND):  0
     <BLANKLINE>
-    NO. OF WIRES: 1
+    NO. OF GEO-OBJECTS: 1
     <BLANKLINE>
     WIRE NO. 1
                 COORDINATES                                 END         NO. OF
@@ -4831,6 +5000,19 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     cmd.add_argument \
+        ( '-H', '--helix'
+        , help    = 'Generalized helix definition, 6-9 values delimited'
+                    ' with ",":'
+                    " Optional tag, Number of segments, helix length,"
+                    " turn length, wire radius, x radius, y radius,"
+                    " optional x radius at end, optional y radius at end;"
+                    " can be specified more than once."
+                    " Note that end radii must either both be omitted or"
+                    " both be given."
+        , action  = 'append'
+        , default = []
+        )
+    cmd.add_argument \
         ( '--laplace-load-a'
         , help    = 'Laplace load, A (denominator) parameters (comma-separated)'
                     ' if multiple load-types are given, Laplace loads'
@@ -4996,7 +5178,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     args = cmd.parse_args (argv)
-    if not args.wire and not args.arc:
+    if not args.wire and not args.arc and not args.helix:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     default_excitation = False
     if not args.excitation_pulse:
@@ -5031,6 +5213,34 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             geo.append (Arc (seg, *r, tag = tag))
         except ValueError as err:
             print ("Invalid arc %d: %s" % (n + 1, str (err)), file = f_err)
+            return 23
+
+    for n, helix in enumerate (args.helix):
+        hparams = helix.strip ().split (',')
+        if not 6 <= len (hparams) <= 9:
+            print \
+                ( "Invalid number of parameters for helix %d" % (n + 1)
+                , file = f_err
+                )
+            return 23
+        tag = None
+        if len (hparams) == 9 or len (hparams) == 7:
+            tag = hparams.pop (0)
+            try:
+                tag = int (tag)
+            except ValueError as err:
+                print \
+                    ( 'Invalid helix tag "%s": %s'
+                    % (tag, str (err))
+                    , file = f_err
+                    )
+                return 23
+        try:
+            seg = int (hparams [0])
+            r = [float (x) for x in hparams [1:]]
+            geo.append (Helix (seg, *r, tag = tag))
+        except ValueError as err:
+            print ("Invalid helix %d: %s" % (n + 1, str (err)), file = f_err)
             return 23
 
     for n, wire in enumerate (args.wire):
@@ -5490,6 +5700,7 @@ __all__ = \
     , 'Far_Field_Pattern'
     , 'Gauge_Wire'
     , 'Geo_Container'
+    , 'Helix'
     , 'Impedance_Load'
     , 'Medium'
     , 'Mininec'

@@ -8,7 +8,7 @@ FREQUENCY (MHZ): 28.5
 
 ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): +1
 
-NO. OF WIRES: 22
+NO. OF GEO-OBJECTS: 22
 
 WIRE NO. 1
             COORDINATES                                 END         NO. OF
@@ -144,23 +144,23 @@ WIRE NO. 22
 
                   **** ANTENNA GEOMETRY ****
 
-WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -             -             -                 -          -    -    0   
 
-WIRE NO.  2  COORDINATES                                CONNECTION PULSE
+WIRE NO.  2 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.50444       0             0             .000512       1    0   1
 
-WIRE NO.  3  COORDINATES                                CONNECTION PULSE
+WIRE NO.  3 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.45364       0             0             .000512       2    0   2
 
-WIRE NO.  4  COORDINATES                                CONNECTION PULSE
+WIRE NO.  4 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.35204       0             0             .000512       3    0   3
 
-WIRE NO.  5  COORDINATES                                CONNECTION PULSE
+WIRE NO.  5 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.14884       0             0             .000512       4    5   4
 -1.7907        0             0             .000512       5    5   5
@@ -169,27 +169,27 @@ X             Y             Z             RADIUS        END1 END2  NO.
 -.71628        0             0             .000512       5    5   8
 -.35814        0             0             .000512       5    0   9
 
-WIRE NO.  6  COORDINATES                                CONNECTION PULSE
+WIRE NO.  6 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.52984       0             0             .000512      -1    0  10
 
-WIRE NO.  7  COORDINATES                                CONNECTION PULSE
+WIRE NO.  7 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.52984       0             .0254         .000512       6    0  11
 
-WIRE NO.  8  COORDINATES                                CONNECTION PULSE
+WIRE NO.  8 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.50444       0             .0254         .000512       7    0  12
 
-WIRE NO.  9  COORDINATES                                CONNECTION PULSE
+WIRE NO.  9 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.45364       0             .0254         .000512       8    0  13
 
-WIRE NO. 10  COORDINATES                                CONNECTION PULSE
+WIRE NO. 10 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.35204       0             .0254         .000512       9    0  14
 
-WIRE NO. 11  COORDINATES                                CONNECTION PULSE
+WIRE NO. 11 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -2.14884       0             .0254         .000512      10   11  15
 -1.7907        0             .0254         .000512      11   11  16
@@ -198,23 +198,23 @@ X             Y             Z             RADIUS        END1 END2  NO.
 -.71628        0             .0254         .000512      11   11  19
 -.35814        0             .0254         .000512      11    0  20
 
-WIRE NO. 12  COORDINATES                                CONNECTION PULSE
+WIRE NO. 12 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
 -             -             -                 -          -    -    0   
 
-WIRE NO. 13  COORDINATES                                CONNECTION PULSE
+WIRE NO. 13 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.50444       0             0             .000512      12    0  21
 
-WIRE NO. 14  COORDINATES                                CONNECTION PULSE
+WIRE NO. 14 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.45364       0             0             .000512      13    0  22
 
-WIRE NO. 15  COORDINATES                                CONNECTION PULSE
+WIRE NO. 15 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.35204       0             0             .000512      14    0  23
 
-WIRE NO. 16  COORDINATES                                CONNECTION PULSE
+WIRE NO. 16 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.14884       0             0             .000512      15   16  24
  1.7907        0             0             .000512      16   16  25
@@ -224,27 +224,27 @@ X             Y             Z             RADIUS        END1 END2  NO.
  .35814        0             0             .000512      16   16  29
  0             0             0             .000512      16   -5  30
 
-WIRE NO. 17  COORDINATES                                CONNECTION PULSE
+WIRE NO. 17 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.52984       0             0             .000512       0   12  31
 
-WIRE NO. 18  COORDINATES                                CONNECTION PULSE
+WIRE NO. 18 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.52984       0             .0254         .000512     -17    0  32
 
-WIRE NO. 19  COORDINATES                                CONNECTION PULSE
+WIRE NO. 19 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.50444       0             .0254         .000512      18    0  33
 
-WIRE NO. 20  COORDINATES                                CONNECTION PULSE
+WIRE NO. 20 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.45364       0             .0254         .000512      19    0  34
 
-WIRE NO. 21  COORDINATES                                CONNECTION PULSE
+WIRE NO. 21 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.35204       0             .0254         .000512      20    0  35
 
-WIRE NO. 22  COORDINATES                                CONNECTION PULSE
+WIRE NO. 22 COORDINATES                                 CONNECTION PULSE
 X             Y             Z             RADIUS        END1 END2  NO.
  2.14884       0             .0254         .000512      21   22  36
  1.7907        0             .0254         .000512      22   22  37
