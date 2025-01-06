@@ -2634,6 +2634,9 @@ class Mininec:
         same_dir     = np.logical_and (*self.pulses.matrix_same_dir)
         same_seg     = np.logical_and (same_len, same_dir)
         same         = np.logical_and (same_geobj, same_seg)
+        # Turn off opt (below) when non vertical and grounded
+        is_nvg       = self.pulses.matrix_is_non_vertical_grounded
+        is_nvg       = np.logical_or (*is_nvg)
         idx0, idx1   = self.pulses.matrix_geo_idx_0
         gs           = self.pulses.matrix_gnd_sgn [1]
         sg           = self.pulses.matrix_sign [1]
@@ -2655,6 +2658,8 @@ class Mininec:
         zero         = np.zeros (self.Z.shape, dtype = int)
         opt          = np.zeros (self.Z.shape, dtype = int)
         opt [np.logical_and (same, (idx0 == idx1))] = 1
+        # Optimization is invalid when pulse is grounded and not vertical
+        opt [is_nvg] = 0
         opt [diag] *= 2
 
         # Optimization on (upper) diagonals: The Z of two pulses is the
@@ -2692,7 +2697,7 @@ class Mininec:
 
         # We only compute upper triangle and copy to lower
         # But only if f8 (see below) is nonzero
-        # This is the case for the mirror image (k == -1)
+        # This is never the case for the mirror image (k == -1)
         triu = np.zeros ((n, n), dtype = bool)
         triu [np.triu_indices (n, 1)] = True
         ngnd   = np.logical_not (self.pulses.matrix_ground [1])
@@ -2708,6 +2713,11 @@ class Mininec:
             compu      = np.logical_and (np.logical_not (copy.T), ng)
             if k > 0:
                 compu  = np.logical_and (compu, excp)
+            #if k >= 0:
+            #    with open ('f8', 'w') as f:
+            #        with np.printoptions (threshold=np.inf, linewidth=np.inf):
+            #            print (f8, file = f)
+            #            print (compu, file = f)
             v          = np.zeros ((n, n), dtype = complex)
             u          = np.zeros ((n, n), dtype = complex)
             vp         = np.zeros ((n, n), dtype = complex)

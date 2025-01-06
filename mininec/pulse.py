@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Copyright (C) 2024 Ralf Schlatterbeck. All rights reserved
+# Copyright (C) 2024-25 Ralf Schlatterbeck. All rights reserved
 # Reichergasse 131, A-3411 Weidling
 # ****************************************************************************
 #
@@ -175,6 +175,11 @@ class Pulse_Container:
         return np.array ([p.sign for p in self])
     # end def sign
 
+    @cached_property
+    def is_non_vertical_grounded (self):
+        return np.array ([p.is_non_vertical_grounded for p in self])
+    # end def is_non_vertical_grounded
+
     # Matrix generalisation
 
     def matrix (self, name):
@@ -320,6 +325,17 @@ class Pulse:
                     self._c_per [k] = self.sign [k] * self.geo [k].tag
         return self._c_per
     # end def c_per
+
+    @cached_property
+    def is_non_vertical_grounded (self):
+        """ This is needed to turn off certain optimizations: They may
+            not be applied if the pulse is grounded *and* not vertical
+            Note that our two segments are the same when grounded.
+        """
+        return (   (self.ground [0] or self.ground [1])
+               and (self.segs [0].dirvec [0] or self.segs [0].dirvec [1])
+               )
+    # end def is_non_vertical_grounded
 
     def as_mininec (self):
         l = []
