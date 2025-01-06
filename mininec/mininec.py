@@ -123,16 +123,17 @@ class Connected_Geobj:
         self.sgn_by_geobj [other_geobj] = sign2
     # end def add
 
-    def tag (self, geobj):
+    def idx (self, geobj):
         """ This computes I1 or I2 from the Basic code, respectively
+            This must *NOT* use the tag of a geo object.
         """
         if self.list:
             # Forward linked segments are printed as 0
             if geobj.n < self.list [0][0].n:
                 return 0
-            return (self.list [0][0].tag) * self.sgn_by_geobj [geobj]
+            return (1 + self.list [0][0].n) * self.sgn_by_geobj [geobj]
         return 0
-    # end def tag
+    # end def idx
 
     def is_connected (self, other):
         return other in self.geo
@@ -1322,11 +1323,12 @@ class Geobj:
             the end is grounded, the index of a connected wire (negative
             if the direction of the wire is reversed) if connected and 0
             otherwise. Used mainly when printing wires in mininec format.
-            We now use the tag of the wire.
+            But this is also used as an index during computation of pulses.
+            We can *NOT* use the tag here.
         """
         if self.is_ground [end_idx]:
-            return -(self.tag)
-        return self.conn [end_idx].tag (self)
+            return -(self.n + 1)
+        return self.conn [end_idx].idx (self)
     # end def idx
 
     def is_connected (self, other):
