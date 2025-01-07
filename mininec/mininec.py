@@ -2662,6 +2662,9 @@ class Mininec:
         opt [is_nvg] = 0
         opt [diag] *= 2
 
+        ngnd   = np.logical_not (self.pulses.matrix_ground [1])
+        ngnd   = np.logical_and (ngnd [..., 0], ngnd [..., 1])
+
         # Optimization on (upper) diagonals: The Z of two pulses is the
         # same if they are the same distance as two other pulses and
         # all are on the same geo object. This amounts to checking
@@ -2675,17 +2678,19 @@ class Mininec:
         cpy_src = []
         cpy_dst = []
         diag_i, diag_j = diag
-        for k in range (n):
-            if k == 0:
+        for idx in range (n):
+            if idx == 0:
                 d = np.eye (n, dtype = bool)
             else:
                 d = np.zeros ((n, n), dtype = bool)
-                d [diag_i [:-k], diag_j [k:]] = True
+                d [diag_i [:-idx], diag_j [idx:]] = True
             valid = np.logical_and (d, opt > 0)
             # We can use idx0 or idx1 because we established both
             # pulses have same geo object at that point
             for geobj in np.unique (idx0 [valid]):
                 v = np.logical_and (valid, idx0 == geobj)
+                # Grounded pulses *must* be computed
+                v = np.logical_and (v, ngnd)
                 a, b = np.where (v)
                 if len (a) < 2:
                     continue
@@ -2700,8 +2705,6 @@ class Mininec:
         # This is never the case for the mirror image (k == -1)
         triu = np.zeros ((n, n), dtype = bool)
         triu [np.triu_indices (n, 1)] = True
-        ngnd   = np.logical_not (self.pulses.matrix_ground [1])
-        ngnd   = np.logical_and (ngnd [..., 0], ngnd [..., 1])
         for k in self.image_iter ():
             ng         = ngnd if k < 0 else True
             kvec       = np.array ([1, 1, k])
