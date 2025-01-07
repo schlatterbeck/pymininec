@@ -2713,7 +2713,6 @@ class Mininec:
             compu      = np.logical_and (np.logical_not (copy.T), ng)
             if k > 0:
                 compu  = np.logical_and (compu, excp)
-            #if k >= 0:
             #    with open ('f8', 'w') as f:
             #        with np.printoptions (threshold=np.inf, linewidth=np.inf):
             #            print (f8, file = f)

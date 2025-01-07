@@ -1,0 +1,108 @@
+#!/usr/bin/python3
+
+import sys
+import numpy as np
+from argparse import ArgumentParser
+
+# Script to check the variable 'F8' (in Basic *and* Python) which
+# affects optimization when filling the impedance matrix.
+
+# To get the Basic log, start yabasi (with MININEC3.BAS JCL CHANGE 9)
+# with the option --patch "247 PRINT 'F8: I:';I;' J:';J;' K:';K;' ';F8"
+# and optionally (print also values for k < 0, i.e. mirror image) with
+# --patch '236 IF K<0 THEN 247'
+# This will replace a 'REM' line with a PRINT statement. 
+# The second patch makes the jump hit the print statement (and not the
+# line after it).
+# Python has (around line 2716 as of this writing) commented code to
+# print variable f8 and 'compu', the latter defines what is computed.
+# This is interesting mainly for cases *with* ground.
+
+# Tests with ground:
+# Test                                   file
+# test_vertical_ideal_ground             test/vertical-ig.mini
+# test_vertical_linear_boundary          test/vertical-ig-lin.mini
+# test_vertical_ideal_ground_upside_down test/vertical-ig-ud.mini
+# test_vertical_radials                  test/vertical-rad.mini
+# test_inverted_l                        test/inv-l.mini
+# test_t_ant                             test/t-ant.mini
+# test_t_fuzzy                           test/t-fuzzy.mini
+# test_t_ant_thin                        test/t-ant-thin.mini
+# test_vertical_ideal_ground_near        test/vertical-ig-near.mini
+# test_vertical_ideal_ground_far_abs     test/vertical-ig-ffabs.mini
+# test_vertical_ideal_ground_far_abs_np  test/vertical-ig-ffabs-np.mini
+# test_w0xi                              test/w0xi.mini
+# test_wire_bug                          test/wire-bug.mini
+# test_negimp_bug                        test/negimp-bug.mini
+
+cmd = ArgumentParser ()
+cmd.add_argument \
+    ( 'basic_log'
+    , help = 'F8 log produced by Basic version'
+    )
+cmd.add_argument \
+    ( 'python_log'
+    , help    = 'F8 log produced by Python version, default=%(default)s'
+    , default = 'f8'
+    , nargs   = '?'
+    )
+cmd.add_argument \
+    ( '-v', '--verbose'
+    , help    = 'Verbose output'
+    , action  = 'store_true'
+    )
+cmd.add_argument \
+    ( '-F', '--fill'
+    , help    = 'Fill with given number for values not computed'
+    , type    = int
+    , default = 9
+    )
+args = cmd.parse_args ()
+
+dim = 0
+f8  = cm = None
+
+with open (args.python_log) as f:
+    for n, line in enumerate (f):
+        line  = line.strip ()
+        items = line.lstrip ('[').rstrip (']').split ()
+        assert dim == 0 or dim == len (items)
+        if dim == 0:
+            dim = len (items)
+            f8  = np.zeros ((dim, dim), dtype = int)
+        elif line.startswith ('[['):
+            cm  = np.zeros ((dim, dim), dtype = bool)
+        if cm is None:
+            f8 [n % dim,:] = [int (x) for x in items]
+        else:
+            items = [x == 'True' for x in items]
+            cm [n % dim,:] = items
+
+f8b = np.ones ((dim, dim), dtype = int) * args.fill
+
+with open (args.basic_log) as f:
+    for line in f:
+        if not line.startswith ('F8:'):
+            continue
+        line = line.split (None, 1) [-1]
+        items = line.split ()
+        assert items [0].startswith ('I:')
+        assert items [1].startswith ('J:')
+        assert items [2].startswith ('K:')
+        i = int (items [0].split (':')[-1])
+        j = int (items [1].split (':')[-1])
+        k = int (items [2].split (':')[-1])
+        f = int (items [3])
+        if k <= 0:
+            assert f == 0
+            continue
+        f8b [i-1, j-1] = f
+
+f8 [np.logical_not (cm)] = args.fill
+if args.verbose or not (f8 == f8b).all ():
+    with np.printoptions (threshold = np.inf, linewidth = np.inf):
+        print ('Python:')
+        print (f8)
+        print ('Basic:')
+        print (f8b)
+
