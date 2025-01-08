@@ -1001,6 +1001,34 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_far_field_data (m)
     # end def test_negimp_bug
 
+    def test_helix_pp (self):
+        """ Right circular polarization, starting X=R, Y=0
+        """
+        m = self.setup_generic_file ('helix-pp', no_ff = True)
+        self.compare_impedance (m, 115.0855+9.352763j)
+    # end def test_helix_pp
+
+    def test_helix_pm (self):
+        """ Left circular polarization, starting X=R, Y=0
+        """
+        m = self.setup_generic_file ('helix-pm', no_ff = True)
+        self.compare_impedance (m, 115.0855+9.352763j)
+    # end def test_helix_pm
+
+    def test_helix_mp (self):
+        """ Left circular polarization, starting X=0, Y=R
+        """
+        m = self.setup_generic_file ('helix-mp', no_ff = True)
+        self.compare_impedance (m, 115.0855+9.352763j)
+    # end def test_helix_mp
+
+    def test_helix_mm (self):
+        """ Right circular polarization, starting X=0, Y=R
+        """
+        m = self.setup_generic_file ('helix-mm', no_ff = True)
+        self.compare_impedance (m, 115.0855+9.352763j)
+    # end def test_helix_mm
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
@@ -1479,6 +1507,35 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_loop_tag
 
+    # Geo transformations currently do not roundtrip
+#    def test_helix_pp (self):
+#        bn = 'helix-pp'
+#        m = self.setup_generic_file (bn, compute = False)
+#        cmd = m.as_cmdline (opt = ('none',))
+#        self.pym_compare (bn, cmd)
+#    # end def test_helix_pp
+#
+#    def test_helix_pm (self):
+#        bn = 'helix-pm'
+#        m = self.setup_generic_file (bn, compute = False)
+#        cmd = m.as_cmdline (opt = ('none',))
+#        self.pym_compare (bn, cmd)
+#    # end def test_helix_pm
+#
+#    def test_helix_mp (self):
+#        bn = 'helix-mp'
+#        m = self.setup_generic_file (bn, compute = False)
+#        cmd = m.as_cmdline (opt = ('none',))
+#        self.pym_compare (bn, cmd)
+#    # end def test_helix_mp
+#
+#    def test_helix_mm (self):
+#        bn = 'helix-mm'
+#        m = self.setup_generic_file (bn, compute = False)
+#        cmd = m.as_cmdline (opt = ('none',))
+#        self.pym_compare (bn, cmd)
+#    # end def test_helix_mm
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1859,6 +1916,34 @@ class Test_Case_Basic_Input_File (_Test_Base_With_File):
         mini = m.as_basic_input (self.args, azi = azi, zen = zen)
         self.mini_compare (bn, mini)
     # end def test_loop
+
+    def test_helix_pp (self):
+        bn   = 'helix-pp'
+        m    = self.setup_generic_file (bn)
+        mini = m.as_basic_input (self.args)
+        self.mini_compare (bn, mini)
+    # end def test_helix_pp
+
+    def test_helix_pm (self):
+        bn   = 'helix-pm'
+        m    = self.setup_generic_file (bn)
+        mini = m.as_basic_input (self.args)
+        self.mini_compare (bn, mini)
+    # end def test_helix_pm
+
+    def test_helix_mp (self):
+        bn   = 'helix-mp'
+        m    = self.setup_generic_file (bn)
+        mini = m.as_basic_input (self.args)
+        self.mini_compare (bn, mini)
+    # end def test_helix_mp
+
+    def test_helix_mm (self):
+        bn   = 'helix-mm'
+        m    = self.setup_generic_file (bn)
+        mini = m.as_basic_input (self.args)
+        self.mini_compare (bn, mini)
+    # end def test_helix_mm
 
 # end class Test_Case_Basic_Input_File
 

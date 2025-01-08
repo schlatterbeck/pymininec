@@ -1614,7 +1614,7 @@ class Helix (Curve):
 
     def as_cmdline (self):
         r = []
-        tpl = ( self.n_segments, self.turnlen, self.length, self.r_orig
+        tpl = ( self.n_segments, self.length, self.turnlen, self.r_orig
               , self.rx1, self.ry1, self.rx2, self.ry2
               )
         flt = ','.join (['%.11g'] * 7)
