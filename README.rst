@@ -10,6 +10,7 @@ MININEC in Python
     :trim:
 .. |-| unicode:: U+202F .. Thin non-breaking space
     :trim:
+.. |ohm| unicode:: U+02126 .. Omega
 .. |numpy.linalg.solve| replace:: ``numpy.linalg.solve``
 .. |scipy.integrate| replace:: ``scipy.integrate``
 .. |scipy.special.ellipk| replace:: ``scipy.special.ellipk``
@@ -84,22 +85,50 @@ specifying how many steps with size increment are performed.
 Geometry
 ++++++++
 
-Next the geometry of the antenna is defined. In the current version
-there are only wires that can be specified. A wire definition takes the
-form::
+Next the geometry of the antenna is defined. Currently straight wires,
+Arcs (consisting of straight segments touching the arc at their ends)
+and Helices (also consisting of straight segments touching the helix at
+their ends) can be specified.
+
+All lengths and coordinates are in meter, but see below for the
+``--geo-scale`` option.
+
+All geometry options take an optional first argument, the tag number.
+If no tag is specified, geo objects are numbered starting with the
+highest specified tag number or, if no tag is specified, one. It is
+recommended to not mix geo objects with and without tag. If different
+geo objects are present, arcs are numbered first, then helices, and
+finally, wires.  Especially when mixing different geometry objects it is
+highly recommended to not rely on auto-tagging but specify the tag
+numbers explicitly.
+
+Tags are used to refer back to the geometry objects with other
+options, e.g. when specifying the feedpoint or loads on the antenna.
+
+All geometry options take the number of segments as a parameter. This is
+the number of short straight wire segments that constitute the geometry
+object.
+
+When specifying several connected geometry objects, endpoints need not
+match exactly (like in the original Basic Mininec code) but must be
+within 1/1000 of the shortest segment length (the same rule applies in
+NEC for matching ends of geometry objects [20]_ (p. 8))
+
+Wire
+~~~~
+
+A wire definition takes the form::
 
  --wire [tag,]<nseg>,<x1>,<y1>,<z1>,<x2>,<y2>,<z2>,<radius>
 
 where (x1, y1, z1) specifies the first endpoint of the wire in
 carthesian coordinates, (x2, y2, z2) defines the second endpoint of the
-wire, and finally the radius is specified. All lengths and coordinates
-are in meter, but see below for the ``--geo-scale`` option. The leading
-tag is optional and is used to refer back to the wire with other
-options, e.g. when specifying the feedpoint or loads on the antenna.  If
-no tag is specified, wires are numbered starting with the highest
-specified tag number or if no tag is specified, one. It is recommended
-to not mix wires with and without tag. The parameter ``nseg`` specifies
-the number of segments the wire is split into for computation.
+wire, and finally the radius is specified. The ``--wire`` option can be
+abbreviated with ``-w``. The leading tag is optional.
+
+
+The parameter ``nseg`` specifies the number of segments the wire is
+split into for computation.
 
 By default wires are segmented into equal-length segments. Segments
 should not be longer than 1/20 the shortest wavelength λ. Mininec
@@ -107,8 +136,8 @@ typically produces results with a resonant frequency slightly too high
 (so the antenna is too long), this can be improved by using a high
 number of segments.
 
-Segment length tapering
-+++++++++++++++++++++++
+Segment Length Tapering of Wires
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An alternative is to use segments that are not equal-length. This can be
 done using the ``--taper-wire`` option. It gets 2 |__| 4 parameters. The first
@@ -125,7 +154,79 @@ segment length until the maximum is reached, it also stops making
 segments longer when subsequent segments would have to be shorter than
 the current segment to keep the number of segments.
 
-Geometry transformation
+Arc
+~~~
+
+A wire arc can be specified with a definition of the form::
+
+ --arc [tag,]<nseg>,<arc-radius>,<arc-angle1><arc-angle2>,<wire-radius>
+
+The tag is optional. The arc center is the origin. The axis is the
+Y-axis. The first angle ``arc-angle1`` is the start angle,
+``arc-angle2`` is the end angle. The angles are measured from the X-axis
+in a left hand direction about the Y-axis in degrees.
+The generated segments form a polygon *inscribed* within the arc.
+If an arc in a different position or orientation is desired it can be
+modified with the ``--geo-rotate`` and ``--geo-translate`` options.
+
+Helix or Spiral
+~~~~~~~~~~~~~~~
+
+A helix can be specified with a definition of the form::
+
+ --helix [tag,]<nseg>,<len>,<turn-len>,<wire-radius>,<xr1>,<yr1>[,<xr2>,<yr2>]
+
+The initial tag number and the final two radii are optional.
+The parameter ``len`` is the overall length of the helix. The
+``turn-len`` is the length of one turn. The ``xr1`` and ``yr1``
+parameters are the helix radius (from midpoint of the helix to the
+midpoint of the wire) in X- and Y-direction. If the last two radii are
+specified they indicate the X-direction and Y-direction radii *at the
+end of the helix* while the first two radii are for the start of the
+helix. The helix-radius is tapered from begin to end in this case.
+
+The helix option can also be used to specify a spiral -- no ideal flat
+spiral can be specified because the number of turns is determined from
+the ratio of ``len` to ``turn-len`` but a very small ``len`` can be
+used to create an almost-flat spiral.
+
+The ``len`` and ``turn-len`` parameters may be negative. The sign does
+not indicate that the helix grows in negative direction -- in fact, the
+helix *always* starts at Z=0 and grows in a positive Z direction. The
+signs determine where the helix starts and the winding direction. A
+right-handed helix is produced when both signs are the same. The helix
+starts at Y=0, X=``xr1`` when the ``len`` parameter is positive and at
+X=0, Y=``yr1`` if it is negative.
+
+This reproduces the behavior of the unofficial NEC ``GH`` card (``GH``
+was an unofficial addition to NEC and is present in most
+implementations, e.g., in ``nec2c``).
+
+A Note on Modeling Helical Antennas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When modeling helical antennas, the first fraction of a turn and the
+wire thickness have great influence on the feedpoint impedance. This
+effect has been noted by other modelers [17]_. This means it is not
+usually a good idea to start the helix on the ground plane directly and
+locate the feedpoint on the ground plane. It is better to have a short
+stub at the feedpoint or for a center-fed helix have a short wire from
+the feedpoint on the ground plane to the start of the helix (typically
+this wire has the same angle as the pitch angle of the helix [18]_).
+When directly feeding the helix on the ground plane, depending on the
+wire thickness, very small (non-physical) impedances can result because
+this violates an asumption of the simulator that the wire does not lie
+partially in the ground plane.
+
+The effect that the feedpoint impedance gets lower when the wire is
+thicker near the ground plane, is a physical effect, however. Kraus (the
+inventor of the helical antenna) recommends to use this effect for
+lowering the impedance for matching to a 50 |ohm| coax feed [19]_. He
+uses a metal strip bonded to the helix conductor and alternatively
+suggests to tune the spacing between conductor and ground plane when the
+helix is not fed at the center.
+
+Geometry Transformation
 +++++++++++++++++++++++
 
 Sometimes it is necessary to modify parts of the geometry. Three
@@ -309,7 +410,7 @@ boundary. The length of the radials is defined by the distance to the
 next medium. So with radials at least two ``--medium`` options are
 required.
 
-Specifying what is computed
+Specifying What is Computed
 +++++++++++++++++++++++++++
 
 With the ``--option`` option it can be specified what outputs are
@@ -346,7 +447,7 @@ is possible to modify the power level for the near field computation.
 Without any ``--option``, far field is printed if no near field
 options are present.
 
-Miscellaneous options
+Miscellaneous Options
 +++++++++++++++++++++
 
 With the option ``--output-cmdline`` the given command-line options can
@@ -397,13 +498,13 @@ plot elevation and azimuth diagram of an antenna, a 3D-plot, the
 geometry and VSWR. All either as a standalone program (using matplotlib)
 or exported as HTML to the browser (using plotly).
 
-Test coverage and code quality
+Test Coverage and Code Quality
 ------------------------------
 
 This section contains some notes on code quality and recent
 improvements.
 
-Test coverage: Making sure it is consistent with original Mininec
+Test Coverage: making Sure it is Consistent with Original Mininec
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 There are several tests against the `original Basic source code`_, for
@@ -478,7 +579,7 @@ There are two distances for which these are computed, so the code
 produces four plots. There is a second script to plot the Basic near and
 far field differences ``plot_bas_ohio.py``.
 
-Code quality before vectorization
+Code Quality Before Vectorization
 +++++++++++++++++++++++++++++++++
 
 Before the vectorization this was the state of the code:
@@ -511,7 +612,7 @@ solution to an `elliptic integral`_. These are now implemented using
 methods (or at least constants in the case of `gaussian quadrature`_)
 from |scipy.integrate|_ and |scipy.special.ellipk|_.
 
-Code quality after vectorization
+Code Quality After Vectorization
 ++++++++++++++++++++++++++++++++
 
 Before beginning the vectorization I've changed the implicit pulse
@@ -926,7 +1027,7 @@ The resulting differences in computed outputs were smaller than the
 differences between the Basic (single precision) and the Python (double
 precision) implementation.
 
-Running examples in Basic
+Running Examples in Basic
 -------------------------
 
 The `original Basic source code`_ can still be run today.
@@ -1133,6 +1234,17 @@ Literature
    Columbia, Ohio, May 1974. Available as `CR-2936`_
 .. [16] Ralf Schlatterbeck. Modeling a wire antenna with insulation.
    `Blog post, Open Source Consulting, September 2024`_.
+.. [17] Darrel Emerson. The gain of an axial-mode helix antenna. In
+   R. Dean Straw, editor, The ARRL Antenna Compendium, volume 4, pages
+   64–68. American Radio Relay League (ARRL), 1995.
+.. [18] Otto J. Glasser and John D. Kraus. Measured impedances of
+   helical beam antennas. Journal of Applied Physics, 19(2):193–197,
+   February 1948.
+.. [19] John D. Kraus. A 50-ohm input impedance for helical beam antennas.
+   IEEE Transactions on Antennas and Propagation, 25(6):913, November 1977.
+.. [20] G. J. Burke and A. J. Poggio. NEC-2 manual, part III: `User's
+   guide`_. Manual, September 1996. This is an unofficial updated version
+   documenting the GH card (Helix), the original is from January 1981.
 
 .. _ADA121535: https://apps.dtic.mil/sti/pdfs/ADA121535.pdf
 .. _ADA181682: https://apps.dtic.mil/sti/pdfs/ADA181682.pdf
@@ -1168,3 +1280,4 @@ Literature
 .. _`Blog post, Open Source Consulting, September 2024`:
     https://blog.runtux.com/posts/2024/09/17/
 .. _`CR-2936`: https://ntrs.nasa.gov/citations/19740013743
+.. _`User's guide`: https://www.nec2.org/other/nec2prt3.pdf
