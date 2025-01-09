@@ -962,6 +962,8 @@ class Geo_Container:
         self.geo        = []
         self.by_tag     = {}
         self.min_seglen = None
+        self.transforms = []
+        self.scales     = []
         if geo is not None:
             for g in geo:
                 self.append (g)
@@ -985,6 +987,23 @@ class Geo_Container:
         assert getattr (geobj, 'parent', None) is None
         geobj.parent = self
     # end def append
+
+    def as_cmdline (self):
+        r = []
+        for g in self:
+            r.append (g.as_cmdline ())
+        for key, t, x, tag in self.transforms:
+            s = '--geo-%s=%s,%.11g,%.11g,%.11g' % ((t, key) + x)
+            if tag:
+                s += ',%s' % tag
+            r.append (s)
+        for factor, tag in self.scales:
+            s = '--geo-scale=%.17g' % factor
+            if tag:
+                s += ',%s' % tag
+            r.append (s)
+        return '\n'.join (r)
+    # end def as_cmdline
 
     def compute_ground (self):
         for n, geobj in enumerate (self.geo):
@@ -1020,7 +1039,7 @@ class Geo_Container:
         self.geo.sort (key = lambda geobj: geobj.tag)
     # end def compute_tags
 
-    def rotate (self, rotation, tag = None):
+    def rotate (self, key, rotation, tag = None):
         """ Rotate geometry object given by tag. If tag is None, the
             whole structure defined so far is rotated.
             The parameter rotation is a 3-element vector with angles in
@@ -1032,6 +1051,7 @@ class Geo_Container:
             Unlike in NEC there is currently no provision to *copy*
             geometry objects to a new location.
         """
+        self.transforms.append ((key, 'rotate', tuple (rotation), tag))
         rmatrix = Rotation_Matrix (rotation)
         if tag is None:
             for g in self:
@@ -1049,6 +1069,7 @@ class Geo_Container:
             so that parameters of translation are in the same
             coordinates as the geo objects.
         """
+        self.scales.append ((factor, tag))
         if tag is None:
             for g in self:
                 g.scale (factor)
@@ -1056,7 +1077,7 @@ class Geo_Container:
             self.by_tag [tag].scale (factor)
     # end def scale
 
-    def translate (self, translation, tag = None):
+    def translate (self, key, translation, tag = None):
         """ Translate geometry object given by tag. If tag is None, the
             whole structure defined so far is translated.
             The parameter translation is a 3-element vector.
@@ -1066,6 +1087,7 @@ class Geo_Container:
             so that parameters of translation are in the same
             coordinates as the geo objects.
         """
+        self.transforms.append ((key, 'translate', tuple (translation), tag))
         if tag is None:
             for g in self:
                 g.translate (translation)
@@ -1080,16 +1102,17 @@ class Geobj:
     def __init__ (self, r, tag = None):
         if r <= 0:
             raise ValueError ("Radius must be >0")
-        self._r        = r
-        self.tag       = tag
-        self.zint      = None
-        self.zins      = None
-        self.skin_load = None
-        self.coat_load = None
-        self.pulses    = []
-        self.had_tag   = tag is not None
+        self._r         = r
+        self.r_unscaled = r
+        self.tag        = tag
+        self.zint       = None
+        self.zins       = None
+        self.skin_load  = None
+        self.coat_load  = None
+        self.pulses     = []
+        self.had_tag    = tag is not None
 
-        self.end_segs  = [None, None]
+        self.end_segs   = [None, None]
         # Links to previous/next connected wire (at start/end)
         # conn [0] contains wires that link to our first end
         # while conn [1] contains wires that link to our second end.
@@ -1480,7 +1503,9 @@ class Arc (Curve):
 
     def as_cmdline (self):
         r = []
-        tpl = (self.n_segments, self.radius, self.ang1, self.ang2, self.r_orig)
+        tpl = ( self.n_segments, self.radius
+              , self.ang1, self.ang2, self.r_unscaled
+              )
         if self.had_tag:
             tpl = (self.tag,) + tpl
             r.append ('-a %d,%d,%.11g,%.11g,%.11g,%.11g' % tpl)
@@ -1510,14 +1535,6 @@ class Arc (Curve):
             else:
                 gnd_prev  = False
     # end def compute_ground
-
-    def scale (self, factor):
-        """ Scale everything by factor including radius
-            Similar to the NEC GS card "Scale Structure Dimensions"
-        """
-        super ().scale (factor)
-        self.radius  = self.radius  * factor
-    # end def scale
 
     def __str__ (self):
         s = 'radius=%.11g, [%.11g, %.11g], r=%.11g' \
@@ -1614,7 +1631,7 @@ class Helix (Curve):
 
     def as_cmdline (self):
         r = []
-        tpl = ( self.n_segments, self.length, self.turnlen, self.r_orig
+        tpl = ( self.n_segments, self.length, self.turnlen, self.r_unscaled
               , self.rx1, self.ry1, self.rx2, self.ry2
               )
         flt = ','.join (['%.11g'] * 7)
@@ -1647,19 +1664,6 @@ class Helix (Curve):
                         ('Helix: No intermediate segment may be grounded')
                 ng += 1
     # end def compute_ground
-
-    def scale (self, factor):
-        """ Scale everything by factor including radius
-            Similar to the NEC GS card "Scale Structure Dimensions"
-        """
-        super ().scale (factor)
-        self.turnlen = self.turnlen * factor
-        self.length  = self.length  * factor
-        self.rx1     = self.rx1     * factor
-        self.rx2     = self.rx2     * factor
-        self.ry1     = self.ry1     * factor
-        self.ry2     = self.ry2     * factor
-    # end def scale
 
     def __str__ (self):
         s = 'l=%.11g turn=%.11g ' \
@@ -1701,6 +1705,7 @@ class Wire (Geobj):
         self._segtype  = 0
         self.taper_min = None
         self.taper_max = None
+        self.endp_unscaled = None
         self.compute_endpoints ()
     # end def __init__
 
@@ -1734,7 +1739,10 @@ class Wire (Geobj):
 
     def as_cmdline (self):
         r = []
-        tpl = (self.n_segments,) + tuple (self.endpoints.flat) + (self.r_orig,)
+        tpl = ( (self.n_segments,)
+              + tuple (self.endp_unscaled.flat)
+              + (self.r_unscaled,)
+              )
         if self.had_tag:
             tpl = (self.tag,) + tpl
             r.append \
@@ -1768,6 +1776,8 @@ class Wire (Geobj):
 
     def compute_endpoints (self):
         self.endpoints = np.array ([self.p1, self.p2])
+        if self.endp_unscaled is None:
+            self.endp_unscaled = self.endpoints
         self.diff = self.p2 - self.p1
         if (self.diff == 0).all ():
             raise ValueError ("Zero length wire: %s %s" % (self.p1, self.p2))
@@ -2226,8 +2236,7 @@ class Mininec:
         ):
         r = []
         r.append ('-f %.8g' % self.f)
-        for w in self.geo:
-            r.append (w.as_cmdline ())
+        r.append (self.geo.as_cmdline ())
         for s in self.sources:
             cm = s.as_cmdline ()
             if cm:
@@ -5340,7 +5349,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
 
     for t in sorted (geo_transforms, key = lambda x: x [0]):
         try:
-            t [1] (t [2], t [3])
+            t [1] (t [0], t [2], t [3])
         except (ValueError, KeyError) as err:
             print ("Invalid geo-transformation: %s, %s" % (t [-1], repr (err)))
             return 23

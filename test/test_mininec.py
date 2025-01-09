@@ -1459,16 +1459,16 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         azi = Angle (0, 10, 37)
         zen = Angle (0, 10, 10)
         cmd = m.as_cmdline (azi = azi, zen = zen)
-        # We end up with the vdipole-001g0 file because the --geo-rotate
-        # and --geo-translate modifications are not round-tripped
-        self.pym_compare ('vdipole-001g0', cmd)
+        # Now the geo transformations do round-trip and we end up with
+        # the same file.
+        self.pym_compare (bn, cmd)
     # end def test_vdipole_rot_trans
 
     def test_dip_coat (self):
         bn = 'dip_coat'
         m   = self.setup_generic_file (bn, compute = False)
-        cmd = m.as_cmdline (opt = ('none',))
-        self.pym_compare ('dip_coat_scaled', cmd)
+        cmd = m.as_cmdline ()
+        self.pym_compare (bn, cmd)
     # end def test_dip_coat
 
     def test_dip_coat_yn (self):
@@ -1508,33 +1508,33 @@ class Test_Case_Cmdline (_Test_Base_With_File):
     # end def test_loop_tag
 
     # Geo transformations currently do not roundtrip
-#    def test_helix_pp (self):
-#        bn = 'helix-pp'
-#        m = self.setup_generic_file (bn, compute = False)
-#        cmd = m.as_cmdline (opt = ('none',))
-#        self.pym_compare (bn, cmd)
-#    # end def test_helix_pp
-#
-#    def test_helix_pm (self):
-#        bn = 'helix-pm'
-#        m = self.setup_generic_file (bn, compute = False)
-#        cmd = m.as_cmdline (opt = ('none',))
-#        self.pym_compare (bn, cmd)
-#    # end def test_helix_pm
-#
-#    def test_helix_mp (self):
-#        bn = 'helix-mp'
-#        m = self.setup_generic_file (bn, compute = False)
-#        cmd = m.as_cmdline (opt = ('none',))
-#        self.pym_compare (bn, cmd)
-#    # end def test_helix_mp
-#
-#    def test_helix_mm (self):
-#        bn = 'helix-mm'
-#        m = self.setup_generic_file (bn, compute = False)
-#        cmd = m.as_cmdline (opt = ('none',))
-#        self.pym_compare (bn, cmd)
-#    # end def test_helix_mm
+    def test_helix_pp (self):
+        bn = 'helix-pp'
+        m = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare (bn, cmd)
+    # end def test_helix_pp
+
+    def test_helix_pm (self):
+        bn = 'helix-pm'
+        m = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare (bn, cmd)
+    # end def test_helix_pm
+
+    def test_helix_mp (self):
+        bn = 'helix-mp'
+        m = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare (bn, cmd)
+    # end def test_helix_mp
+
+    def test_helix_mm (self):
+        bn = 'helix-mm'
+        m = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline (opt = ('none',))
+        self.pym_compare (bn, cmd)
+    # end def test_helix_mm
 
 # end class Test_Case_Cmdline
 
