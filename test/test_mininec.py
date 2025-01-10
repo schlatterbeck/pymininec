@@ -427,6 +427,13 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
             Laplace_Load ([], [])
     # end def test_load
 
+    def test_skin_effect_load (self):
+        """ Test error case: Need either conductivity or resistivity
+        """
+        with pytest.raises (ValueError):
+            ld = Skin_Effect_Load (None)
+    # end def test_skin_effect_load
+
     def test_medium (self):
         """ Test error cases
         """
@@ -913,12 +920,17 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
 
     def test_dip_coat (self):
         m = self.setup_generic_file ('dip_coat')
-        # compute impedance from expected admittance
         imp = (66.21636203467537-1.2609487888760895j)
         self.compare_impedance (m, imp)
         # Also compare far field
         self.compare_far_field_data (m)
     # end def test_dip_coat
+
+    def test_dip_coat_scaled (self):
+        m = self.setup_generic_file ('dip_coat_scaled')
+        imp = (66.21682-1.259494j)
+        self.compare_impedance (m, imp)
+    # end def test_dip_coat_scaled
 
     def test_dip_coat_yn (self):
         m = self.setup_generic_file ('dip_coat_yn')
@@ -1450,7 +1462,7 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         bn  = 'dip_skin2'
         m   = self.setup_generic_file (bn, compute = False)
         cmd = m.as_cmdline (opt = ('none',))
-        self.pym_compare ('dip_skin', cmd)
+        self.pym_compare (bn, cmd)
     # end def test_skin2_effect
 
     def test_vdipole_rot_trans (self):

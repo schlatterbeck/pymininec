@@ -4,7 +4,5 @@
 # Scale by 1/32 * wavelength @600MHz
 --geo-scale=0.015614583333333334
 --excitation-pulse=19
---skin-effect-conductivity=5.96e+07,1
---skin-effect-conductivity=5.96e+07,2
---insulation-load=0.0047625,3.2,1
---insulation-load=0.0047625,3.2,2
+--skin-effect-conductivity=5.96e+07
+--insulation-load=0.0047625,3.2

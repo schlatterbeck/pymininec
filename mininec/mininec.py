@@ -128,9 +128,8 @@ class Connected_Geobj:
             This must *NOT* use the tag of a geo object.
         """
         if self.list:
-            # Forward linked segments are printed as 0
-            if geobj.n < self.list [0][0].n:
-                return 0
+            # Forward linked segments should not be queried here
+            assert geobj.n >= self.list [0][0].n
             return (1 + self.list [0][0].n) * self.sgn_by_geobj [geobj]
         return 0
     # end def idx
@@ -651,6 +650,11 @@ class Trap_Load (Laplace_Load):
 
 class Distributed_Load (_Load):
 
+    def __init__ (self, all_wires = None):
+        super ().__init__ ()
+        self.all_wires = bool (all_wires)
+    # end def __init__
+
     def add_pulse (self, pulse):
         # Allow adding only to our own geobj
         n = self.__class__.__name__.replace ('_', ' ')
@@ -680,10 +684,25 @@ class Skin_Effect_Load (Distributed_Load):
     """ Ohmic loss due to skin effect
     """
 
-    def __init__ (self, geobj, conductivity):
-        super ().__init__ ()
+    def __init__ \
+        ( self, geobj
+        , conductivity = None
+        , resistivity  = None
+        , all_wires    = None
+        ):
+        super ().__init__ (all_wires)
+        if  (  (conductivity is None and resistivity is None)
+            or (conductivity is not None and resistivity is not None)
+            ):
+            raise ValueError \
+                ('Skin_Effect_Load: Either conductivity or resistivity'
+                 ' is required'
+                )
         self.geobj        = geobj
+        self.resistivity  = resistivity
         self.conductivity = conductivity
+        if self.conductivity is None:
+            self.conductivity = 1 / self.resistivity
         if geobj.skin_load is not None and geobj.skin_load is not self:
             raise ValueError \
                 ("Only one skin-effect load per geo object")
@@ -691,10 +710,13 @@ class Skin_Effect_Load (Distributed_Load):
     # end def __init__
 
     def as_cmdline (self, parent, by_geo = False):
-        r = []
-        tag = self.geobj.tag
-        r.append ('--skin-effect-conductivity=%g,%d' % (self.conductivity, tag))
-        return '\n'.join (r)
+        if self.resistivity is not None:
+            s = '--skin-effect-resistivity=%g' % self.resistivity
+        else:
+            s = '--skin-effect-conductivity=%g' % self.conductivity
+        if not self.all_wires:
+            s = s + ',%d' % self.geobj.tag
+        return s
     # end def as_cmdline
 
     def impedance (self, f, pulse):
@@ -744,8 +766,8 @@ class Insulation_Load (Distributed_Load):
     """ Impedance due to insulation of geobj
     """
 
-    def __init__ (self, geobj, radius, epsilon_r):
-        super ().__init__ ()
+    def __init__ (self, geobj, radius, epsilon_r, all_wires = None):
+        super ().__init__ (all_wires)
         self.geobj     = geobj
         self.epsilon_r = epsilon_r
         self.epsilon   = epsilon_r * epsilon_0
@@ -761,11 +783,10 @@ class Insulation_Load (Distributed_Load):
     # end def __init__
 
     def as_cmdline (self, parent, by_geo = False):
-        r = []
-        tag = self.geobj.tag
-        r.append \
-            ('--insulation-load=%g,%g,%d' % (self.radius, self.epsilon_r, tag))
-        return '\n'.join (r)
+        s = '--insulation-load=%g,%g' % (self.radius, self.epsilon_r)
+        if not self.all_wires:
+            s = s + ',%d' % self.geobj.tag
+        return s
     # end def as_cmdline
 
     def impedance (self, f, pulse):
@@ -2241,8 +2262,13 @@ class Mininec:
                 r.append (cm)
         for g in (self.media or ()):
             r.append (g.as_cmdline ())
+        loads = set ()
         for l in self.loads:
+            key = l.__class__
+            if isinstance (l, Distributed_Load) and key in loads:
+                continue
             r.append (l.as_cmdline (self, by_geo = load_by_geo))
+            loads.add (key)
         if zen is not None:
             r.append ('--theta=%g,%g,%d' % (zen.initial, zen.inc, zen.number))
         if azi is not None:
@@ -5617,7 +5643,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             cond = float (ld [0])
             if tag is None:
                 for w in m.geo:
-                    ld = Skin_Effect_Load (w, cond)
+                    ld = Skin_Effect_Load (w, cond, all_wires = True)
                     m.register_load (ld, None, w.tag)
             else:
                 w  = m.geo.by_tag [tag]
@@ -5641,11 +5667,12 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             res = float (ld [0])
             if tag is None:
                 for w in m.geo:
-                    ld = Skin_Effect_Load (w, 1 / res)
+                    ld = Skin_Effect_Load \
+                        (w, resistivity = res, all_wires = True)
                     m.register_load (ld, None, w.tag)
             else:
                 w  = m.geo.by_tag [tag]
-                ld = Skin_Effect_Load (w, 1 / res)
+                ld = Skin_Effect_Load (w, resistivity = res)
                 m.register_load (ld, None, w.tag)
         except ValueError as err:
             print ("Error in skin-effect resistivity: %s" % err, file = f_err)
@@ -5670,7 +5697,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
             r, eps = (float (x) for x in ld [:2])
             if tag is None:
                 for w in m.geo:
-                    ld = Insulation_Load (w, r, eps)
+                    ld = Insulation_Load (w, r, eps, all_wires = True)
                     m.register_load (ld, None, w.tag)
             else:
                 w  = m.geo.by_tag [tag]
@@ -5787,7 +5814,12 @@ __all__ = \
     , 'Impedance_Load'
     , 'Medium'
     , 'Mininec'
+    , 'Impedance_Load'
     , 'Laplace_Load'
+    , 'Series_RLC_Load'
+    , 'Trap_Load'
+    , 'Skin_Effect_Load'
+    , 'Insulation_Load'
     , 'Wire'
     , 'ideal_ground'
     ]
