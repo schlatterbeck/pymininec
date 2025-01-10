@@ -1654,8 +1654,6 @@ class Helix (Curve):
         l   = len (self.segends)
         eps = self.parent.min_seglen * 1e-3
         for n, s in enumerate (self.segends):
-            if s [-1] < -eps:
-                raise ValueError ('Helix may not be partially below ground')
             if abs (s [-1]) < eps:
                 if ng:
                     raise ValueError ('Helix: No two segments may be grounded')
@@ -4921,6 +4919,64 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> args = args.split ()
     >>> r = main (args, sys.stdout)
     Invalid config: Arc may not be partially below ground
+    >>> r
+    23
+
+    >>> args = '--helix 0,.3,1e-3,0.11,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid number of parameters for helix 1
+    >>> r
+    23
+
+    >>> args = '--helix aaa,40,0,.3,1e-3,0.11,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid helix tag "aaa": invalid literal for int() with base 10: 'aaa'
+    >>> r
+    23
+
+    >>> args = '--helix 40,0,.3,1e-3,0.11,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid helix 1: Helix length must be != 0
+    >>> r
+    23
+
+    >>> args = '--helix 40,0.5,0,1e-3,0.11,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid helix 1: Helix turn length must be != 0
+    >>> r
+    23
+
+    >>> args = '--helix 40,0.5,0.3,1e-3,-0.11,-0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid helix 1: Helix radius must be > 0
+    >>> r
+    23
+
+    >>> args = '--helix 2,0.5,0.3,1e-3,0.11,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid helix 1: Helix needs at least three segments per turn
+    >>> r
+    23
+
+    >>> args = '--helix 40,0.5,0.3,1e-3,0.11,0.11 --medium=0,0,0'
+    >>> args += ' --geo-rotate 1,0,90,0 --geo-translate 2,0,0,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid config: Helix: No two segments may be grounded
+    >>> r
+    23
+
+    >>> args = '--helix 16,0.6,0.3,1e-3,0.11,0.11 --medium=0,0,0'
+    >>> args += ' --geo-rotate 1,0,270,0 --geo-translate 2,0,0,0.11'
+    >>> args = args.split ()
+    >>> r = main (args, sys.stdout)
+    Invalid config: Helix: No intermediate segment may be grounded
     >>> r
     23
 

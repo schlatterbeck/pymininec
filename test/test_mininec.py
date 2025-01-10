@@ -1536,6 +1536,13 @@ class Test_Case_Cmdline (_Test_Base_With_File):
         self.pym_compare (bn, cmd)
     # end def test_helix_mm
 
+    def test_loop_scale (self):
+        bn = 'loop-scale'
+        m = self.setup_generic_file (bn, compute = False)
+        cmd = m.as_cmdline ()
+        self.pym_compare (bn, cmd)
+    # end def test_loop_scale
+
 # end class Test_Case_Cmdline
 
 class Test_Case_Basic_Input_File (_Test_Base_With_File):
@@ -1966,7 +1973,7 @@ class Test_Doctest:
     # end def run_test
 
     def test_mininec (self):
-        num_tests = 578
+        num_tests = 612
         self.run_test (mininec.mininec, num_tests)
     # end def test_mininec
 
