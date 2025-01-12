@@ -32,6 +32,7 @@ from datetime        import datetime
 from itertools       import pairwise
 from scipy.special   import ellipk, jv
 from scipy.integrate import fixed_quad
+from mininec         import __version__
 from mininec.util    import format_float
 from mininec.pulse   import Pulse_Container, Pulse
 from mininec.segment import Segment
@@ -5277,6 +5278,11 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , action  = 'store_true'
         )
     cmd.add_argument \
+        ( '--version'
+        , help    = 'Output the version number and exit'
+        , action  = 'store_true'
+        )
+    cmd.add_argument \
         ( '-w', '--wire'
         , help    = 'Wire definition 8-9 values delimited with ",":'
                     " Optional tag, Number of segments,"
@@ -5287,6 +5293,9 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         , default = []
         )
     args = cmd.parse_args (argv)
+    if args.version:
+        print (__version__)
+        sys.exit (0)
     if not args.wire and not args.arc and not args.helix:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     default_excitation = False
