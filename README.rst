@@ -15,10 +15,10 @@ MININEC in Python
 .. |scipy.integrate| replace:: ``scipy.integrate``
 .. |scipy.special.ellipk| replace:: ``scipy.special.ellipk``
 
-This is an attempt to rewrite the original MININEC3 basic sources in
-Python. Standard use-case like computation of feed impedance and far
-field are implemented and are quite well tested. There is only a command
-line interface.
+This is a rewrite of the original MININEC3 basic sources in Python.
+Standard use-case like computation of feed impedance and far field are
+implemented and are quite well tested. There is only a command line
+interface.
 
 An example of using the command-line interface uses the following
 12-element Yagi/Uda antenna originally presented by Cebik [6]_ without
@@ -250,7 +250,7 @@ above ground of an antenna: The whole antenna can be shifted up without
 having to edit all the Z-components of all geometry elements.
 
 Finally the ``--geo-scale`` option scales all geometry parameters
-(including the radius) by a given factor. The factor is the first
+(including the wire radius) by a given factor. The factor is the first
 parameter, an optional second parameter again gives a geometry tag. If
 the tag is omitted the whole antenna is scaled. The scaling is always
 applied last so that the ``--geo-translate`` option applies to the
@@ -462,6 +462,11 @@ generated. Running the Basic code with Yabasi_, the user input can be
 fed into the Basic program with the ``-i`` option which is useful for
 comparing the values computed by pymininec to the values computed by the
 original Basic code. The option takes a file name as an argument.
+There are different versions of the Basic code which have slightly
+different user-input prompts. The version of the Basic code for which to
+generate input can be specified with the ``--mininec-version`` option.
+This option currently takes the values 9, 12, or 13. The default is the
+widely-available version 9.
 
 With the ``-T`` or ``--timing`` option, printing of runtimes of various
 parts of the computation is requested. The option takes no arguments.
@@ -532,15 +537,21 @@ maintenance.
 
 For all the test examples it was carefully verified that the results are
 close to the original results in Basic (see `Running examples in Basic`_
-to see how you can run the original Basic code in the 21th century). The
-differences are due to rounding errors in the single precision
-implementation in Basic compared to a double precision implementation in
-Python. I'm using numeric code from `numpy`_ where possible to speed up
+to see how you can run the original Basic code in the 21th century).
+
+Some of the differences were due to rounding errors in the single
+precision implementation in Basic compared to a double precision
+implementation in Python. This happened because pcbasic_ uses single
+precision float as the default. When running the Basic code with my
+Basic interpreter Yabasi_, the default is double precision float.
+
+I'm using numeric code from `numpy`_ where possible to speed up
 computation, e.g. solving the impedance matrix is done using
 |numpy.linalg.solve|_ instead of a line-by-line translation from Basic.
 You can verify the differences yourself. In the ``test`` directory there
 are input files with extension ``.mini`` which are intended (after
-conversion to carriage-return convention) to be used as input to the
+conversion to carriage-return convention when using pcbasic_, Yabasi_
+can use the ``.mini`` files directly) to be used as input to the
 original Basic code. The output of the Basic code is in files with the
 extension ``.bout`` while the output of the Python code is in files
 with the extension ``.pout``. The ``.pout`` files are compared in the
@@ -548,6 +559,9 @@ regression tests. The ``.pym`` files in the ``test`` directory are the
 command-line arguments to recreate the ``.pout`` files with
 ``mininec.py``. An uppercase ``.Bout`` extension is used for output
 generated with Yabasi_ where the distinction matters.
+
+Near Field Accuracy
+~~~~~~~~~~~~~~~~~~~
 
 In his thesis [5]_, Zeineddin investigates numerical instabilities when
 comparing near and far field. He solves this by doing certain
@@ -557,7 +571,9 @@ instabilities are reproduceable in the Basic version. In the Python
 version the instabilities are not present (because everything is in
 double precision). But the absolute field values computed in Python are
 lower than the ones reported by Zeineddin (and the Basic code *does*
-reproduce Zeineddins values).
+reproduce Zeineddins values). I have not verified if these differences
+result from Zeineddin using an earlier version of the Mininec Basic
+code.
 
 It doesn't look like there is a problem in the computations of the
 currents in the Python code, the computed currents are lower than in
@@ -771,8 +787,8 @@ Skin Effect Loads
 
 [This section uses math in ReStructuredText which may not render
 correctly on all platforms. In particular, `Github has an open issue`_
-on this for more than a decade now. It is said to be `supported on pypi`_,
-let's see.]
+on this for more than a decade now. The formulas *are*
+`supported on pypi`_]
 
 To support skin effect loads on geometry objects (e.g. wires) we need to
 compute the internal impedance of a segment. The `Wikipedia article
@@ -932,7 +948,7 @@ Notes on Elliptic Integral Parameters
 The Mininec code uses the implementation of an `elliptic integral`_ when
 computing the impedance matrix and in several other places. The integral
 uses a set of E-vector coefficients that are cited differently in
-different places. In the latest version of the open source Basic code
+different places. In the version 9 of the open source Basic code
 these parameters are in lines 1510 |__| 1512. They are also
 reprinted in the publication [2]_ about that version of Mininec which
 has a listing of the Basic source code (slightly different from the
@@ -1044,7 +1060,7 @@ called Yabasi_ for two reasons:
 - pcbasic does some effort to compute in single precision float numbers
 
 A third reason materialized when I had Yabasi_ working: It is *much*
-faster than pcbasic_.
+faster than pcbasic_ (about a factor of 90).
 
 Since Mininec reads all inputs for an antenna simulation from the
 command-line in Basic, I'm creating input files that contain
@@ -1058,7 +1074,8 @@ run, e.g.::
     make vertical-rad.CR
 
 and a carriage-return version of ``test/vertical-rad.mini`` will be
-created.
+created (This uses the ``tr`` command-line tool on Linux, but there is
+probably not even have a ``make`` utility on Windows).
 
 Of course the input files only make sense if you actually run them with
 the mininec basic code as this displays all the prompts.
@@ -1068,9 +1085,9 @@ interpreter.
 
 You can run `pcbasic`_ with the command-line option ``--input=`` to specify
 an input file. Note that the input file has to be converted to carriage
-return line endings (no newlines). I've described how I'm debugging the
-Basic code using the Python debugger in a `contribution to pcbasic`_,
-this has been moved to the `pcbasic wiki`_.
+return line endings (no newlines), see above. I've described how I'm
+debugging the Basic code using the Python debugger in a `contribution to
+pcbasic`_, this has been moved to the `pcbasic wiki`_.
 
 For Yabasi_ this debugging is built-in, you can specify the command-line
 option ``-L <line>`` where ``<line>`` is the line number in the Basic
@@ -1082,8 +1099,8 @@ to single step through the Basic program. Alternatively you can specify
 another line number you want to stop at.
 
 In the file ``debug-basic.txt`` you can find my notes on how to debug
-mininec using the python debugger with pcbasic. This is more or less a
-random cut&paste buffer.
+mininec using the python debugger with pcbasic_ and Yabasi_. This is
+more or less a random cut&paste buffer.
 
 The `original basic source code`_ used to be at the `unofficial
 NEC archive`_ by PA3KJ or from the `Mininec github project`_ by the same
@@ -1106,6 +1123,19 @@ statements use too much memory.
 
 Release Notes
 -------------
+
+v1.2: Feature improvements and bug fixes
+
+- Implement new geometry objects Arc and Helix
+- Fix indexing bugs in pulse computation
+- Fix bug with non-vertical grounded pulses
+- Use fuzzy matching of the ends of geo objects: We use the same
+  algorithm as NEC: Ends match if they are nearer than 1/1000 of the
+  smallest segment
+- Allow specification of Mininec version when generating input for the
+  Basic version of Mininec
+- Use official Gauss-Legendre parameters instead of using the innards of
+  scipy.integrate (uses numpy.polynomial.legendre.leggauss)
 
 v1.1: Feature improvements
 
@@ -1197,7 +1227,9 @@ Literature
    Naval Ocean Systems Center (NOSC), San Diego, California, September
    1986. Available as ADA181682_ from the Defense Technical Information
    Center. Note: The scan of that report is *very* bad. If you have
-   access to a better version, please make it available!
+   access to a better version, please make it available! I've meanwhile
+   transcribed this report to a version using LaTeX with the help of
+   scanned pages from a more readable version, see `my LaTex version`_
 .. [3] Milton Abramowitz and Irene A. Stegun, editors. Handbook of
    Mathematical Functions With Formulas, Graphs, and Mathematical
    Tables.  Number 55 in Applied Mathematics Series.  National Bureau
@@ -1281,3 +1313,4 @@ Literature
     https://blog.runtux.com/posts/2024/09/17/
 .. _`CR-2936`: https://ntrs.nasa.gov/citations/19740013743
 .. _`User's guide`: https://www.nec2.org/other/nec2prt3.pdf
+.. _`my LaTex version`: https://github.com/schlatterbeck/mininec-3-doc
