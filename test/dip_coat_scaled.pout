@@ -1,0 +1,131 @@
+                   ****************************************
+                     MINI-NUMERICAL ELECTROMAGNETICS CODE
+                                   MININEC
+                   ****************************************
+
+FREQUENCY (MHZ): 600
+    WAVE LENGTH =  .499667  METERS
+
+ENVIRONMENT (+1 FOR FREE SPACE, -1 FOR GROUND PLANE): +1
+
+NO. OF GEO-OBJECTS: 2
+
+WIRE NO. 1
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0             .110864       0                          0
+ 0             0             0             .003175      0             10
+
+WIRE NO. 2
+            COORDINATES                                 END         NO. OF
+   X             Y             Z          RADIUS     CONNECTION     SEGMENTS
+ 0            -.110864       0                          0
+ 0             0             0             .003175     -1             10
+
+                  **** ANTENNA GEOMETRY ****
+
+WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+ 0             .099777       0             .003175       0    1   1
+ 0             .08869        0             .003175       1    1   2
+ 0             .077604       0             .003175       1    1   3
+ 0             .066518       0             .003175       1    1   4
+ 0             .055431       0             .003175       1    1   5
+ 0             .044345       0             .003175       1    1   6
+ 0             .033259       0             .003175       1    1   7
+ 0             .022172       0             .003175       1    1   8
+ 0             .011086       0             .003175       1    0   9
+
+WIRE NO.  2 COORDINATES                                 CONNECTION PULSE
+X             Y             Z             RADIUS        END1 END2  NO.
+ 0            -.099777       0             .003175       0    2  10
+ 0            -.08869        0             .003175       2    2  11
+ 0            -.077604       0             .003175       2    2  12
+ 0            -.066518       0             .003175       2    2  13
+ 0            -.055431       0             .003175       2    2  14
+ 0            -.044345       0             .003175       2    2  15
+ 0            -.033259       0             .003175       2    2  16
+ 0            -.022172       0             .003175       2    2  17
+ 0            -.011086       0             .003175       2    2  18
+ 0             0             0             .003175       2   -1  19
+
+NO. OF SOURCES :  1
+PULSE NO., VOLTAGE MAGNITUDE, PHASE (DEGREES): 19 , 1 , 0
+NUMBER OF LOADS 38
+PULSE NO.,RESISTANCE,REACTANCE:  1 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  2 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  3 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  4 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  5 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  6 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  7 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  8 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  9 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 10 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 11 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 12 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 13 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 14 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 15 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 16 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 17 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 18 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE: 19 ,  .003503  ,  .003503 
+PULSE NO.,RESISTANCE,REACTANCE:  1 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  2 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  3 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  4 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  5 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  6 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  7 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  8 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE:  9 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 10 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 11 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 12 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 13 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 14 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 15 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 16 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 17 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 18 ,  0        ,  2.330108
+PULSE NO.,RESISTANCE,REACTANCE: 19 ,  0        ,  2.330108
+
+********************    SOURCE DATA     ********************
+PULSE 19      VOLTAGE = ( 1 , 0 J)
+              CURRENT = ( 1.509644E-02 ,  2.871456E-04 J)
+              IMPEDANCE = ( 66.21682 , -1.259494 J)
+              POWER =  7.548220E-03  WATTS
+
+********************    CURRENT DATA    ********************
+
+WIRE NO.  1 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0
+ 1            -3.537871E-03  6.805400E-04  3.602731E-03  169.1117 
+ 2            -5.857506E-03  1.052116E-03  5.951246E-03  169.8172 
+ 3            -7.934092E-03  1.323438E-03  8.043712E-03  170.53   
+ 4            -9.763286E-03  1.495168E-03  9.877109E-03  171.2933 
+ 5            -1.134651E-02  1.568619E-03  1.145442E-02  172.1289 
+ 6            -1.267057E-02  1.541033E-03  1.276394E-02  173.0656 
+ 7            -1.372005E-02  1.406855E-03  1.379200E-02  174.1454 
+ 8            -1.448085E-02  1.152512E-03  1.452664E-02  175.4495 
+ 9            -1.494195E-02  7.705391E-04  1.496180E-02  177.0479 
+J             -1.509644E-02 -2.871456E-04  1.509917E-02 -178.9103 
+WIRE NO.  2 :
+PULSE         REAL          IMAGINARY     MAGNITUDE     PHASE
+ NO.          (AMPS)        (AMPS)        (AMPS)        (DEGREES)
+E              0             0             0             0
+ 10            3.537872E-03 -6.805399E-04  3.602732E-03 -10.88834 
+ 11            5.857508E-03 -1.052116E-03  5.951247E-03 -10.18279 
+ 12            7.934094E-03 -1.323438E-03  8.043715E-03 -9.469974 
+ 13            9.763289E-03 -1.495168E-03  9.877112E-03 -8.706739 
+ 14            1.134651E-02 -1.568619E-03  1.145443E-02 -7.871066 
+ 15            1.267056E-02 -1.541033E-03  1.276393E-02 -6.93443  
+ 16            1.372005E-02 -1.406855E-03  1.379199E-02 -5.85465  
+ 17            1.448085E-02 -1.152512E-03  1.452664E-02 -4.550507 
+ 18            1.494195E-02 -7.705391E-04  1.496180E-02 -2.952063 
+J              1.509644E-02  2.871456E-04  1.509917E-02  1.089677 
+
+

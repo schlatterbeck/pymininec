@@ -1041,6 +1041,14 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
         self.compare_impedance (m, 115.0855+9.352763j)
     # end def test_helix_mm
 
+    def test_helix_cavity (self):
+        """ Helix with cavity reflector measured by King + Wong 1980
+        """
+        ele = Angle (0, 1, 181)
+        m   = self.setup_generic_file ('helix-cavity', ele = ele)
+        self.compare_far_field_data (m)
+    # end def test_helix_cavity
+
 # end class Test_Case_Known_Structure
 
 class Test_Case_Cmdline (_Test_Base_With_File):
