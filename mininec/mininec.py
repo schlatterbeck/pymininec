@@ -5007,6 +5007,10 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     >>> r
     23
 
+    >>> args = ['--version']
+    >>> r = main (args, sys.stdout)
+    0+unknown
+
     """
     from argparse import ArgumentParser
     cmd = ArgumentParser ()
@@ -5295,7 +5299,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     args = cmd.parse_args (argv)
     if args.version:
         print (__version__)
-        sys.exit (0)
+        return 0
     if not args.wire and not args.arc and not args.helix:
         args.wire = ['10, 0, 0, 0, 21.414285, 0, 0, 0.001']
     default_excitation = False
