@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2022 Dr. Ralf Schlatterbeck Open Source Consulting.
+# Copyright (C) 2025 Dr. Ralf Schlatterbeck Open Source Consulting.
 # Reichergasse 131, A-3411 Weidling.
 # Web: http://www.runtux.com Email: office@runtux.com
 # All rights reserved
@@ -43,7 +43,7 @@ setup \
     , license          = license
     , author           = "Ralf Schlatterbeck"
     , author_email     = "rsc@runtux.com"
-    , install_requires = ['matplotlib', 'numpy', 'scipy']
+    , install_requires = ['numpy', 'scipy']
     , packages         = ['mininec']
     , platforms        = 'Any'
     , url              = "https://github.com/schlatterbeck/pymininec"
