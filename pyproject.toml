@@ -32,12 +32,11 @@ dynamic         = ["version"]
 authors         = [{ name="Ralf Schlatterbeck", email="rsc@runtux.com" }, ]
 description     = "Python version of the original MININEC Antenna Optimization code"
 readme          = "README.rst"
-license         = {text = "MIT License"}
+license         = "MIT"
 requires-python = '>=3.7'
 dependencies    = ['numpy', 'scipy']
 classifiers     = [
           'Development Status :: 5 - Production/Stable'
-        , 'License :: OSI Approved :: MIT License'
         , 'Operating System :: OS Independent'
         , 'Intended Audience :: Science/Research'
         , 'Intended Audience :: Other Audience'
