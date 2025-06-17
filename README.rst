@@ -185,18 +185,18 @@ specified they indicate the X-direction and Y-direction radii *at the
 end of the helix* while the first two radii are for the start of the
 helix. The helix-radius is tapered from begin to end in this case.
 
-The helix option can also be used to specify a spiral -- no ideal flat
+The helix option can also be used to specify a spiral |--| no ideal flat
 spiral can be specified because the number of turns is determined from
-the ratio of ``len` to ``turn-len`` but a very small ``len`` can be
+the ratio of ``len`` to ``turn-len`` but a very small ``len`` can be
 used to create an almost-flat spiral.
 
 The ``len`` and ``turn-len`` parameters may be negative. The sign does
-not indicate that the helix grows in negative direction -- in fact, the
+not indicate that the helix grows in negative direction |--| in fact, the
 helix *always* starts at Z=0 and grows in a positive Z direction. The
 signs determine where the helix starts and the winding direction. A
 right-handed helix is produced when both signs are the same. The helix
-starts at Y=0, X=``xr1`` when the ``len`` parameter is positive and at
-X=0, Y=``yr1`` if it is negative.
+starts at Y=0, X= ``xr1`` when the ``len`` parameter is positive and at
+X=0, Y= ``yr1`` if it is negative.
 
 This reproduces the behavior of the unofficial NEC ``GH`` card (``GH``
 was an unofficial addition to NEC and is present in most
