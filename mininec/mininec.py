@@ -305,10 +305,10 @@ class Far_Field_Pattern:
     """ Values in dBi and/or V/m for far field
         Angles are in degrees for printing
     """
-    def __init__ (self, azi, zen, gain, e_theta, e_phi, pwr_ratio):
+    def __init__ (self, azi, zen, gain_dbi, e_theta, e_phi, pwr_ratio):
         self.azi       = azi
         self.zen       = zen
-        self.gain      = gain
+        self.gain_dbi  = gain_dbi
         self.pwr_ratio = np.sqrt (pwr_ratio)
         self.e_theta   = e_theta * self.pwr_ratio
         self.e_phi     = e_phi   * self.pwr_ratio
@@ -316,7 +316,7 @@ class Far_Field_Pattern:
 
     def db_as_mininec (self):
         r = []
-        v, h, t = self.gain.T
+        v, h, t = self.gain_dbi.T
         for theta, phi, v, h, t in zip \
             (self.zen.flat, self.azi.flat, v.flat, h.flat, t.flat):
             r.append \
@@ -2374,6 +2374,19 @@ class Mininec:
         rd   = dist or 0
         pv   = self.pulses
         f3   = pv.sign * self.w * pv.seg_len / 2
+        # To get the power ratio in dBi we need to relate the field
+        # power at a point to the power of the isotropic radiator at
+        # that point.
+        # The power of an isotropic radiator is power / (4 pi r**2)
+        # (the divisor is the sphere surface)
+        # The factor r**2 cancels out compared to the field power
+        # (That's the distance where we compute the E-field)
+        # Computing the power from the E-field is E_abs ** 2 / Z_0
+        # Where Z_0 is the impedance of free space, Z_0 = 376.730313412.
+        # So to get from E_abs ** 2 to the power ratio we have to divide
+        # by Z_0 * self.power / 4 pi, or taking the reciprocal multiply by
+        # 4 pi / (self.power * Z_0), 4 pi / Z_0 / 2 is approx 0.016678.
+        # The factor 2 comes from RMS vs peak amplitude.
         k9   = .016678 / self.power
         # cos, -sin for azi and zen angles
         # cos is the real, -sin the imag part
