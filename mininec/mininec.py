@@ -305,18 +305,51 @@ class Far_Field_Pattern:
     """ Values in dBi and/or V/m for far field
         Angles are in degrees for printing
     """
-    def __init__ (self, azi, zen, gain_dbi, e_theta, e_phi, pwr_ratio):
+    def __init__ (self, azi, zen, e_t, e_p, power, ff_power, distance):
+        self.power     = power
+        self.ff_power  = ff_power
+        self.distance  = distance or 1
         self.azi       = azi
         self.zen       = zen
-        self.gain_dbi  = gain_dbi
-        self.pwr_ratio = np.sqrt (pwr_ratio)
-        self.e_theta   = e_theta * self.pwr_ratio
-        self.e_phi     = e_phi   * self.pwr_ratio
+        self.e_ratio   = np.sqrt (self.ff_power / self.power)
+        self.e_theta   = e_t
+        self.e_phi     = e_p
+        self.compute_gain ()
     # end def __init__
+
+    def compute_gain (self):
+        """ compute pattern in dBi
+            To get the power ratio in dBi we need to relate the field
+            power at a point to the power of the isotropic radiator at
+            that point.
+            The power of an isotropic radiator is power / (4 pi r**2)
+            (the divisor is the sphere surface)
+            The factor r**2 cancels out compared to the field power
+            (That's the distance where we compute the E-field)
+            Computing the power from the E-field is E_abs ** 2 / Z_0
+            Where Z_0 is the impedance of free space, Z_0 = 376.730313412.
+            So to get from E_abs ** 2 to the power ratio we have to divide
+            by Z_0 * self.power / 4 pi, or taking the reciprocal multiply by
+            4 pi / (self.power * Z_0), 4 pi / Z_0 / 2 is approx 0.016678.
+            The factor 2 in the denominator comes from RMS vs peak amplitude.
+        """
+        dbi_factor = 4 * np.pi / (2 * 376.730313412 * self.power)
+        shp = self.azi.shape
+        p123 = np.ones ((shp [1], shp [0], 3), dtype = float) * -999
+        # calculate values in dBi
+        t1 = dbi_factor * (self.e_theta.real ** 2 + self.e_theta.imag ** 2)
+        t2 = dbi_factor * (self.e_phi.real   ** 2 + self.e_phi.imag   ** 2)
+        t3 = t1 + t2
+        t123 = np.array ([t1, t2, t3]).T
+        # Only fill in values larger than this value all others are -999
+        cond = t123 > 1e-30
+        p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
+        self.gain_dbi = p123.T
+    # end def compute_gain
 
     def db_as_mininec (self):
         r = []
-        v, h, t = self.gain_dbi.T
+        v, h, t = self.gain_dbi
         for theta, phi, v, h, t in zip \
             (self.zen.flat, self.azi.flat, v.flat, h.flat, t.flat):
             r.append \
@@ -329,10 +362,12 @@ class Far_Field_Pattern:
     # end def db_as_mininec
 
     def abs_gain_as_mininec (self):
-        e_t_abs = np.abs   (self.e_theta)
-        e_p_abs = np.abs   (self.e_phi)
-        e_t_ang = np.angle (self.e_theta) / np.pi * 180
-        e_p_ang = np.angle (self.e_phi)   / np.pi * 180
+        e_t = self.e_theta * self.e_ratio / self.distance
+        e_p = self.e_phi   * self.e_ratio / self.distance
+        e_t_abs = np.abs   (e_t)
+        e_p_abs = np.abs   (e_p)
+        e_t_ang = np.angle (e_t) / np.pi * 180
+        e_p_ang = np.angle (e_p) / np.pi * 180
         r = []
         for th, ph, et_abs, ep_abs, et_ang, ep_ang in zip \
             ( self.zen.flat, self.azi.flat
@@ -2374,24 +2409,10 @@ class Mininec:
         rd   = dist or 0
         pv   = self.pulses
         f3   = pv.sign * self.w * pv.seg_len / 2
-        # To get the power ratio in dBi we need to relate the field
-        # power at a point to the power of the isotropic radiator at
-        # that point.
-        # The power of an isotropic radiator is power / (4 pi r**2)
-        # (the divisor is the sphere surface)
-        # The factor r**2 cancels out compared to the field power
-        # (That's the distance where we compute the E-field)
-        # Computing the power from the E-field is E_abs ** 2 / Z_0
-        # Where Z_0 is the impedance of free space, Z_0 = 376.730313412.
-        # So to get from E_abs ** 2 to the power ratio we have to divide
-        # by Z_0 * self.power / 4 pi, or taking the reciprocal multiply by
-        # 4 pi / (self.power * Z_0), 4 pi / Z_0 / 2 is approx 0.016678.
-        # The factor 2 comes from RMS vs peak amplitude.
-        k9   = .016678 / self.power
         # cos, -sin for azi and zen angles
         # cos is the real, -sin the imag part
-        acs  = np.e ** (-1j * azimuth_angle.angle_rad ())
-        zcs  = np.e ** (-1j * zenith_angle.angle_rad ())
+        acs  = np.exp (-1j * azimuth_angle.angle_rad ())
+        zcs  = np.exp (-1j * zenith_angle.angle_rad ())
         zcs_m, acs_m = np.meshgrid (zcs, acs)
         # spherical coordinates??
         rvec = np.array (
@@ -2534,21 +2555,8 @@ class Mininec:
         h12 = np.sum (gain * rvec.imag, axis = 2) * self.g0 * -1j
         vv  = np.array ([acs_m.imag, acs_m.real]).T
         x34 = np.sum (gain [:, :, :2] * vv, axis = 2) * self.g0 * -1j
-        # pattern in dBi
-        p123 = np.ones ((len (zcs), len (acs), 3), dtype = float) * -999
-        t1 = k9 * (h12.real ** 2 + h12.imag ** 2)
-        t2 = k9 * (x34.real ** 2 + x34.imag ** 2)
-        t3 = t1 + t2
-        # calculate values in dBi
-        t123 = np.array ([t1.T, t2.T, t3.T]).T
-        cond = t123 > 1e-30
-        p123 [cond] = np.log (t123 [cond]) / np.log (10) * 10
-        if rd != 0:
-            h12 /= rd
-            x34 /= rd
-        rat = self.ff_power / self.power
-        self.far_field = \
-            Far_Field_Pattern (azi_d, zen_d, p123, h12.T, x34.T, rat)
+        self.far_field = Far_Field_Pattern \
+            (azi_d, zen_d, h12.T, x34.T, self.power, self.ff_power, rd)
     # end def compute_far_field
 
     @measure_time
@@ -4182,7 +4190,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     <BLANKLINE>
                       **** ANTENNA GEOMETRY ****
     <BLANKLINE>
-    WIRE NO.  1  COORDINATES                                CONNECTION PULSE
+    WIRE NO.  1 COORDINATES                                 CONNECTION PULSE
     X             Y             Z             RADIUS        END1 END2  NO.
      0             0             0             .0127        -1    1   1
      0             0             2.01676       .0127         1    1   2
@@ -4224,14 +4232,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
      ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
      0             0            -999          -999          -999
-     45            0             1.163918     -999           1.163918
-     90            0             5.119285     -999           5.119285
+     45            0             1.163971     -999           1.163971
+     90            0             5.119338     -999           5.119338
      0             180          -999          -999          -999
-     45            180           1.163918     -999           1.163918
-     90            180           5.119285     -999           5.119285
+     45            180           1.163971     -999           1.163971
+     90            180           5.119338     -999           5.119338
      0             360          -999          -999          -999
-     45            360           1.163918     -999           1.163918
-     90            360           5.119285     -999           5.119285
+     45            360           1.163971     -999           1.163971
+     90            360           5.119338     -999           5.119338
     <BLANKLINE>
     FREQUENCY (MHZ): 7.16
         WAVE LENGTH =  41.87151  METERS
@@ -4263,14 +4271,14 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
     ZENITH        AZIMUTH       VERTICAL      HORIZONTAL    TOTAL
      ANGLE         ANGLE        PATTERN (DB)  PATTERN (DB)  PATTERN (DB)
      0             0            -999          -999          -999
-     45            0             1.16192      -999           1.16192
-     90            0             5.120395     -999           5.120395
+     45            0             1.161973     -999           1.161973
+     90            0             5.120448     -999           5.120448
      0             180          -999          -999          -999
-     45            180           1.16192      -999           1.16192
-     90            180           5.120395     -999           5.120395
+     45            180           1.161973     -999           1.161973
+     90            180           5.120448     -999           5.120448
      0             360          -999          -999          -999
-     45            360           1.16192      -999           1.16192
-     90            360           5.120395     -999           5.120395
+     45            360           1.161973     -999           1.161973
+     90            360           5.120448     -999           5.120448
 
     >>> args = ['-f', '7.15', '-w', '5,0,0,0,0,0,10.0838,0.0127']
     >>> args.extend (['--medium=0,0,0', '--excitation-pulse=1'])

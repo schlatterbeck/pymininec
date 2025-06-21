@@ -614,52 +614,58 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
 
     def test_dipole_wiredia_001 (self):
         m = self.dipole_7mhz (wire_dia = 0.001, filename = 'dipole-001.pout')
-        assert self.expected_output == m.as_mininec ()
+        out = m.as_mininec ()
+        assert self.expected_output == out
     # end def test_dipole_wiredia_001
 
     def test_vdipole_wiredia_01 (self):
         m = self.vertical_dipole (wire_dia = 0.01, filename = 'vdipole-01.pout')
-        assert self.expected_output == m.as_mininec ()
+        out = m.as_mininec ()
+        assert self.expected_output == out
     # end def test_vdipole_wiredia_01
 
     def test_vdipole_wiredia_01_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01g0.pout', media = ideal)
-        assert self.expected_output == m.as_mininec ()
+        out = m.as_mininec ()
+        assert self.expected_output == out
     # end def test_vdipole_wiredia_01_ground
 
     def test_vdipole_wiredia_01_ground_loaded (self):
         ideal = [ideal_ground]
         load  = Impedance_Load (2e-6)
+        # Attach to *all* segments
         m = self.vertical_dipole \
             ( wire_dia = 0.01
             , filename = 'vdipole-01g0l.pout'
             , media    = ideal
             , load     = load
             )
-        # Attach to *all* segments
-        assert self.expected_output == m.as_mininec ()
+        out = m.as_mininec ()
+        assert self.expected_output == out
     # end def test_vdipole_wiredia_01_ground_loaded
 
     def test_vdipole_wiredia_01_ground_loaded_j (self):
         ideal = [ideal_ground]
         load  = Impedance_Load (2e-6+2e-6j)
+        # Attach to *all* segments
         m = self.vertical_dipole \
             ( wire_dia = 0.01
             , filename = 'vdipole-01g0l-j.pout'
             , media    = ideal
             , load     = load
             )
-        # Attach to *all* segments
-        assert self.expected_output == m.as_mininec ()
+        out = m.as_mininec ()
+        assert self.expected_output == out
     # end def test_vdipole_wiredia_01_ground_loaded_j
 
     def test_vdipole_wiredia_001_ground (self):
         ideal = [ideal_ground]
         m = self.vertical_dipole \
             (wire_dia = 0.001, filename = 'vdipole-001g0.pout', media = ideal)
-        assert self.expected_output == m.as_mininec ()
+        out = m.as_mininec ()
+        assert self.expected_output == out
     # end def test_vdipole_wiredia_001_ground
 
     def test_vdipole_wiredia_01_avg_ground (self):
@@ -678,7 +684,7 @@ class Test_Case_Known_Structure (_Test_Base_With_File):
             and -999.
         """
         avg = [Medium (13, 0.005)]
-        m  = self.vertical_dipole \
+        m   = self.vertical_dipole \
             (wire_dia = 0.01, filename = 'vdipole-01gavg.pout', media = avg)
         self.compare_far_field_data (m)
     # end def test_vdipole_wiredia_01_avg_ground
