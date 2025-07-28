@@ -942,6 +942,25 @@ I had first tried a formulation by Richmond [15]_ suggested to me by Roy
 Lewallen, W7EL (the author of EZNEC). But that formulation turned out to
 be numerically instable for small segments. More details are in my blog [16]_.
 
+Mininec API
+-----------
+
+An overview of what we can do with the API |--| simulating an antenna
+(in free space) and plotting it with `plot-antenna`_ is now in an
+`Example Jupyter Notebook`_. More, e.g.
+
+- different types of ground, with or without radials and different
+  ground heights
+- Antenna loading (e.g. traps)
+- Skin effect loading and insulated wires
+- More geometry objects like Helix or Arc
+- Geometry transformations (needed for Helix and Arc because they have a
+  default placement)
+
+can for now be seen in the ``main()`` function of ``mininec.py``. I may
+write another notebook that shows extended functionality when time
+permits.
+
 Notes on Elliptic Integral Parameters
 -------------------------------------
 
@@ -1314,3 +1333,4 @@ Literature
 .. _`CR-2936`: https://ntrs.nasa.gov/citations/19740013743
 .. _`User's guide`: https://www.nec2.org/other/nec2prt3.pdf
 .. _`my LaTex version`: https://github.com/schlatterbeck/mininec-3-doc
+.. _`Example Jupyter Notebook`: plot-antenna-example.ipynb
