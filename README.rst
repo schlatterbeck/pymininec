@@ -959,7 +959,10 @@ An overview of what we can do with the API |--| simulating an antenna
 
 can for now be seen in the ``main()`` function of ``mininec.py``. I may
 write another notebook that shows extended functionality when time
-permits.
+permits. Github seems to render the notebook without pictures. In my
+blog you can find a slightly different `version of the notebook`_. In
+this version you can zoom, turn the various traces on/off in the legend
+on the right side and do the usual things possible with plotly graphics.
 
 Notes on Elliptic Integral Parameters
 -------------------------------------
@@ -1334,3 +1337,4 @@ Literature
 .. _`User's guide`: https://www.nec2.org/other/nec2prt3.pdf
 .. _`my LaTex version`: https://github.com/schlatterbeck/mininec-3-doc
 .. _`Example Jupyter Notebook`: plot-antenna-example.ipynb
+.. _`version of the notebook`: https://blog.runtux.com/posts/2025/07/28/
