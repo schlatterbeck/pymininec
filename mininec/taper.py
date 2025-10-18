@@ -131,7 +131,8 @@ def taper2 (p1, p2, n, r, min_t = 0, max_t = None):
     lv = p2 - p1
     l  = np.linalg.norm (p2 - p1)
     uv = lv / l
-    min_t = max (2.5 * r, min_t)
+    if min_t <= 0:
+        min_t = max (2.5 * r, min_t)
     assert n > 1
     if l / n < min_t:
         raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t)) \
@@ -305,7 +306,8 @@ def taper1 (p1, p2, n, r, min_t = 0, max_t = None, end = 0):
     lv = p2 - p1
     l  = np.linalg.norm (p2 - p1)
     uv = lv / l
-    min_t = max (2.5 * r, min_t)
+    if min_t <= 0:
+        min_t = max (2.5 * r, min_t)
     assert n > 1
     if l / n < min_t:
         raise Taper_Error ('Segment size too short: %g < %g' % (l / n, min_t)) \
