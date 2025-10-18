@@ -224,7 +224,8 @@ class _Test_Base_With_File:
         """ This is used when the CURRENT line in the feed pulse is
             slightly off on different architectures. In addition the
             individual CURRENT DATA lines are also compared
-            approximately. We get lists of lines already split.
+            approximately. Same for resulting feedpoint impoedance.
+            We get lists of lines already split.
         """
         off = ex.index (self.source_data) + 2
         assert ex [:off] == ac [:off]
@@ -238,6 +239,17 @@ class _Test_Base_With_File:
         off += 1
         state = 0
         for l_ex, l_ac in zip (ex [off:], ac [off:]):
+            if state == 0 and l_ex.lstrip ().startswith ('IMPEDANCE'):
+                s_e = l_ex.strip ().split ()
+                s_a = l_ac.strip ().split ()
+                for e, a in zip (s_e, s_a):
+                    if len (e) < 3 or e == 'IMPEDANCE':
+                        assert e == a
+                    else:
+                        e = float (e)
+                        a = float (a)
+                        assert a == pytest.approx (e, rel = 1e-6, abs = 0)
+                continue
             if state == 0 or state == 2:
                 assert l_ex == l_ac
             if '(DEGREES)' in l_ex:
