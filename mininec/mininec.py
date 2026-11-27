@@ -2050,6 +2050,9 @@ class Mininec:
     # INTRINSIC IMPEDANCE OF FREE SPACE DIVIDED BY 2 PI
     g0 = 29.979221
     c  = 299.8 # speed of light
+    # Near-field: number of batch pairs, this is a time/memory tradeoff,
+    # see compute_near_field.
+    nf_batch_pairs = 5000
 
     def __init__ (self, f, geo, media = None, print_opts = None, t = False):
         """ Initialize, no interactive input is done here
@@ -2656,29 +2659,29 @@ class Mininec:
         >>> m.compute_rhs ()
         >>> for r in m.rhs:
         ...     print ('%.6e%+.6ej' % (r.real, r.imag))
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	2.443461e-03-4.232199e-03j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        2.443461e-03-4.232199e-03j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
         >>> m.sources = []
         >>> m.register_source (s, 4)
         >>> m.compute_rhs ()
         >>> for r in m.rhs:
         ...     print ('%.6e%+.6ej' % (r.real, r.imag))
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00-4.886922e-03j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
-	0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00-4.886922e-03j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
+        0.000000e+00+0.000000e+00j
         """
         n      = len (self.pulses)
         self.Z = np.zeros ((n, n), dtype=complex)
@@ -2934,14 +2937,9 @@ class Mininec:
         return (v * d1 [pidx] * v6 + u * d1 [pidx] * v7) * kvec
     # end def nf_helper
 
-    # Upper bound for the number of (field point, pulse) pairs computed
-    # in one batch of the near field computation. Memory needed per
-    # batch is roughly proportional to this, see compute_near_field.
-    nf_batch_pairs = 5000
-
     @measure_time
     def compute_near_field \
-        (self, start, inc, nvec, pwr = None, batch_size = None):
+        (self, start, inc, nvec, pwr = None, batch_pairs = None):
         """ Near field
             Asumes that the impedance matrix has been computed.
             Note that the input paramters are three-dimensional vectors.
@@ -2952,15 +2950,15 @@ class Mininec:
             nvec  is originally  NX, NY, NZ
             power is originally  O2
             Basic code starts at 875
-            batch_size: number of field points computed together in
-            one vectorized step. Larger batches are faster but need
-            more memory. The default is chosen so that a batch contains
-            about nf_batch_pairs (field point, pulse) pairs. Results do
-            not depend on the batch size.
+            batch_pairs: Number of (field-point, pulse pairs, we compute
+            the batch_size from this: the number of field points
+            computed together in one vectorized step. Larger batches are
+            faster but need more memory.
+            Results do not depend on the batch size.
         """
         self.nf_param = np.array ([list (start), list (inc), list (nvec)]).T
-        self.e_field = []
-        self.h_field = []
+        self.e_field = np.array ([])
+        self.h_field = np.array ([])
         # virtual dipole length for near field calculation:
         s0 = .001 * self.wavelen
         if pwr is None:
@@ -2979,24 +2977,24 @@ class Mininec:
             )
 
         coords = self.near_field_coord.T
-        if batch_size is None:
-            batch_size = self.nf_batch_pairs // max (1, len (self.pulses))
+        batch_pairs = batch_pairs or self.nf_batch_pairs
+        batch_size = batch_pairs // max (1, len (self.pulses))
         batch_size = max (1, int (batch_size))
         e = np.zeros ((len (coords), 3), dtype = complex)
         h = np.zeros ((len (coords), 3), dtype = complex)
         for i in range (0, len (coords), batch_size):
             sl = slice (i, i + batch_size)
             e [sl], h [sl] = self.near_field_points (coords [sl], s0)
-        self.e_field = list (e * f_e)
-        self.h_field = list (h * f_h)
+        self.e_field = e * f_e
+        self.h_field = h * f_h
     # end def compute_near_field
 
     def near_field_points (self, coords, s0):
         """ E- and H-field (unscaled) at the given points, coords has
-            shape (n, 3), the result are two arrays of shape (n, 3).
+            shape (nc, 3), the result are two arrays of shape (nc, 3).
             All points are computed in one vectorized step: Arrays have
-            an additional leading axis over the n points (called nc
-            below), so memory use grows with n * number of pulses.
+            an additional leading axis over the nc points, so memory use
+            grows with nc * number of pulses.
         """
         coords = np.asarray (coords, dtype = float)
         nc     = len (coords)
@@ -5269,6 +5267,16 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
                     "Y and Z direction, respectively."
         )
     cmd.add_argument \
+        ( '--nf-batch-pairs'
+        , help    = "Upper bound for the number of (field point, pulse)"
+                    " pairs computed in one batch of the near field"
+                    " computation. Memory needed per batch is roughly"
+                    " proportional to this, this is a time/memory"
+                    " tradeoff."
+        , type    = int
+        , default = Mininec.nf_batch_pairs
+        )
+    cmd.add_argument \
         ( '--nf-power'
         , help    = "Power used for near-field computation"
         , type    = float
@@ -5846,7 +5854,7 @@ def main (argv = sys.argv [1:], f_err = sys.stderr, return_mininec = False):
         if args.frequency_steps != 1 and k == 0:
             print (m.frq_independent_as_mininec ())
         if 'near-field' in options:
-            d = {}
+            d = dict (batch_pairs = args.nf_batch_pairs)
             if args.nf_power:
                 d ['pwr'] = args.nf_power
             m.compute_near_field (nf_start, nf_inc, nf_count, **d)
